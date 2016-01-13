@@ -4,6 +4,11 @@
 import sys
 sys.path.append('/home/jaime/Documents/Python Code')
 
+# Import custom modules
+import iclrt_tools.plotting.dfplots as df
+import iclrt_tools.data_sets.waveforms as wvf
+import iclrt_tools.filters.filters as filters
+
 # Import other modules
 import numpy as np
 import matplotlib as mpl
@@ -14,10 +19,6 @@ import operator
 
 import xml.etree.ElementTree as et
 
-# Import custom modules
-import iclrt_tools.plotting.dfplots as df
-import iclrt_tools.data_sets.waveforms as wvf
-import iclrt_tools.filters.filters as filters
 
 class DataSet(object):
 
