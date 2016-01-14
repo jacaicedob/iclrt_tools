@@ -52,6 +52,8 @@ class FieldMillData(object):
                 self.t.append(datetime.datetime.strptime(t, '%Y-%m-%d %H:%M:%S'))
                 pass
 
+        return self.t, self.E
+
 
 class FieldMillDataold(object):
     """
