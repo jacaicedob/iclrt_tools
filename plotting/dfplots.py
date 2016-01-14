@@ -2115,6 +2115,14 @@ class LMAPlotter(object):
         self.ax_3d.set_ylabel('South - North (km)')
         self.ax_3d.set_zlabel('Altitude (km)')
 
+        ticks_loc = [self.plot_data['seconds_of_day'][0], self.plot_data['seconds_of_day'][int(len(self.plot_data['seconds_of_day'])/2)], self.plot_data['seconds_of_day'][-1]]
+        cb = self.fig_3d.colorbar(self.scat_3d, orientation='vertical', ticks=ticks_loc)
+        times = [self.plot_data['t'][0].strftime('%H:%M:%S.%f'),
+                 self.plot_data['t'][int(len(self.plot_data['t'])/2)].strftime('%H:%M:%S.%f'),
+                 self.plot_data['t'][-1].strftime('%H:%M:%S.%f')]
+        cb.ax.set_yticklabels(times)
+
+
     def plot_all(self):
         self.fig_all = plt.figure()
         self.gs = GridSpec(5, 4)
