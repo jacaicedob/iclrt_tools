@@ -2,7 +2,7 @@
 
 # Add personal packages directory to path
 import sys
-sys.path.append('/home/jaime/Documents/Python Code')
+sys.path.append('/home/jaime/Documents/Python Code/iclrt_tools')
 
 import matplotlib.pyplot as plt
 import datetime
@@ -47,9 +47,9 @@ y_lims = p.ax_plan.get_ylim()
 
 p.filter_xy(x_lims, y_lims)
 
-# p.plot_all()
-# plt.show()
+p.plot_all()
+plt.show()
 
 # # Plot 3D
-p.plot_3D(x_lims, y_lims, z_lims, projections=True)
-plt.show()
+# p.plot_3D(x_lims, y_lims, z_lims, projections=True)
+# plt.show()
