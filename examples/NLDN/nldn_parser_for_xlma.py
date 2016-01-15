@@ -2,10 +2,10 @@
 
 # Add personal packages directory to path
 import sys
-sys.path.append('/home/jaime/Documents/Python Code')
+sys.path.append('/home/jaime/Documents/Python Code/iclrt_tools')
 
 # Import other modules
-import JaimePackages.nldn.nldn_parser as nldn
+import iclrt_tools.nldn.xlma_nldn_parser as nldn
 
 
 if len(sys.argv) < 3:
