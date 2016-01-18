@@ -815,6 +815,24 @@ class RadarPlotter(object):
     def __init__(self, fileName):
         self.fileName = fileName
         self.radar = pyart.io.read(self.fileName)
+        self.fields = self.radar.fields.keys()
+        self.display = pyart.graph.RadarDisplay(self.radar)
+
+    def plot_ppi(self, field, sweep=0, fig=None, ax=None):
+        if field in self.fields:
+            if sweep <= self.radar.nsweeps:
+                if fig is not None and ax is not None:
+                    self.display.plot_ppi(field, sweep=sweep, vmin=-25, vmax=75, fig=fig, ax=ax)
+                else:
+                    self.display.plot_ppi(field, sweep=sweep, vmin=-25, vmax=75)
+
+    def plot_pseudo_rhi(self, field, azimuth=0, fig=None, ax=None):
+        if field in self.fields:
+            if azimuth <= 360:
+                if fig is not None and ax is not None:
+                    self.display.plot_azimuth_to_rhi(field, azimuth, vmin=-25, vmax=75, fig=fig, ax=ax)
+                else:
+                    self.display.plot_azimuth_to_rhi(field, 210, vmin=-25, vmax=75)
 
 
 class LMAPlotter(object):
