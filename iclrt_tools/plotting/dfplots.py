@@ -812,11 +812,12 @@ class ImagePlotter(object):
 
 
 class RadarPlotter(object):
-    def __init__(self, fileName):
-        self.fileName = fileName
+    def __init__(self, file_name):
+        self.fileName = file_name
         self.radar = pyart.io.read(self.fileName)
         self.fields = self.radar.fields.keys()
         self.ICLRT_shift = (32e3, 61e3)  # Distance (x,y) in km from KJAX radar
+        self.ICLRT_azimuth = 208.3  # Azimuth in degrees from KJAX radar
         self.display = None
 
     def setup_display(self, shift=None):
@@ -831,36 +832,27 @@ class RadarPlotter(object):
                 if self.display is None:
                         self.setup_display()
 
-                if fig is not None and ax is not None:
-                    self.display.plot_ppi(field, sweep=sweep, vmin=-25,
-                                          vmax=75, fig=fig, ax=ax,
-                                          title_flag=False,
-                                          colorbar_label='dBZ',
-                                          axislabels_flag=False)
-                else:
-                    self.display.plot_ppi(field, sweep=sweep, vmin=-25,
-                                          vmax=75,title_flag=False,
-                                          colorbar_label='dBZ',
-                                          axislabels_flag=False)
+                self.display.plot_ppi(field, sweep=sweep, vmin=-25,
+                                      vmax=75, fig=fig, ax=ax,
+                                      title_flag=False,
+                                      colorbar_label='dBZ',
+                                      axislabels_flag=False)
 
-    def plot_pseudo_rhi(self, field, azimuth=0, fig=None, ax=None):
+    def plot_pseudo_rhi(self, field, azimuth=None, fig=None, ax=None):
+        if azimuth is None:
+            azimuth = self.ICLRT_azimuth
+
         if field in self.fields:
             if azimuth <= 360:
                 if self.display is None:
                     self.setup_display()
 
-                if fig is not None and ax is not None:
-                    self.display.plot_azimuth_to_rhi(field, azimuth,
-                                                     vmin=-25, vmax=75,
-                                                     fig=fig, ax=ax,
-                                                     title_flag=False,
-                                                     colorbar_label='dBZ',
-                                                     axislabels_flag=False)
-                else:
-                    self.display.plot_azimuth_to_rhi(field, 210, vmin=-25,
-                                                     vmax=75, title_flag=False,
-                                                     colorbar_label='dBZ',
-                                                     axislabels_flag=False)
+                self.display.plot_azimuth_to_rhi(field, azimuth,
+                                                 vmin=-25, vmax=75,
+                                                 fig=fig, ax=ax,
+                                                 title_flag=False,
+                                                 colorbar_label='dBZ',
+                                                 axislabels_flag=False)
 
 
 class LMAPlotter(object):
