@@ -15,6 +15,8 @@ import datetime
 import math
 import pyart
 
+import iclrt_tools.lma.lma as lma
+
 
 def plot(x, y, **kwargs):
     fig = plt.figure()
@@ -857,6 +859,9 @@ class RadarPlotter(object):
 
 class LMAPlotter(object):
     def __init__(self, lma_file):
+        if not isinstance(lma_file, lma.LMAFile):
+            lma_file = lma.LMAFile(lma_file)
+
         self.raw_data = lma_file.data
         self.filtered_data = self.raw_data
 
@@ -1540,12 +1545,18 @@ class LMAPlotter(object):
         # for label in self.ax_alt_t.xaxis.get_ticklabels(minor=False):
         #     label.set_rotation(30)
 
-    def plot_plan(self, xlims=[-20E3, 20E3], ylims=[-20E3, 20E3]):
+    def plot_plan(self, fig=None, ax=None, xlims=[-20E3, 20E3],
+                  ylims=[-20E3, 20E3]):
         self.plot_x_stack = []
         self.plot_y_stack = []
 
-        self.fig_plan = plt.figure()
-        self.ax_plan = self.fig_plan.add_subplot(111)
+        if fig is None or ax is None:
+            self.fig_plan = plt.figure()
+            self.ax_plan = self.fig_plan.add_subplot(111)
+
+        else:
+            self.fig_plan = fig
+            self.ax_plan = ax
 
         self.scat_plan = self.ax_plan.scatter(self.plot_data['x'],
                              self.plot_data['y'], marker='.',
