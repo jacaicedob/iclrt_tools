@@ -2,11 +2,11 @@
 
 # Add personal packages directory to path
 import sys
-sys.path.append('/home/jaime/Documents/Python Code')
+import os
 
 # Import other modules
-# import JaimePackages.data_sets.data_sets_non_oo as ds
-import JaimePackages.data_sets.data_sets as ds
+# import iclrt_tools.data_sets.data_sets_non_oo as ds
+import iclrt_tools.data_sets.data_sets as ds
 
 def usage():
     s =  """
@@ -80,7 +80,7 @@ Usage:
 
 
 def main():
-
+    os.chdir('/home/jaime/Documents/ResearchTopics/Publications/Current Reflections/Data Sets/')
     if len(sys.argv) < 3:
         usage()
         sys.exit(1)

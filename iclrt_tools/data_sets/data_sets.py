@@ -2,7 +2,7 @@
 
 # Add personal packages directory to path
 import sys
-sys.path.append('/home/jaime/Documents/Python Code')
+import os
 
 # Import custom modules from the above directory
 import iclrt_tools.plotting.dfplots as df
@@ -39,6 +39,7 @@ class DataSet(object):
                                       self.eventName[6:])
 
     def get_data_set(self, rs='all', meass='all'):
+        os.chdir('/home/jaime/Documents/ResearchTopics/Publications/Current Reflections/Data Sets/')
         mpl.rcParams['figure.dpi'] = 150
 
         self.data = {}
@@ -128,6 +129,7 @@ class DataSet(object):
     def plot_data_set(self, rs='all', meass='all', lim=20, window=1.0,
                       norm=False):
         #~ mpl.rcdefaults()
+        os.chdir('/home/jaime/Documents/ResearchTopics/Publications/Current Reflections/Data Sets/')
 
         for rss in self.root.iter('return_stroke'):
 
@@ -336,6 +338,7 @@ class DataSet(object):
             plt.show()
 
     def save_data(self, fileSave):
+        os.chdir('/home/jaime/Documents/ResearchTopics/Publications/Current Reflections/Data Sets/')
         print("Saving data to: {file}".format(file=fileSave))
         if self.data:
             if self.fo:
@@ -347,6 +350,7 @@ class DataSet(object):
             pickle.dump(file_data, open(fileSave, "wb"))
 
     def print_keys(self, rs='all'):
+        os.chdir('/home/jaime/Documents/ResearchTopics/Publications/Current Reflections/Data Sets/')
 
         for rss in self.root.iter('return_stroke'):
 
@@ -377,7 +381,7 @@ class DataSet(object):
             print()
 
     def calc_rise(self, rs='all', meass='all'):
-
+        os.chdir('/home/jaime/Documents/ResearchTopics/Publications/Current Reflections/Data Sets/')
         for rss in self.root.iter('return_stroke'):
 
             r_s = int(rss.find('number').text)
@@ -488,6 +492,7 @@ class DataSet(object):
                 plt.show()
 
     def calc_dip_time(self, rs='all', meass='all', window=1.0):
+        os.chdir('/home/jaime/Documents/ResearchTopics/Publications/Current Reflections/Data Sets/')
 
         for rss in self.root.iter('return_stroke'):
 
@@ -622,6 +627,7 @@ class DataSet(object):
                 plt.show()
 
     def calc_dip(self,rs='all', meass='all', window=1.0):
+        os.chdir('/home/jaime/Documents/ResearchTopics/Publications/Current Reflections/Data Sets/')
 
         for rss in self.root.iter('return_stroke'):
 
