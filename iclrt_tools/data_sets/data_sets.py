@@ -310,18 +310,18 @@ class DataSet(object):
 
                 zoom_lim = [-1, int(lim)]
 
-                # title = '%s (RS #%d)' % (self.eventName, r_s)
+                title = '%s (RS #%d)' % (self.eventName, r_s)
                 # title = '%s (ICC)' % self.eventName
-                title = data[meass].ax.get_title()
+                # title = data[meass].ax.get_title()
 
-                if factor == 1E-3:
-                    ylabel = '(k%s' % (data[meass].ax.get_ylabel()[1:])
-                else:
-                    ylabel = data[meass].ax.get_ylabel()
+                # if factor == 1E-3:
+                #     ylabel = '(k%s' % (data[meass].ax.get_ylabel()[1:])
+                # else:
+                #     ylabel = data[meass].ax.get_ylabel()
 
                 xlabel = 'Time ($\mu$s)'
 
-                ax.plot(x, y_filtered*factor/norm_factor, linewidth=l_width)
+                ax.plot(x*1e6, y_filtered*factor/norm_factor, linewidth=l_width)
                 ax.set_title(title)
                 #~ ax.set_ylabel(ylabel)
                 #~ ax.set_xlabel(xlabel)
@@ -365,7 +365,7 @@ class DataSet(object):
             else:
                 continue
 
-            fileSave = "./DataFiles/%s_data_%s_rs%d_oo.p" % (self.eventNamef,
+            fileSave = "./DataFiles/%s_data_%s_rs%d.p" % (self.eventNamef,
                                                           self.eventDate, r_s)
             data = pickle.load(open(fileSave, "rb"))
 
@@ -395,7 +395,7 @@ class DataSet(object):
             else:
                 continue
 
-            fileSave = "./DataFiles/%s_data_%s_rs%d_oo.p" % (self.eventNamef,
+            fileSave = "./DataFiles/%s_data_%s_rs%d.p" % (self.eventNamef,
                                                              self.eventDate,
                                                              r_s)
             data = pickle.load(open(fileSave, "rb"))
@@ -507,7 +507,7 @@ class DataSet(object):
             else:
                 continue
 
-            fileSave = "./DataFiles/%s_data_%s_rs%d_oo.p" % (self.eventNamef,
+            fileSave = "./DataFiles/%s_data_%s_rs%d.p" % (self.eventNamef,
                                                           self.eventDate,
                                                           r_s)
             data = pickle.load(open(fileSave, "rb"))
@@ -519,7 +519,7 @@ class DataSet(object):
             if meass in keys:
 
                 ii = data[meass].data
-                ii = self.moving_average(ii, window)
+                # ii = self.moving_average(ii, window)
                 time = data[meass].dataTime*1.0E-6
 
                 fig, ax = plt.subplots(1, 1)
@@ -642,7 +642,7 @@ class DataSet(object):
             else:
                 continue
 
-            fileSave = "./DataFiles/%s_data_%s_rs%d_oo.p" % (self.eventNamef,
+            fileSave = "./DataFiles/%s_data_%s_rs%d.p" % (self.eventNamef,
                                                           self.eventDate, r_s)
             data = pickle.load(open(fileSave, "rb"))
 
@@ -652,7 +652,8 @@ class DataSet(object):
 
             if meass in keys:
 
-                ii = self.moving_average(data[meass].data, window)
+                # ii = self.moving_average(data[meass].data, window)
+                ii = data[meass].data
                 time = data[meass].dataTime*1.0E-6
 
                 fig, ax = plt.subplots(1,1)

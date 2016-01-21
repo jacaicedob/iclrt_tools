@@ -227,4 +227,43 @@ class Waveform(object):
         if p.points:
             return p.points
 
+    def peak_to_peak(self):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.plot(self.dataTime, self.data)
+        ax.set_title('Select peak region')
+
+        p = df.Plot(fig, ax)
+        plt.show()
+
+        if len(p.points) > 2:
+            print('Error! Only select 2 points.')
+            return None
+
+        xs = [pt[0] for pt in p.points]
+        xs.sort()
+
+        indmin, indmax = np.searchsorted(self.dataTime, (xs[0], xs[1]))
+        indmax = min(len(self.dataTime)-1, indmax)
+
+        data = self.data[indmin:indmax]
+        time = self.dataTime[indmin:indmax]
+
+        indmin1 = np.argmin(data)
+        indmax1 = np.argmax(data)
+
+        plt.plot(self.dataTime, self.data)
+        plt.scatter(self.dataTime[indmin+indmin1], self.data[indmin+indmin1])
+        plt.scatter(self.dataTime[indmin+indmax1], self.data[indmin+indmax1])
+        print(time[indmax1] - time[indmin1])
+        p = df.Plot(plt.gcf(), plt.gca())
+        plt.show()
+
+        # xs = [pt[0] for pt in p.points]
+        # xs.sort()
+        #
+        # indmin2 = np.searchsorted(self.dataTime, xs[0])
+        # print(time[indmax1] - self.dataTime[indmin2])
+
+
 

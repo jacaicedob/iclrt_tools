@@ -14,16 +14,16 @@ import numpy as np
 import iclrt_tools.data_sets.waveforms as wave
 
 # Remove the plots that were added to the Waveform objects
-events ={'UF0920-3': '/home/jaime/Documents/Python Code/Data Sets/DataFiles/UF0920_data_061809_rs3.p',
-         'UF0925-1': '/home/jaime/Documents/Python Code/Data Sets/DataFiles/UF0925_data_062909_rs1.p',
-         'UF0925-6': '/home/jaime/Documents/Python Code/Data Sets/DataFiles/UF0925_data_062909_rs6.p',
-         'UF0929-1': '/home/jaime/Documents/Python Code/Data Sets/DataFiles/UF0929_data_063009_rs1.p',
-        'UF0929-5': '/home/jaime/Documents/Python Code/Data Sets/DataFiles/UF0929_data_063009_rs5.p',
-        'UF0932-1': '/home/jaime/Documents/Python Code/Data Sets/DataFiles/UF0932_data_070709_rs1.p',
-        'UF1309-1': '/home/jaime/Documents/Python Code/Data Sets/DataFiles/UF1309_data_060913_rs1.p',
-        'UF1333-1': '/home/jaime/Documents/Python Code/Data Sets/DataFiles/UF1333_data_081713_rs1.p',
-        'UF1426-1': '/home/jaime/Documents/Python Code/Data Sets/DataFiles/UF1426_data_071414_rs1.p',
-        'UF1442-1': '/home/jaime/Documents/Python Code/Data Sets/DataFiles/UF1442_data_080214_rs1.p'}
+events ={'UF0920-3': '/home/jaime/Documents/ResearchTopics/Publications/Current Reflections/Data Sets/DataFiles/UF0920_data_061809_rs3.p',
+         'UF0925-1': '/home/jaime/Documents/ResearchTopics/Publications/Current Reflections/Data Sets/DataFiles/UF0925_data_062909_rs1.p',
+         'UF0925-6': '/home/jaime/Documents/ResearchTopics/Publications/Current Reflections/Data Sets/DataFiles/UF0925_data_062909_rs6.p',
+         'UF0929-1': '/home/jaime/Documents/ResearchTopics/Publications/Current Reflections/Data Sets/DataFiles/UF0929_data_063009_rs1.p',
+        'UF0929-5': '/home/jaime/Documents/ResearchTopics/Publications/Current Reflections/Data Sets/DataFiles/UF0929_data_063009_rs5.p',
+        'UF0932-1': '/home/jaime/Documents/ResearchTopics/Publications/Current Reflections/Data Sets/DataFiles/UF0932_data_070709_rs1.p',
+        'UF1309-1': '/home/jaime/Documents/ResearchTopics/Publications/Current Reflections/Data Sets/DataFiles/UF1309_data_060913_rs1.p',
+        'UF1333-1': '/home/jaime/Documents/ResearchTopics/Publications/Current Reflections/Data Sets/DataFiles/UF1333_data_081713_rs1.p',
+        'UF1426-1': '/home/jaime/Documents/ResearchTopics/Publications/Current Reflections/Data Sets/DataFiles/UF1426_data_071414_rs1.p',
+        'UF1442-1': '/home/jaime/Documents/ResearchTopics/Publications/Current Reflections/Data Sets/DataFiles/UF1442_data_080214_rs1.p'}
 
 for key in sorted(events.keys()):
     print("Converting {}".format(key))
