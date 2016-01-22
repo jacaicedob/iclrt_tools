@@ -832,7 +832,7 @@ class RadarPlotter(object):
         if field in self.fields:
             if sweep <= self.radar.nsweeps:
                 if self.display is None:
-                        self.setup_display()
+                    self.setup_display()
 
                 self.display.plot_ppi(field, sweep=sweep, vmin=-25,
                                       vmax=75, fig=fig, ax=ax,

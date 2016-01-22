@@ -2,7 +2,6 @@
 
 # Add personal packages directory to path
 import sys
-sys.path.append('/home/jaime/Documents/Python Code/iclrt_tools')
 
 import matplotlib.pyplot as plt
 import datetime
@@ -12,7 +11,7 @@ import matplotlib as mpl
 import iclrt_tools.lma.lma as lma
 import iclrt_tools.plotting.dfplots as df
 
-fileName = '/home/jaime/Documents/LMA/Data/Triggered/ByDate/2015/150827/LYLOUT_150827_232422_0008_8stations.dat'
+fileName = '/home/jaime/Documents/LMA/Data/Triggered/2015/150827/LYLOUT_150827_232422_0008_8stations.dat'
 
 f = lma.LMAFile(fileName)
 p = df.LMAPlotter(f)
@@ -32,7 +31,7 @@ plt.show()
 t_lims = p.ax_alt_t.get_xlim()
 t_lims = [datetime.datetime.strftime(mpl.dates.num2date(t_lims[0]), '%H:%M:%S.%f'), datetime.datetime.strftime(mpl.dates.num2date(t_lims[-1]), '%H:%M:%S.%f')]
 z_lims = p.ax_alt_t.get_ylim()
-z_lims = [0, z_lims[-1]*1E3]
+z_lims = [0, 4e3]  #z_lims[-1]*1E3]
 
 p.filter_time(t_lims)
 p.filter_alt(z_lims[-1])
@@ -48,8 +47,8 @@ y_lims = p.ax_plan.get_ylim()
 p.filter_xy(x_lims, y_lims)
 
 p.plot_all()
-plt.show()
-
-# # Plot 3D
-# p.plot_3D(x_lims, y_lims, z_lims, projections=True)
 # plt.show()
+
+# Plot 3D
+p.plot_3D(x_lims, y_lims, z_lims, projections=True)
+plt.show()
