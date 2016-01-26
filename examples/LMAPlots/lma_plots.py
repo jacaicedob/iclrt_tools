@@ -24,6 +24,7 @@ p.filter_num_stations(6)
 
 print("Plotting...")
 
+p.set_cmap('grey')
 p.plot_alt_t()
 plt.show()
 
