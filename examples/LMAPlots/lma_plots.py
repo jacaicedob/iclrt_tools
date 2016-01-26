@@ -11,7 +11,7 @@ import matplotlib as mpl
 import iclrt_tools.lma.lma as lma
 import iclrt_tools.plotting.dfplots as df
 
-fileName = '/home/jaime/Documents/LMA/Data/Triggered/2015/150827/LYLOUT_150827_232422_0008_8stations.dat'
+fileName = '/home/jaime/Documents/LMA/Data/Triggered/2015/150827/LYLOUT_150827_235318_0008_8stations.dat'
 
 f = lma.LMAFile(fileName)
 p = df.LMAPlotter(f)
