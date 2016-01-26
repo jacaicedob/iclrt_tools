@@ -865,6 +865,8 @@ class LMAPlotter(object):
         self.raw_data = lma_file.data
         self.filtered_data = self.raw_data
 
+        self.cmap = cm.jet
+
         self.plot_data = {}
         self.plot_data_stack = []
         self.plot_x_stack = []
@@ -1013,6 +1015,12 @@ class LMAPlotter(object):
         self.plot_data['x'] *= mult
         self.plot_data['z'] *= mult
         self.plot_data['y'] *= mult
+
+    def set_cmap(self, cmap):
+        if cmap == 'jet':
+            self.cmap = cm.jet
+        elif cmap == 'grey':
+            self.cmap = cm.gray
 
     def reset_filters(self):
         """
@@ -1220,11 +1228,11 @@ class LMAPlotter(object):
         self.fig_alt_t = plt.figure()
         self.ax_alt_t = self.fig_alt_t.add_subplot(111)
 
-        colors = cm.rainbow(np.linspace(0, 1, len(self.plot_data['t'])))
+        colors = self.cmap(np.linspace(0, 1, len(self.plot_data['t'])))
         self.scat_alt_t = self.ax_alt_t.scatter(self.plot_data['t'],
                               self.plot_data['z']*1E-3,
                               marker='.', c=colors,
-                              cmap=cm.rainbow, s=30, lw=0)
+                              s=30, lw=0)
 
         self.ax_alt_t.set_ylabel('Altitude (km)')
         self.ax_alt_t.set_xlabel('Time (s)')
@@ -1502,7 +1510,7 @@ class LMAPlotter(object):
 
         data = np.hstack((thisx[:, np.newaxis], thisy[:, np.newaxis]))
         self.scat_alt_t.set_offsets(data)
-        colors = cm.rainbow(np.linspace(0, 1, len(thist)))
+        colors = self.cmap(np.linspace(0, 1, len(thist)))
         self.scat_alt_t.set_color(colors)
 
         max_y = -np.inf
@@ -1566,7 +1574,7 @@ class LMAPlotter(object):
         self.scat_plan = self.ax_plan.scatter(self.plot_data['x'],
                              self.plot_data['y'], marker='.',
                              c=self.plot_data['seconds_of_day'],
-                             cmap=cm.rainbow, s=30, lw=0)
+                             cmap=self.cmap, s=30, lw=0)
 
         self.ax_plan.set_xlim(xlims)
         self.ax_plan.set_ylim(ylims)
@@ -1848,7 +1856,7 @@ class LMAPlotter(object):
             self.scat_proj = self.ax_proj.scatter(self.plot_data['y'],
                                  self.plot_data['z'], marker='.',
                                  c=self.plot_data['seconds_of_day'],
-                                 cmap=cm.rainbow, s=30, lw=0)
+                                 cmap=self.cmap, s=30, lw=0)
             self.ax_proj.set_xlim(lims)
             self.ax_proj.set_ylim(zlims)
             self.ax_proj.set_xlabel('South - North')
@@ -1859,7 +1867,7 @@ class LMAPlotter(object):
             self.scat_proj = self.ax_proj.scatter(self.plot_data['x'],
                                  self.plot_data['z'], marker='.',
                                  c=self.plot_data['seconds_of_day'],
-                                 cmap=cm.rainbow, s=30, lw=0)
+                                 cmap=self.cmap, s=30, lw=0)
             self.ax_proj.set_xlim(lims)
             self.ax_proj.set_ylim(zlims)
             self.ax_proj.set_xlabel('West - East')
@@ -2157,7 +2165,7 @@ class LMAPlotter(object):
         self.scat_3d = self.ax_3d.scatter(self.plot_data['x']*1e-3,
                              self.plot_data['y']*1e-3, self.plot_data['z']*1e-3,
                              marker='.', c=self.plot_data['seconds_of_day'],
-                             cmap=cm.rainbow, s=30, lw=0)
+                             cmap=self.cmap, s=30, lw=0)
 
 
 
@@ -2219,7 +2227,7 @@ class LMAPlotter(object):
                                 time,
                                 self.plot_data['z']*1E-3,
                                 marker=marker, c=c,
-                                cmap=cm.rainbow, s=s, lw=lw)
+                                cmap=self.cmap, s=s, lw=lw)
 
         maj_t, min_t = self.get_date_format_major(self.plot_data['t'])
 
@@ -2246,21 +2254,21 @@ class LMAPlotter(object):
         # Altitude vs. NS projection subplot
         self.scat_all_NS = self.ax_all_NS.scatter(self.plot_data['z']*1E-3,
                                  self.plot_data['y']*1E-3, marker=marker,
-                                 c=c, cmap=cm.rainbow, s=s, lw=lw)
+                                 c=c, cmap=self.cmap, s=s, lw=lw)
         self.ax_all_NS.set_xlim([0, np.max(self.plot_data['z']*1e-3)])
         self.ax_all_NS.set_ylim([np.min(self.plot_data['y'])*1e-3, np.max(self.plot_data['y']*1e-3)])
 
         # Altitude vs. EW projection subplot
         self.scat_all_EW = self.ax_all_EW.scatter(self.plot_data['x']*1E-3,
                                  self.plot_data['z']*1E-3, marker=marker,
-                                 c=c, cmap=cm.rainbow, s=s, lw=lw)
+                                 c=c, cmap=self.cmap, s=s, lw=lw)
         self.ax_all_EW.set_ylim([0, np.max(self.plot_data['z']*1e-3)])
         self.ax_all_EW.set_xlim([np.min(self.plot_data['x'])*1e-3, np.max(self.plot_data['x']*1e-3)])
 
         # Altitude vs. plan projection subplot
         self.scat_all_plan = self.ax_all_plan.scatter(self.plot_data['x']*1E-3,
                              self.plot_data['y']*1E-3, marker=marker,
-                             c=c, cmap=cm.rainbow, s=s, lw=lw)
+                             c=c, cmap=self.cmap, s=s, lw=lw)
 
         self.ax_all_plan.set_xlim([np.min(self.plot_data['x'])*1e-3, np.max(self.plot_data['x']*1e-3)])
         self.ax_all_plan.set_ylim([np.min(self.plot_data['y'])*1e-3, np.max(self.plot_data['y']*1e-3)])
