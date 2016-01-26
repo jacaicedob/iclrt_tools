@@ -1009,6 +1009,11 @@ class LMAPlotter(object):
         # print('secs shape', self.plot_data['seconds_of_day'].shape)
         # print(' ')
 
+    def scale_data(self, mult=1):
+        self.plot_data['x'] *= mult
+        self.plot_data['z'] *= mult
+        self.plot_data['y'] *= mult
+
     def reset_filters(self):
         """
         Resets the data to the unfiltered raw data.
