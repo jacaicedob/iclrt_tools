@@ -1807,7 +1807,7 @@ class LMAPlotter(object):
     def update_graph_plan(self, thisx, thisy, thist):
         data = np.hstack((thisx[:, np.newaxis], thisy[:, np.newaxis]))
         self.scat_plan.set_offsets(data)
-        colors = cm.rainbow(np.linspace(0, 1, len(thist)))
+        colors = self.cmap(np.linspace(0, 1, len(thist)))
         self.scat_plan.set_color(colors)
 
         max_y = -np.inf
@@ -2112,7 +2112,7 @@ class LMAPlotter(object):
     def update_graph_proj(self, thisx, thisy, thist):
         data = np.hstack((thisx[:, np.newaxis], thisy[:, np.newaxis]))
         self.scat_proj.set_offsets(data)
-        colors = cm.rainbow(np.linspace(0, 1, len(thist)))
+        colors = self.cmap(np.linspace(0, 1, len(thist)))
         self.scat_proj.set_color(colors)
 
         max_y = -np.inf
