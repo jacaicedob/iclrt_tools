@@ -15,6 +15,9 @@ class Picture(object):
         self.image_size = self.image.size
         self.pixel_length = 0.0
         self.fov = (0.0, 0.0)
+        self.xoffset = 0
+        self.yoffset = 0
+        self.get_fov()
 
     def __str__(self, camera_info=False):
         s = '-' * 50
@@ -46,15 +49,15 @@ class Picture(object):
         self.fov = (self.image_size[0] * self.pixel_length,
                     self.image_size[1] * self.pixel_length)
 
-    def set_reference_point(self, height):
+    def set_offset(self, xoffset=None, yoffset=None):
         """
-        Graphically select a known height from the picture, i.e., the height
-        of the tubes of the ground launcher is 5 m. This will ensure the tick
-        marks in the figure are accurate in height.
-        :param height: height of known reference point
-        :return:
+        Set the x and y offsets to graphically center the image to a certaint point
         """
-        pass
+
+        if xoffset is not None:
+            self.xoffset = xoffset
+        elif yoffset is not None:
+            self.yoffset = yoffset
 
     def plot_picture(self, reference=5):
         self.set_reference = False
@@ -62,7 +65,7 @@ class Picture(object):
 
         self.img = mplimg.imread(self.image.filename)
 
-        mpl.rc_file('../../Plotting/matplotlibrc')
+        # mpl.rc_file('../../Plotting/matplotlibrc')
         # mpl.rcParams['xtick.color'] = 'k'
         # mpl.rcParams['ytick.color'] = 'k'
         mpl.rcParams['ytick.direction'] = 'inout'
@@ -71,8 +74,9 @@ class Picture(object):
 
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111)
-        self.im = self.ax.imshow(self.img, extent=[0, self.fov[0], 0, self.fov[1]])
-        self.im.axes.xaxis.set_major_locator(mpl.ticker.NullLocator())
+        self.im = self.ax.imshow(self.img, extent=[-self.xoffset, self.fov[0] - self.xoffset,
+                                                   -self.yoffset, self.fov[1] - self.yoffset])
+        # self.im.axes.xaxis.set_major_locator(mpl.ticker.NullLocator())
         self.im.axes.yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator())
         self.im.axes.yaxis.set_ticks_position('left')
 
@@ -88,13 +92,13 @@ class Picture(object):
     def onclick(self, event):
         if event.button == 1 and (event.inaxes is self.ax):
             if self.set_reference:
-                offset = event.ydata - self.reference
+                self.yoffset = event.ydata - self.reference
+                self.xoffset = event.xdata
 
                 self.ax.clear()
-                self.im = self.ax.imshow(self.img, extent=[0, self.fov[0],
-                                                           -offset,
-                                                           self.fov[1] - offset])
-                self.im.axes.xaxis.set_major_locator(mpl.ticker.NullLocator())
+                self.im = self.ax.imshow(self.img, extent=[-self.xoffset, self.fov[0] - self.xoffset,
+                                                           -self.yoffset, self.fov[1] - self.yoffset])
+                # self.im.axes.xaxis.set_major_locator(mpl.ticker.NullLocator())
                 self.im.axes.yaxis.set_minor_locator(mpl.ticker.AutoMinorLocator())
                 self.im.axes.yaxis.set_ticks_position('left')
 
@@ -148,7 +152,7 @@ class CameraParser(object):
     def __init__(self, camera_xml_file):
         self.xml_file = camera_xml_file
 
-    def get_camera_info(self, year='all', brand='all', model='all'):
+    def get_camera_info(self, year='all', brand='all', model='all', station='all'):
         cameras = []
         root = et.parse(self.xml_file)
 
@@ -167,6 +171,11 @@ class CameraParser(object):
                 if model == 'all':
                     pass
                 elif camera.find('model').text != model:
+                    continue
+
+                if station == 'all':
+                    pass
+                elif camera.find('station').text != station:
                     continue
 
                 brandd = camera.find('brand').text
@@ -189,11 +198,12 @@ class CameraParser(object):
 if __name__ == "__main__":
     xml_file = './cameras.xml'
     parser = CameraParser(xml_file)
-    cameras = parser.get_camera_info(year='2015', model='D5100')
+    cameras = parser.get_camera_info(year='2015', station='NEO')
 
     cam = cameras[0]
-    picture = Picture(cam, './NEO.jpg')
+    picture = Picture(cam, '/media/jaime/LarsenArray/2015Data/082715/Pictures and Videos/NEO/20150827_232423_0087.jpg')
 
     print(picture)
     #
-    # picture.plot_picture()
+    picture.plot_picture()
+    picture.plot_picture()

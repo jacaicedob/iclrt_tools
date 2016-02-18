@@ -107,13 +107,24 @@ Tree Structure:
         <year>2015</year>
         <camera>
             <brand>Nikon</brand>
-            <model>D5100</model>
+            <model>D5000</model>
             <station>NEO</station>
             <distance>432</distance>
-            <focal_length>20</focal_length>
+            <focal_length>10</focal_length>
             <sensor_width>23.6</sensor_width>
-            <sensor_height>15.6</sensor_height>
-            <pixel_size>4.8</pixel_size>
+            <sensor_height>15.8</sensor_height>
+            <pixel_size>5.5</pixel_size>
+            <frame_rate>0</frame_rate>
+        </camera>
+        <camera>
+            <brand>Nikon</brand>
+            <model>D5000</model>
+            <station>SWO</station>
+            <distance>390</distance>
+            <focal_length>10</focal_length>
+            <sensor_width>23.6</sensor_width>
+            <sensor_height>15.8</sensor_height>
+            <pixel_size>5.5</pixel_size>
             <frame_rate>0</frame_rate>
         </camera>
     </summer>
