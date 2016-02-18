@@ -24,7 +24,7 @@ p.filter_num_stations(6)
 
 print("Plotting...")
 
-p.set_cmap('grey')
+# p.set_cmap('grey')
 p.plot_alt_t()
 plt.show()
 
@@ -47,7 +47,7 @@ y_lims = p.ax_plan.get_ylim()
 
 p.filter_xy(x_lims, y_lims)
 
-p.plot_all()
+# p.plot_all()
 # plt.show()
 
 # Plot 3D
