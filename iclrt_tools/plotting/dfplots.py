@@ -818,7 +818,7 @@ class RadarPlotter(object):
         self.fileName = file_name
         self.radar = pyart.io.read(self.fileName)
         self.fields = self.radar.fields.keys()
-        self.ICLRT_shift = (32e3, 61e3)  # Distance (x,y) in km from KJAX radar
+        self.ICLRT_shift = (32.238e3, 59.873e3)  #(32e3, 61e3)# Distance (x,y) in km from KJAX radar
         self.ICLRT_azimuth = 208.3  # Azimuth in degrees from KJAX radar
         self.display = None
 
@@ -828,7 +828,7 @@ class RadarPlotter(object):
 
         self.display = pyart.graph.RadarDisplay(self.radar, shift)
 
-    def plot_ppi(self, field, sweep=0, fig=None, ax=None):
+    def plot_ppi(self, field='reflectivity', sweep=0, fig=None, ax=None):
         if field in self.fields:
             if sweep <= self.radar.nsweeps:
                 if self.display is None:
@@ -840,7 +840,7 @@ class RadarPlotter(object):
                                       colorbar_label='dBZ',
                                       axislabels_flag=False)
 
-    def plot_pseudo_rhi(self, field, azimuth=None, fig=None, ax=None):
+    def plot_pseudo_rhi(self, field='reflectivity', azimuth=None, fig=None, ax=None):
         if azimuth is None:
             azimuth = self.ICLRT_azimuth
 
@@ -855,6 +855,73 @@ class RadarPlotter(object):
                                                  title_flag=False,
                                                  colorbar_label='dBZ',
                                                  axislabels_flag=False)
+
+    def plot_ppi_rhi(self, field='reflectivity', sweep=0, fig=None, ax=None):
+        if field in self.fields:
+            if sweep <= self.radar.nsweeps:
+                if self.display is None:
+                    self.setup_display()
+
+                self.display.plot_ppi(field, sweep=sweep, vmin=-25,
+                                      vmax=75, fig=fig, ax=ax,
+                                      title_flag=False,
+                                      colorbar_label='dBZ',
+                                      axislabels_flag=False)
+
+                self.fig_ppi = plt.gcf()
+                self.ax_ppi = plt.gca()
+
+                self.ax_ppi.scatter(0,0, s=50, c='w')
+                self.fig_ppi.canvas.mpl_connect('button_release_event', self.onclick)
+                self.fig_ppi.canvas.mpl_connect('key_press_event', self.onkeypress)
+                self.fig_ppi.canvas.mpl_connect('key_release_event', self.onkeyrelease)
+
+                self.ax_ppi.set_xlim([-20, 20])
+                self.ax_ppi.set_ylim([-20, 20])
+
+                self.fig_rhi, self.ax_rhi = plt.subplots(1,1)
+                self.display.plot_azimuth_to_rhi(field, self.ICLRT_azimuth,
+                                                 vmin=-25, vmax=75,
+                                                 fig=self.fig_rhi, ax=self.ax_rhi,
+                                                 title_flag=False,
+                                                 colorbar_label='dBZ',
+                                                 axislabels_flag=False)
+                self.ax_rhi.set_xlim([-70, 70])
+                self.ax_rhi.set_ylim([0, 20])
+
+                self.field = field
+                self.sel_point = False
+
+    def onclick(self, event):
+        if event.button == 1 and (event.inaxes is self.ax_ppi):
+            if self.sel_point:
+                y = event.xdata*1e3 - self.ICLRT_shift[0]
+                x = event.ydata*1e3 - self.ICLRT_shift[1]
+                theta = math.atan(y/x) * 180/math.pi + 180
+
+                # print(theta)
+                self.ax_rhi.clear()
+                self.display.plot_azimuth_to_rhi(self.field, theta,
+                                                 vmin=-25, vmax=75,
+                                                 fig=self.fig_rhi, ax=self.ax_rhi,
+                                                 title_flag=False,
+                                                 colorbar_flag=False,
+                                                 axislabels_flag=False)
+                self.ax_rhi.set_xlim([-70, 70])
+                self.ax_rhi.set_ylim([0, 20])
+
+                self.fig_rhi.canvas.draw()
+
+        else:
+            return True
+
+    def onkeypress(self, event):
+        if event.key == 'a':
+            self.sel_point = True
+
+    def onkeyrelease(self, event):
+        if event.key == 'a':
+            self.sel_point = False
 
 
 class LMAPlotter(object):
