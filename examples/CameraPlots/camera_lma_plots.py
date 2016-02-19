@@ -40,7 +40,7 @@ for i, picture in enumerate(pictures):
     t_lims = p.ax_alt_t.get_xlim()
     t_lims = [datetime.datetime.strftime(mpl.dates.num2date(t_lims[0]), '%H:%M:%S.%f'), datetime.datetime.strftime(mpl.dates.num2date(t_lims[-1]), '%H:%M:%S.%f')]
     z_lims = p.ax_alt_t.get_ylim()
-    z_lims = [0, pic.fov[1] - pic.yoffset]  #z_lims[-1]*1E3]
+    z_lims = [0, 4E3]  # pic.fov[1] - pic.yoffset]  #z_lims[-1]*1E3]
 
     p.filter_time(t_lims)
     p.filter_alt(z_lims[-1])
