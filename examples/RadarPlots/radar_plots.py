@@ -63,7 +63,7 @@ radar_files = ['./KJAX20150827_233020_V06.gz',
                './KJAX20150828_005151_V06.gz',
                './KJAX20150828_005630_V06.gz']
 
-parent = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 07-17-2012/John Data/Radar Data/KJAX'
+parent = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 07-17-2012/Radar Data/KJAX'
 os.chdir(parent)
 
 radar_files = ['./KJAX_SDUS52_N0RJAX_201207171803',
@@ -126,8 +126,8 @@ for radar_file in radar_files:
     fig, ax = plt.subplots(1, 1)
     radar_plotter.plot_ppi('reflectivity', fig=fig, ax=ax)
     ax.scatter(0, 0, s=50, c='w')
-    ax.set_xlim([-20, 20])
-    ax.set_ylim([-20, 20])
+    ax.set_xlim([-40, 40])
+    ax.set_ylim([-40, 40])
     ax.set_xlabel('West - East (km)')
     ax.set_ylabel('South - North (km)')
     # ax.set_title(radar_file[2:-7])
