@@ -11,26 +11,27 @@
 import struct
 import numpy as np
 from datetime import datetime
+import matplotlib.pyplot as plt
 
 class lecroy_data(object):
     def __init__(self, f_name):
         with open(f_name,'rb') as fin:
             ##header_data=fin.read(357)
 
-            self.dummy=fin.read(11)
-            self.descriptor_name=fin.read(16)
-            self.template_name=fin.read(16)
+            self.dummy = fin.read(11)
+            self.descriptor_name = fin.read(16)
+            self.template_name = fin.read(16)
 
-            self.comm_type=struct.unpack('h',fin.read(2))[0] ## byte or word
+            self.comm_type = struct.unpack('h',fin.read(2))[0] ## byte or word
             
-            self.comm_order=struct.unpack('h',fin.read(2))[0]## HiFirst or LoFirst
+            self.comm_order = struct.unpack('h',fin.read(2))[0]## HiFirst or LoFirst
             self.endianness = '<' if self.comm_order else '>'
             
-            self.wave_descriptor=struct.unpack(self.endianness + 'l',fin.read(4))[0]
-            self.user_text=struct.unpack(self.endianness + 'l',fin.read(4))[0]
-            self.res_desc1=struct.unpack(self.endianness + 'l',fin.read(4))[0]
-            self.trig_time_array=struct.unpack(self.endianness + 'l',fin.read(4))[0]
-            self.ris_time_array=struct.unpack(self.endianness + 'l',fin.read(4))[0]
+            self.wave_descriptor = struct.unpack(self.endianness + 'l',fin.read(4))[0]
+            self.user_text = struct.unpack(self.endianness + 'l',fin.read(4))[0]
+            self.res_desc1 = struct.unpack(self.endianness + 'l',fin.read(4))[0]
+            self.trig_time_array = struct.unpack(self.endianness + 'l',fin.read(4))[0]
+            self.ris_time_array = struct.unpack(self.endianness + 'l',fin.read(4))[0]
             self.res_array1=struct.unpack(self.endianness + 'l',fin.read(4))[0]
             self.wave_array_1=struct.unpack(self.endianness + 'l',fin.read(4))[0]
             self.wave_array_2=struct.unpack(self.endianness + 'l',fin.read(4))[0]
@@ -220,7 +221,7 @@ class lecroy_data(object):
         
         for i in range(self.subarray_count):
            segment = self.Data[i*pts_segment:(i+1)*pts_segment]
-           
+
            segments.append(segment)
 
         self.segments = segments
@@ -230,22 +231,25 @@ class lecroy_data(object):
     def get_segment(self, num=1, calFactor=1):
         seg = self.get_segments()
         
-        self.data = seg[num - 1] * calFactor
+        data = seg[num - 1] * calFactor
+        time = self.get_seg_time()
 
-        return self.data
+        segment = LecroyTrace(data, time)
+
+        return segment
         
     def get_seg_time(self):
-        self.dataTime = np.arange(0, len(self.Data) / self.subarray_count) * \
+        dataTime = np.arange(0, len(self.Data) / self.subarray_count) * \
                         self.horiz_interval
 
-        return self.dataTime
+        return dataTime
         #~ return np.arange(0,len(self.Data) / self.subarray_count)*self.horiz_interval #- self.horiz_offset    
         
     def get_time(self):
         return np.arange(0,len(self.Data))*self.horiz_interval  #- self.horiz_offset
 
     def repack_header(self):
-        ret=self.dummy+self.descriptor_name+self.template_name
+        ret = self.dummy+self.descriptor_name+self.template_name
         ret += struct.pack(self.endianness + 'h',self.comm_type)
         ret += struct.pack(self.endianness + 'h',self.comm_order)
         ret += struct.pack(self.endianness + 'l',self.wave_descriptor)
@@ -324,3 +328,21 @@ class lecroy_data(object):
 
         return datetime(year=year_, month=month_, day=day_, hour=hour_,
                         minute=min, second=int(sec), microsecond=int(micro))
+
+
+class LecroyTrace(object):
+    """
+    This class implements an object for the information contained
+    in the lecroy files.
+    """
+    def __init__(self, data, dataTime):
+
+        self.data = data
+        self.dataTime = dataTime
+
+    def plot(self):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.plot(self.dataTime, self.data)
+
+        return fig, ax

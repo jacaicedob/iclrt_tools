@@ -387,6 +387,13 @@ class YokoTrace(object):
         self.Date = Date
         self.GPSTime = GPSTime
 
+    def plot(self):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.plot(self.dataTime, self.data)
+
+        return fig, ax
+
     def __str__(self):
         s = '\nTrace Label:\n  %s' % self.traceLabel
         s += '\nDate:\n  %s' % self.Date
