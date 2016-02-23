@@ -933,6 +933,7 @@ class LMAPlotter(object):
         self.filtered_data = self.raw_data
 
         self.cmap = cm.jet
+        self.sorting = 'time'
 
         self.plot_data = {}
         self.plot_data_stack = []
@@ -1070,6 +1071,8 @@ class LMAPlotter(object):
                                         self.filtered_data])
         self.plot_data['seconds_of_day'] = np.array([s.seconds_of_day for s in
                                             self.filtered_data])
+        self.plot_data['charge'] = np.array([s.charge for s in
+                                            self.filtered_data])
 
         # print('t shape', self.plot_data['t'].shape)
         # print('x shape', self.plot_data['x'].shape)
@@ -1088,6 +1091,13 @@ class LMAPlotter(object):
             self.cmap = cm.jet
         elif cmap == 'grey':
             self.cmap = cm.gray
+
+    def set_sorting(self, sorting='time'):
+        if sorting == 'charge':
+            self.sorting = sorting
+
+        else:
+            self.sorting = sorting
 
     def reset_filters(self):
         """
@@ -1109,6 +1119,7 @@ class LMAPlotter(object):
         self.plot_data['y'] = self.plot_data['y'][indices]
         self.plot_data['z'] = self.plot_data['z'][indices]
         self.plot_data['seconds_of_day'] = self.plot_data['seconds_of_day'][indices]
+        self.plot_data['charge'] = self.plot_data['charge'][indices]
 
     def alt_histogram(self):
         h = self.plot_data['z']
@@ -1295,10 +1306,14 @@ class LMAPlotter(object):
         self.fig_alt_t = plt.figure()
         self.ax_alt_t = self.fig_alt_t.add_subplot(111)
 
-        colors = self.cmap(np.linspace(0, 1, len(self.plot_data['t'])))
+        if self.sorting == 'time':
+            colors = self.cmap(np.linspace(0, 1, len(self.plot_data['t'])))
+        elif self.sorting == 'charge':
+            colors = self.plot_data['charge']
+
         self.scat_alt_t = self.ax_alt_t.scatter(self.plot_data['t'],
                               self.plot_data['z']*1E-3,
-                              marker='.', c=colors,
+                              marker='.', c=colors, cmap=self.cmap,
                               s=30, lw=0)
 
         self.ax_alt_t.set_ylabel('Altitude (km)')
@@ -1577,6 +1592,7 @@ class LMAPlotter(object):
 
         data = np.hstack((thisx[:, np.newaxis], thisy[:, np.newaxis]))
         self.scat_alt_t.set_offsets(data)
+
         colors = self.cmap(np.linspace(0, 1, len(thist)))
         self.scat_alt_t.set_color(colors)
 

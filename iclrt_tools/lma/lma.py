@@ -110,8 +110,40 @@ class LMAFile(object):
         self.data_loaded = True
 
 
+class XLMAExportedFile(LMAFile):
+    def __init__(self, file_name, load_data=True):
+        super(XLMAExportedFile, self).__init__(file_name, False)
+
+        self.file_name = file_name
+        self.center_coordinate = latlon.Location(29.9429917, -82.0332305, 0.00)
+
+        if load_data:
+            self.load_data()
+
+    def load_data(self):
+        with open(self.file_name) as f:
+            self.data = []
+            flag = False
+
+            for line in f:
+                if '*** data ***' in line:
+                    flag = True
+                    continue
+
+                if flag:
+                    words = line.split()
+
+                    source = LMASource(self.date, words[0], words[1], words[2],
+                                       words[3], words[4], words[6], words[9], words[8])
+
+                    source.set_xyz_coords(self.center_coordinate)
+                    self.data.append(source)
+
+        self.data_loaded = True
+
+
 class LMASource(object):
-    def __init__(self, date, seconds_of_day, lat, lon, alt, rc2, power, mask):
+    def __init__(self, date, seconds_of_day, lat, lon, alt, rc2, power, mask, charge=0):
         if isinstance(date, datetime.datetime):
             self.date = date
         else:
@@ -126,6 +158,7 @@ class LMASource(object):
         self.rc2 = float(rc2)
         self.power = float(power)
         self.mask = '{0:08d}'.format(int(bin(int(mask, 16))[2:]))
+        self.charge = charge
         self.num_stations = self.mask.count('1')
         self.xyz_coords = None
 
@@ -173,6 +206,13 @@ class LMASource(object):
         self.xyz_coords = x, y, z
 
     def __repr__(self):
+        if self.charge < 0:
+            charge = "Negative"
+        elif self.charge > 0:
+            charge = "Positive"
+        else:
+            charge = "Undetermined"
+
         s = ""
         s += "Date: {0}".format(self.date.strftime('%m/%d/%y'))
         s += "Time: {0}".format(self.time.strftime('%H:%M:%S.%f'))
@@ -185,5 +225,6 @@ class LMASource(object):
         s += "Number of stations used in solution: {0}".format(
                                 self.num_stations)
         s += "Station Mask: {0}".format(self.mask)
+        s += "Charge: {0}".format(charge)
 
         return s
