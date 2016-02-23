@@ -28,7 +28,7 @@ class MainWindow(QtGui.QMainWindow):
         self.init_bars()
 
         self.hbox = QtGui.QHBoxLayout()
-        
+
         self.vbox = QtGui.QVBoxLayout()
 
         self.main_frame.setLayout(self.vbox)
@@ -93,7 +93,21 @@ class MainWindow(QtGui.QMainWindow):
             self.draw()
 
         else:
-            pass
+            f = lecroy.lecroy_data(fname)
+            traces = []
+
+            for i in range(f.subarray_count):
+                traces.append(f.get_segment(i+1))
+
+            for trace in traces:
+                # fig = Figure(dpi=300)
+                # ax = fig.add_subplot(111)
+                # ax.plot(trace.dataTime, trace.data)
+                fig, ax = trace.plot()
+
+                self.plots.append((fig, ax))
+
+            self.draw()
 
     def draw(self):
         fig = self.plots[0][0]
