@@ -188,7 +188,7 @@ class Yoko850File(object):
 
                 result = YokoHeader(traceID, Date, Time, dataOffset, \
                                     blockSize, HResolution, HOffset, \
-                                    VResolution, VOffset)
+                                    VResolution, VOffset, numTraces)
 
             finally:
                 f.close()
@@ -233,9 +233,16 @@ class Yoko850File(object):
         # Open the actual waveform file using read-only and big endian binary
         # format
         try:
-            with open(self.filename + '.wvf', 'rb') as f:
+            try:
+                f = open(self.filename + '.wvf', 'rb')
+            except IOError:
+                try:
+                    f = open(self.filename + '.WVF', 'rb')
+                except IOError:
+                    raise
+            # with open(self.filename + '.wvf', 'rb') as f:
                 # Rewind the file to the beginning
-                f.seek(0,0)
+                f.seek(0, 0)
 
                 # Move to the position of the desired trace
                 f.seek(2 * (blockSize * (traceNumber - 1) + startIndex) + \
@@ -245,8 +252,8 @@ class Yoko850File(object):
                 # (2-byte) data)
                 data = np.zeros(stopIndex - startIndex + 1)
 
-                d_s=f.read(2*len(data))
-                data=np.fromstring(d_s, dtype=np.dtype('>h'))
+                d_s = f.read(2*len(data))
+                data = np.fromstring(d_s, dtype=np.dtype('>h'))
 
 #               for i in xrange(data.shape[0]):
 #                   data[i], = struct.unpack('>h',f.read(2))   # Read 2 bytes
@@ -262,7 +269,8 @@ class Yoko850File(object):
 
                 # Calculate the vertical offset based on the first 1000 samples
 
-                if wantOffset==True or (hasattr(wantOffset,'lower') and wantOffset.lower() == 'y'):
+                if wantOffset is True or (hasattr(wantOffset, 'lower') and
+                                                  wantOffset.lower() == 'y'):
 #                   f.seek(0,0)
 #                   f.seek(2 * (blockSize*(traceNumber - 1) + dataOffset),0)
 #
@@ -278,13 +286,16 @@ class Yoko850File(object):
                     Average first or last 1000 points to remove offset
                     """
                     #~ data-=np.mean(data[0:1000])  # First
-                    data-=np.mean(data[-1000:]) # Last
+                    data -= np.mean(data[-1000:]) # Last
 
                 # Get the trace label
                 traceLabel = traceID[traceNumber-1]
 
-                result = YokoTrace(data, dataTime, traceLabel, HResolution,\
+                result = YokoTrace(data, dataTime, traceLabel, HResolution,
                                    HOffset, Date, GPSTime)
+
+            finally:
+                f.close()
 
         except IOError as e:
             print(str(e))
@@ -298,7 +309,7 @@ class YokoHeader(object):
     in the '.HDR' file.
     """
     def __init__(self, traces, Date, Time, dataOffset, blockSize, \
-                 HResolution, HOffset, VResolution, VOffset):
+                 HResolution, HOffset, VResolution, VOffset, numTraces):
         """
         Args:
             traces (list): A list of all the traces labels (usually channel
@@ -322,9 +333,11 @@ class YokoHeader(object):
         self.HOffset = HOffset
         self.VResolution = VResolution
         self.VOffset = VOffset
+        self.numTraces = numTraces
 
     def __str__(self):
         s = '\nTraces:\n  %s' % self.traces
+        s += '\nNumTraces:\n %d' % self.numTraces
         s += '\nDate:\n  %s' % self.Date
         s += '\nTime:\n  %s' % self.Time
         s += '\nData Offset:\n  %s' % self.dataOffset
