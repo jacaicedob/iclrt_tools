@@ -16,8 +16,13 @@ fileName = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolutio
 
 print("Reading File...")
 # f = lma.LMAFile(fileName)
+start = datetime.datetime.now()
 f = lma.XLMAExportedFile(fileName)
+print(datetime.datetime.now() - start)
+
+start = datetime.datetime.now()
 p = df.LMAPlotter(f)
+print(datetime.datetime.now() - start)
 
 print("Filtering...")
 
