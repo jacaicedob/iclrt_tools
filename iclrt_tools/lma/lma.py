@@ -11,6 +11,7 @@ import iclrt_tools.lat_lon.lat_lon as latlon
 import datetime
 import numpy as np
 
+
 class LMAFile(object):
     def __init__(self, file_name, load_data=True):
         self.file_name = file_name
@@ -158,7 +159,7 @@ class LMASource(object):
         self.rc2 = float(rc2)
         self.power = float(power)
         self.mask = '{0:08d}'.format(int(bin(int(mask, 16))[2:]))
-        self.charge = charge
+        self.charge = int(charge)
         self.num_stations = self.mask.count('1')
         self.xyz_coords = None
 

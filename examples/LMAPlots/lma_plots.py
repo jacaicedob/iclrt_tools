@@ -2,7 +2,6 @@
 
 # Add personal packages directory to path
 import sys
-
 import matplotlib.pyplot as plt
 import datetime
 import matplotlib as mpl
@@ -15,6 +14,7 @@ fileName = '/home/jaime/Documents/LMA/Data/Triggered/2015/150827/LYLOUT_150827_2
 
 fileName = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 08-27-2015/LMA/ChargeAnalysis-1of2-exported.dat'
 
+print("Reading File...")
 # f = lma.LMAFile(fileName)
 f = lma.XLMAExportedFile(fileName)
 p = df.LMAPlotter(f)
@@ -28,7 +28,7 @@ p.filter_num_stations(6)
 print("Plotting...")
 
 # p.set_cmap('grey')
-p.set_sorting('charge')
+p.set_coloring('charge')
 p.plot_alt_t()
 plt.show()
 

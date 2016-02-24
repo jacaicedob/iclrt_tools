@@ -933,7 +933,7 @@ class LMAPlotter(object):
         self.filtered_data = self.raw_data
 
         self.cmap = cm.jet
-        self.sorting = 'time'
+        self.coloring = 'time'
 
         self.plot_data = {}
         self.plot_data_stack = []
@@ -941,6 +941,7 @@ class LMAPlotter(object):
         self.plot_y_stack = []
 
         # Filter the data to default values
+        # self.fix_charge()
         self.filter_rc2()
         self.filter_num_stations()
         self.filter_alt()
@@ -951,6 +952,16 @@ class LMAPlotter(object):
         mpl.rcParams['keymap.forward'] = ''
         mpl.rcParams['keymap.home'] = ''
         mpl.rcParams['keymap.zoom'] = ''
+
+    def fix_charge(self):
+        for s in self.filtered_data:
+            # For coloring purposes, creates an array of RGBA values arrays
+            if s.charge == 3:
+                s.charge = np.array([1.0, 0.0, 0.0, 1.0])  # RGBA for red
+            elif s.charge == 0:
+                s.charge = np.array([0.0, 1.0, 0.0, 1.0])  # RGBA for green
+            elif s.charge == -3:
+                s.charge = np.array([0.0, 0.0, 1.0, 1.0])  # RGBA for blue
 
     def filter_rc2(self, rc2=5.0):
         """
@@ -998,7 +1009,7 @@ class LMAPlotter(object):
         # Update the plot data
         self.update_data()
 
-    def filter_xy(self, xlims=[-20.0E3,20.0E3], ylims=[-20.0E3,20.0E3]):
+    def filter_xy(self, xlims=[-20.0E3, 20.0E3], ylims=[-20.0E3, 20.0E3]):
         """
         Filters the data to only show the points that are within the specified
         limits xlims, ylims.
@@ -1045,11 +1056,13 @@ class LMAPlotter(object):
         # Convert the time limits to timedelta objects
         t0 = datetime.datetime.strptime(tlims[0], '%H:%M:%S.%f')
         dt0 = datetime.timedelta(hours=t0.hour, minutes=t0.minute,
-                                seconds=t0.second, microseconds=t0.microsecond)
+                                 seconds=t0.second,
+                                 microseconds=t0.microsecond)
 
         t1 = datetime.datetime.strptime(tlims[1], '%H:%M:%S.%f')
         dt1 = datetime.timedelta(hours=t1.hour, minutes=t1.minute,
-                                seconds=t1.second, microseconds=t1.microsecond)
+                                 seconds=t1.second,
+                                 microseconds=t1.microsecond)
 
         # Filter the data
         self.filtered_data = [s for s in self.filtered_data if
@@ -1070,9 +1083,9 @@ class LMAPlotter(object):
         self.plot_data['z'] = np.array([s.xyz_coords[2] for s in
                                         self.filtered_data])
         self.plot_data['seconds_of_day'] = np.array([s.seconds_of_day for s in
-                                            self.filtered_data])
+                                                     self.filtered_data])
         self.plot_data['charge'] = np.array([s.charge for s in
-                                            self.filtered_data])
+                                             self.filtered_data])
 
         # print('t shape', self.plot_data['t'].shape)
         # print('x shape', self.plot_data['x'].shape)
@@ -1092,12 +1105,12 @@ class LMAPlotter(object):
         elif cmap == 'grey':
             self.cmap = cm.gray
 
-    def set_sorting(self, sorting='time'):
-        if sorting == 'charge':
-            self.sorting = sorting
+    def set_coloring(self, coloring='time'):
+        if coloring == 'charge':
+            self.coloring = coloring
 
         else:
-            self.sorting = sorting
+            self.coloring = coloring
 
     def reset_filters(self):
         """
@@ -1232,11 +1245,13 @@ class LMAPlotter(object):
         temp_x = x
         temp_y = y
         temp_t = self.plot_data['t']
+        temp_charge = self.plot_data['charge']
 
         if x_old is not None:
             # Sort by x and get old x limits
             temp_t = temp_t[np.argsort(temp_x)]
             temp_y = temp_y[np.argsort(temp_x)]
+            temp_charge = temp_charge[np.argsort(temp_x)]
             temp_x = temp_x[np.argsort(temp_x)]
 
             indmin, indmax = np.searchsorted(temp_x, x_old)
@@ -1245,10 +1260,12 @@ class LMAPlotter(object):
             temp_x = temp_x[indmin:indmax]
             temp_y = temp_y[indmin:indmax]
             temp_t = temp_t[indmin:indmax]
+            temp_charge = temp_charge[indmin:indmax]
 
             # Sort by y and get old y limits
             temp_t = temp_t[np.argsort(temp_y)]
             temp_x = temp_x[np.argsort(temp_y)]
+            temp_charge = temp_charge[np.argsort(temp_y)]
             temp_y = temp_y[np.argsort(temp_y)]
 
             indmin, indmax = np.searchsorted(temp_y, (y_old[0], y_old[1]))
@@ -1257,10 +1274,12 @@ class LMAPlotter(object):
             temp_x = temp_x[indmin:indmax]
             temp_y = temp_y[indmin:indmax]
             temp_t = temp_t[indmin:indmax]
+            temp_charge = temp_charge[indmin:indmax]
 
         # Sort by x and get new  x limits
         temp_t = temp_t[np.argsort(temp_x)]
         temp_y = temp_y[np.argsort(temp_x)]
+        temp_charge = temp_charge[np.argsort(temp_x)]
         temp_x = temp_x[np.argsort(temp_x)]
 
         indmin, indmax = np.searchsorted(temp_x, x_new)
@@ -1269,10 +1288,12 @@ class LMAPlotter(object):
         temp_x = temp_x[indmin:indmax]
         temp_y = temp_y[indmin:indmax]
         temp_t = temp_t[indmin:indmax]
+        temp_charge = temp_charge[indmin:indmax]
 
         # Sort by y and get new y limits
         temp_t = temp_t[np.argsort(temp_y)]
         temp_x = temp_x[np.argsort(temp_y)]
+        temp_charge = temp_charge[np.argsort(temp_y)]
         temp_y = temp_y[np.argsort(temp_y)]
 
         indmin, indmax = np.searchsorted(temp_y, (y_new[0], y_new[1]))
@@ -1281,7 +1302,11 @@ class LMAPlotter(object):
         temp_x = temp_x[indmin:indmax]
         temp_y = temp_y[indmin:indmax]
         temp_t = temp_t[indmin:indmax]
+        temp_charge = temp_charge[indmin:indmax]
 
+        # If the x axis corresponds to time (such as in alt_t plots), then
+        # convert to the appropriate numbers so that the DateFormatter from
+        # the axis can represent the values correctly
         try:
             if isinstance(temp_x[0], datetime.datetime):
                 for i in range(len(temp_x)):
@@ -1293,9 +1318,10 @@ class LMAPlotter(object):
         # Sort by time one last time
         temp_y = temp_y[np.argsort(temp_t)]
         temp_x = temp_x[np.argsort(temp_t)]
+        temp_charge = temp_charge[np.argsort(temp_t)]
         temp_t = temp_t[np.argsort(temp_t)]
 
-        return temp_x, temp_y, temp_t
+        return temp_x, temp_y, temp_t, temp_charge
 
     def plot_alt_t(self, lims=[0, 20e3]):
         self.plot_x_stack = []
@@ -1306,15 +1332,15 @@ class LMAPlotter(object):
         self.fig_alt_t = plt.figure()
         self.ax_alt_t = self.fig_alt_t.add_subplot(111)
 
-        if self.sorting == 'time':
+        if self.coloring == 'time':
             colors = self.cmap(np.linspace(0, 1, len(self.plot_data['t'])))
-        elif self.sorting == 'charge':
+        elif self.coloring == 'charge':
             colors = self.plot_data['charge']
 
         self.scat_alt_t = self.ax_alt_t.scatter(self.plot_data['t'],
-                              self.plot_data['z']*1E-3,
-                              marker='.', c=colors, cmap=self.cmap,
-                              s=30, lw=0)
+                                                self.plot_data['z']*1E-3,
+                                                marker='.', c=colors,
+                                                cmap=self.cmap, s=30, lw=0)
 
         self.ax_alt_t.set_ylabel('Altitude (km)')
         self.ax_alt_t.set_xlabel('Time (s)')
@@ -1339,11 +1365,11 @@ class LMAPlotter(object):
         self.span_alt_t = SpanSelector(self.ax_alt_t, self.onselect_alt_t,
                                        'horizontal', useblit=True,
                                        rectprops=dict(alpha=0.2,
-                                       facecolor='red'))
+                                                      facecolor='red'))
         self.span_alt_t_v = SpanSelector(self.ax_alt_t, self.onselect_alt_t_v,
-                                       'vertical', useblit=True,
-                                       rectprops=dict(alpha=0.2,
-                                       facecolor='red'))
+                                         'vertical', useblit=True,
+                                         rectprops=dict(alpha=0.2,
+                                                        facecolor='red'))
 
         self.span_alt_t_v.visible = False
 
@@ -1374,58 +1400,34 @@ class LMAPlotter(object):
         # Convert xmin_old to datetime
         a = dates.num2date(xmin_old)
         xmin_old = datetime.datetime(a.year, a.month, a.day, a.hour, a.minute,
-            a.second, a.microsecond)
+                                     a.second, a.microsecond)
 
         # Convert xmax_old to datetime
         a = dates.num2date(xmax_old)
         xmax_old = datetime.datetime(a.year, a.month, a.day, a.hour, a.minute,
-            a.second, a.microsecond)
+                                     a.second, a.microsecond)
 
         # Get new limits and redraw
         # Convert xmin to datetime
         a = dates.num2date(xmin)
         xmin = datetime.datetime(a.year, a.month, a.day, a.hour, a.minute,
-            a.second, a.microsecond)
+                                 a.second, a.microsecond)
 
         # Convert xmax to datetime
         a = dates.num2date(xmax)
         xmax = datetime.datetime(a.year, a.month, a.day, a.hour, a.minute,
-            a.second, a.microsecond)
-
-        # if not self.plot_x_stack:
-        #     indmin, indmax = np.searchsorted(self.plot_data['t'], (xmin_old, xmax_old))
-        #     temp_t = self.plot_data['t'][indmin:indmax]
-        #
-        # else:
-        #     temp_t = self.plot_data['t']
-        #
-        # if not self.plot_y_stack:
-        #     indmin, indmax = np.searchsorted(self.plot_data['z'], (ymin_old, ymax_old))
-        #     temp_z = self.plot_data['z'][indmin:indmax]
-        #
-        # else:
-        #     temp_z = self.plot_data['z']
-        #
-        # # Find the indices for xmin, xmax
-        # indmin, indmax = np.searchsorted(temp_t, (xmin, xmax))
-        # indmax = min(len(self.plot_data['t'])-1, indmax)
-        #
-        # if (indmax - indmin) < 2:
-        #     return True
-        #
-        # thisx = temp_t[indmin:indmax]
-        # thisy = temp_z[indmin:indmax]
+                                 a.second, a.microsecond)
 
         try:
             if not self.plot_x_stack:
-                thisx, thisy, thist = self.get_plot_data(self.plot_data['t'], self.plot_data['z'], None, [xmin, xmax], None, [ymin_old*1e3, ymax_old*1e3])
+                thisx, thisy, thist, thischarge = self.get_plot_data(self.plot_data['t'], self.plot_data['z'], None, [xmin, xmax], None, [ymin_old*1e3, ymax_old*1e3])
             else:
-                thisx, thisy, thist = self.get_plot_data(self.plot_data['t'], self.plot_data['z'], self.plot_x_stack[-1], [xmin, xmax], [self.plot_y_stack[-1][0]*1e3, self.plot_y_stack[-1][1]*1e3], [ymin_old*1e3, ymax_old*1e3])
+                thisx, thisy, thist, thischarge = self.get_plot_data(self.plot_data['t'], self.plot_data['z'], self.plot_x_stack[-1], [xmin, xmax], [self.plot_y_stack[-1][0]*1e3, self.plot_y_stack[-1][1]*1e3], [ymin_old*1e3, ymax_old*1e3])
 
         except IndexError:
             return True
 
-        self.update_graph_alt_t(thisx, thisy, thist)
+        self.update_graph_alt_t(thisx, thisy, thist, thischarge)
 
         # Append values to stack
         self.plot_x_stack.append([xmin_old, xmax_old])
@@ -1453,50 +1455,18 @@ class LMAPlotter(object):
         # Convert xmax_old to datetime
         a = dates.num2date(xmax_old)
         xmax_old = datetime.datetime(a.year, a.month, a.day, a.hour, a.minute,
-            a.second, a.microsecond)
-
-        # if not self.plot_x_stack:
-        #     xmin_old = self.plot_x_stack[-2][0]
-        #     xmax_old = self.plot_x_stack[-2][1]
-        #     indmin, indmax = np.searchsorted(self.plot_data['t'], (xmin_old, xmax_old))
-        #     temp_x = self.plot_data['t'][indmin:indmax]
-        #
-        # else:
-        #     temp_x = self.plot_data['t']
-        #
-        # if not self.plot_y_stack:
-        #     indmin, indmax = np.searchsorted(self.plot_data['z'], (ymin_old, ymax_old))
-        #     temp_y = self.plot_data['z'][indmin:indmax]*1e-3
-        #
-        # else:
-        #     temp_y = self.plot_data['z']*1e-3
-        #
-        # # Find the indices for ymin, ymax
-        # # temp_x = self.plot_data['t']
-        # # temp_y = self.plot_data['z']*1e-3
-        #
-        # temp_x = temp_x[np.argsort(temp_y)]
-        # temp_y = temp_y[np.argsort(temp_y)]
-        #
-        # indmin, indmax = np.searchsorted(temp_y, (ymin, ymax))
-        # indmax = min(len(temp_y)-1, indmax)
-        #
-        # if (indmax - indmin) < 2:
-        #     return True
-        #
-        # thisx = temp_x[indmin:indmax]
-        # thisy = temp_y[indmin:indmax]
+                                     a.second, a.microsecond)
 
         try:
             if not self.plot_x_stack:
-                thisx, thisy, thist = self.get_plot_data(self.plot_data['t'], self.plot_data['z'], None, [xmin_old, xmax_old], None, [ymin*1e3, ymax*1e3])
+                thisx, thisy, thist, thischarge = self.get_plot_data(self.plot_data['t'], self.plot_data['z'], None, [xmin_old, xmax_old], None, [ymin*1e3, ymax*1e3])
             else:
-                thisx, thisy, thist = self.get_plot_data(self.plot_data['t'], self.plot_data['z'], self.plot_x_stack[-1], [xmin_old, xmax_old], [self.plot_y_stack[-1][0]*1e3, self.plot_y_stack[-1][1]*1e3], [ymin*1e3, ymax*1e3])
+                thisx, thisy, thist, thischarge = self.get_plot_data(self.plot_data['t'], self.plot_data['z'], self.plot_x_stack[-1], [xmin_old, xmax_old], [self.plot_y_stack[-1][0]*1e3, self.plot_y_stack[-1][1]*1e3], [ymin*1e3, ymax*1e3])
 
         except IndexError:
             return True
 
-        self.update_graph_alt_t(thisx, thisy, thist)
+        self.update_graph_alt_t(thisx, thisy, thist, thischarge)
 
         # Append values to stack
         self.plot_x_stack.append([xmin_old, xmax_old])
@@ -1509,23 +1479,10 @@ class LMAPlotter(object):
         if event.button == 3 and (event.inaxes is self.ax_alt_t or self.synced):
 
             if self.plot_x_stack:
-                # # Get old limits from stacks
-                # xmin = self.plot_x_stack[-1][0]
-                # xmax = self.plot_x_stack[-1][1]
-                #
-                # self.plot_x_stack = self.plot_x_stack[:-1]
-                #
-                # # Set new limits and redraw
-                # indmin, indmax = np.searchsorted(self.plot_data['t'],
-                #                                  (xmin, xmax))
-                # indmax = min(len(self.plot_data['t'])-1, indmax)
-                #
-                # thisx = self.plot_data['t'][indmin:indmax]
-                # self.ax_alt_t.set_xlim(thisx[0], thisx[-1])
 
-                thisx, thisy, thist = self.get_plot_data(self.plot_data['t'], self.plot_data['z'], self.plot_x_stack[-1], self.plot_x_stack[-1], [self.plot_y_stack[-1][0]*1e3, self.plot_y_stack[-1][1]*1e3], [self.plot_y_stack[-1][0]*1e3, self.plot_y_stack[-1][1]*1e3])
+                thisx, thisy, thist, thischarge = self.get_plot_data(self.plot_data['t'], self.plot_data['z'], self.plot_x_stack[-1], self.plot_x_stack[-1], [self.plot_y_stack[-1][0]*1e3, self.plot_y_stack[-1][1]*1e3], [self.plot_y_stack[-1][0]*1e3, self.plot_y_stack[-1][1]*1e3])
 
-                self.update_graph_alt_t(thisx, thisy, thist)
+                self.update_graph_alt_t(thisx, thisy, thist, thischarge)
 
                 self.plot_x_stack = self.plot_x_stack[:-1]
 
@@ -1534,42 +1491,10 @@ class LMAPlotter(object):
     def onkeypress_alt_t(self, event):
         if event.key == 'r':
             if self.plot_x_stack:
-                # # Get initial limits from stacks
-                # xmin = self.plot_x_stack[0][0]
-                # xmax = self.plot_x_stack[0][1]
-                #
-                # self.plot_x_stack = []
-                #
-                # # Set new limits and redraw
-                # indmin, indmax = np.searchsorted(self.plot_data['t'],
-                #                                  (xmin, xmax))
-                # indmax = min(len(self.plot_data['t'])-1, indmax)
-                #
-                # thisx = self.plot_data['t'][indmin:indmax]
-                # self.ax_alt_t.set_xlim(thisx[0], thisx[-1])
-                #
-                # max_y = -np.inf
-                # min_y = np.inf
-                #
-                # mx_y = self.plot_data['z'][indmin:indmax].max()
-                # mn_y = self.plot_data['z'][indmin:indmax].min()
-                #
-                # if mx_y > max_y:
-                #     max_y = mx_y
-                #
-                # if mn_y < min_y:
-                #     min_y = mn_y
-                #
-                # max_y = max_y + (max_y - min_y)*.1
-                # min_y = min_y - (max_y - min_y)*.1
-                #
-                # self.ax_alt_t.set_ylim(min_y*1E-3, max_y*1E-3)
-                #
-                # self.fig_alt_t.canvas.draw()
 
-                thisx, thisy, thist = self.get_plot_data(self.plot_data['t'], self.plot_data['z'], self.plot_x_stack[0], self.plot_x_stack[0], [self.plot_y_stack[0][0]*1e3, self.plot_y_stack[0][1]*1e3], [self.plot_y_stack[0][0]*1e3, self.plot_y_stack[0][1]*1e3])
+                thisx, thisy, thist, thischarge = self.get_plot_data(self.plot_data['t'], self.plot_data['z'], self.plot_x_stack[0], self.plot_x_stack[0], [self.plot_y_stack[0][0]*1e3, self.plot_y_stack[0][1]*1e3], [self.plot_y_stack[0][0]*1e3, self.plot_y_stack[0][1]*1e3])
 
-                self.update_graph_alt_t(thisx, thisy, thist)
+                self.update_graph_alt_t(thisx, thisy, thist, thischarge)
 
                 self.plot_x_stack = []
 
@@ -1587,13 +1512,18 @@ class LMAPlotter(object):
             self.span_alt_t.visible = True
             self.span_alt_t_v.visible = False
 
-    def update_graph_alt_t(self, thisx, thisy, thist):
+    def update_graph_alt_t(self, thisx, thisy, thist, thischarge):
         thisy *= 1e-3
 
         data = np.hstack((thisx[:, np.newaxis], thisy[:, np.newaxis]))
+        # thischarge = thischarge[:, np.newaxis]
         self.scat_alt_t.set_offsets(data)
 
-        colors = self.cmap(np.linspace(0, 1, len(thist)))
+        if self.coloring == 'time':
+            colors = self.cmap(np.linspace(0, 1, len(thist)))
+        elif self.coloring == 'charge':
+            colors = thischarge
+
         self.scat_alt_t.set_color(colors)
 
         max_y = -np.inf
@@ -1655,9 +1585,10 @@ class LMAPlotter(object):
             self.ax_plan = ax
 
         self.scat_plan = self.ax_plan.scatter(self.plot_data['x'],
-                             self.plot_data['y'], marker='.',
-                             c=self.plot_data['seconds_of_day'],
-                             cmap=self.cmap, s=30, lw=0)
+                                              self.plot_data['y'], marker='.',
+                                              c=self.plot_data[
+                                                 'seconds_of_day'],
+                                              cmap=self.cmap, s=30, lw=0)
 
         self.ax_plan.set_xlim(xlims)
         self.ax_plan.set_ylim(ylims)
@@ -1706,50 +1637,12 @@ class LMAPlotter(object):
         ymin = np.min([y_start, y_end])
         ymax = np.max([y_start, y_end])
 
-        # temp_x = self.plot_data['x']
-        # temp_y = self.plot_data['y']
-        #
-        # # Sort both arrays wrt x
-        # temp_y = temp_y[np.argsort(temp_x)]
-        # temp_x = temp_x[np.argsort(temp_x)]
-        #
-        # # Find the indices for xmin, xmax
-        # x_indmin, x_indmax = np.searchsorted(temp_x, (xmin, xmax))
-        # x_indmax = min(len(temp_x)-1, x_indmax)
-        #
-        # temp_x = temp_x[x_indmin:x_indmax]
-        # temp_y = temp_y[x_indmin:x_indmax]
-        #
-        # # Sort both arrays wrt y
-        # temp_x = temp_x[np.argsort(temp_y)]
-        # temp_y = temp_y[np.argsort(temp_y)]
-        #
-        # # Find the indices for ymin, ymax
-        # y_indmin, y_indmax = np.searchsorted(temp_y, (ymin, ymax))
-        # y_indmax = min(len(temp_y)-1, y_indmax)
-        #
-        # print(y_indmin, y_indmax)
-        #
-        # temp_x = temp_x[y_indmin:y_indmax]
-        # temp_y = temp_y[y_indmin:y_indmax]
-        #
-        # thisx = temp_x
-        # thisy = temp_y
-
         if not self.plot_x_stack:
             thisx, thisy, thist = self.get_plot_data(self.plot_data['x'], self.plot_data['y'], None, [xmin, xmax], None, [ymin, ymax])
         else:
             thisx, thisy, thist = self.get_plot_data(self.plot_data['x'], self.plot_data['y'], self.plot_x_stack[-1], [xmin, xmax], self.plot_y_stack[-1], [ymin, ymax])
 
         self.update_graph_plan(thisx, thisy, thist)
-        # self.scat_plan.set_offsets([thisx, thisy])
-        # Set plot's limits
-        # try:
-        #     self.ax_plan.set_xlim(np.min(thisx), np.max(thisx))
-        #     self.ax_plan.set_ylim(np.min(thisy), np.max(thisy))
-        # except ValueError:
-        #     print("Error")
-        #     return True
 
         self.plot_x_stack.append([xmin_old, xmax_old])
         self.plot_y_stack.append([ymin_old, ymax_old])
@@ -1770,52 +1663,12 @@ class LMAPlotter(object):
                 ymin = self.plot_y_stack[-1][0]
                 ymax = self.plot_y_stack[-1][1]
 
-                # # Set new limits and redraw
-                # temp_x = self.plot_data['x']
-                # temp_y = self.plot_data['y']
-                #
-                # # Sort both arrays wrt x
-                # temp_y = temp_y[np.argsort(temp_x)]
-                # temp_x = temp_x[np.argsort(temp_x)]
-                #
-                # # Find the indices for xmin, xmax
-                # x_indmin, x_indmax = np.searchsorted(temp_x, (xmin, xmax))
-                # x_indmax = min(len(temp_x)-1, x_indmax)
-                #
-                # # if (x_indmax - x_indmin) < 2:
-                # #     return True
-                #
-                # temp_x = temp_x[x_indmin:x_indmax]
-                # temp_y = temp_y[x_indmin:x_indmax]
-                #
-                # # Sort both arrays wrt y
-                # temp_x = temp_x[np.argsort(temp_y)]
-                # temp_y = temp_y[np.argsort(temp_y)]
-                #
-                # # Find the indices for ymin, ymax
-                # y_indmin, y_indmax = np.searchsorted(temp_y, (ymin, ymax))
-                # y_indmax = min(len(temp_y)-1, y_indmax)
-                #
-                # # if (y_indmax - y_indmin) < 2:
-                # #     return True
-                #
-                # temp_x = temp_x[y_indmin:y_indmax]
-                # temp_y = temp_y[y_indmin:y_indmax]
-                #
-                # thisx = temp_x
-                # thisy = temp_y
-
                 if not self.plot_x_stack:
                     thisx, thisy, thist = self.get_plot_data(self.plot_data['x'], self.plot_data['y'], None, [xmin, xmax], None, [ymin, ymax])
                 else:
                     thisx, thisy, thist = self.get_plot_data(self.plot_data['x'], self.plot_data['y'], self.plot_x_stack[-1], [xmin, xmax], self.plot_y_stack[-1], [ymin, ymax])
 
                 self.update_graph_plan(thisx, thisy, thist)
-
-                # # self.scat_plan.set_offsets([thisx, thisy])
-                # # Set plot's limits
-                # self.ax_plan.set_xlim(np.min(thisx), np.max(thisx))
-                # self.ax_plan.set_ylim(np.min(thisy), np.max(thisy))
 
                 self.plot_x_stack = self.plot_x_stack[:-1]
                 self.plot_y_stack = self.plot_y_stack[:-1]
@@ -1832,52 +1685,12 @@ class LMAPlotter(object):
                 ymin = self.plot_y_stack[0][0]
                 ymax = self.plot_y_stack[0][1]
 
-                # Set new limits and redraw
-                # temp_x = self.plot_data['x']
-                # temp_y = self.plot_data['y']
-                #
-                # # Sort both arrays wrt x
-                # temp_y = temp_y[np.argsort(temp_x)]
-                # temp_x = temp_x[np.argsort(temp_x)]
-                #
-                # # Find the indices for xmin, xmax
-                # x_indmin, x_indmax = np.searchsorted(temp_x, (xmin, xmax))
-                # x_indmax = min(len(temp_x)-1, x_indmax)
-                #
-                # # if (x_indmax - x_indmin) < 2:
-                # #     return True
-                #
-                # temp_x = temp_x[x_indmin:x_indmax]
-                # temp_y = temp_y[x_indmin:x_indmax]
-                #
-                # # Sort both arrays wrt y
-                # temp_x = temp_x[np.argsort(temp_y)]
-                # temp_y = temp_y[np.argsort(temp_y)]
-                #
-                # # Find the indices for ymin, ymax
-                # y_indmin, y_indmax = np.searchsorted(temp_y, (ymin, ymax))
-                # y_indmax = min(len(temp_y)-1, y_indmax)
-                #
-                # # if (y_indmax - y_indmin) < 2:
-                # #     return True
-                #
-                # temp_x = temp_x[y_indmin:y_indmax]
-                # temp_y = temp_y[y_indmin:y_indmax]
-                #
-                # thisx = temp_x
-                # thisy = temp_y
-
                 if not self.plot_x_stack:
                     thisx, thisy, thist = self.get_plot_data(self.plot_data['x'], self.plot_data['y'], None, [xmin, xmax], None, [ymin, ymax])
                 else:
                     thisx, thisy, thist = self.get_plot_data(self.plot_data['x'], self.plot_data['y'], self.plot_x_stack[-1], [xmin, xmax], self.plot_y_stack[-1], [ymin, ymax])
 
                 self.update_graph_plan(thisx, thisy, thist)
-
-                # # self.scat_plan.set_offsets([thisx, thisy])
-                # # Set plot's limits
-                # self.ax_plan.set_xlim(np.min(thisx), np.max(thisx))
-                # self.ax_plan.set_ylim(np.min(thisy), np.max(thisy))
 
                 self.plot_x_stack = []
                 self.plot_y_stack = []
@@ -2005,48 +1818,12 @@ class LMAPlotter(object):
         else:
             temp_x = self.plot_data['x']
 
-        # # Sort both arrays wrt x
-        # temp_y = temp_y[np.argsort(temp_x)]
-        # temp_x = temp_x[np.argsort(temp_x)]
-        #
-        # # Find the indices for xmin, xmax
-        # x_indmin, x_indmax = np.searchsorted(temp_x, (xmin, xmax))
-        # x_indmax = min(len(temp_x)-1, x_indmax)
-        #
-        # # if (x_indmax - x_indmin) < 2:
-        # #     return True
-        #
-        # temp_x = temp_x[x_indmin:x_indmax]
-        # temp_y = temp_y[x_indmin:x_indmax]
-        #
-        # # Sort both arrays wrt y
-        # temp_x = temp_x[np.argsort(temp_y)]
-        # temp_y = temp_y[np.argsort(temp_y)]
-        #
-        # # Find the indices for ymin, ymax
-        # y_indmin, y_indmax = np.searchsorted(temp_y, (ymin, ymax))
-        # y_indmax = min(len(temp_y)-1, y_indmax)
-        #
-        # # if (y_indmax - y_indmin) < 2:
-        # #     return True
-        #
-        # temp_x = temp_x[y_indmin:y_indmax]
-        # temp_y = temp_y[y_indmin:y_indmax]
-        #
-        # thisx = temp_x
-        # thisy = temp_y
-
         if not self.plot_x_stack:
             thisx, thisy, thist = self.get_plot_data(self.plot_data['x'], self.plot_data['y'], None, [xmin, xmax], None, [ymin, ymax])
         else:
             thisx, thisy, thist = self.get_plot_data(self.plot_data['x'], self.plot_data['y'], self.plot_x_stack[-1], [xmin, xmax], self.plot_y_stack[-1], [ymin, ymax])
 
         self.update_graph_proj(thisx, thisy, thist)
-
-        # # self.scat_plan.set_offsets([thisx, thisy])
-        # # Set plot's limits
-        # self.ax_proj.set_xlim(np.min(thisx), np.max(thisx))
-        # self.ax_proj.set_ylim(np.min(thisy), np.max(thisy))
 
         self.plot_x_stack.append([xmin_old, xmax_old])
         self.plot_y_stack.append([ymin_old, ymax_old])
@@ -2075,48 +1852,12 @@ class LMAPlotter(object):
                 else:
                     temp_x = self.plot_data['x']
 
-                # # Sort both arrays wrt x
-                # temp_y = temp_y[np.argsort(temp_x)]
-                # temp_x = temp_x[np.argsort(temp_x)]
-                #
-                # # Find the indices for xmin, xmax
-                # x_indmin, x_indmax = np.searchsorted(temp_x, (xmin, xmax))
-                # x_indmax = min(len(temp_x)-1, x_indmax)
-                #
-                # # if (x_indmax - x_indmin) < 2:
-                # #     return True
-                #
-                # temp_x = temp_x[x_indmin:x_indmax]
-                # temp_y = temp_y[x_indmin:x_indmax]
-                #
-                # # Sort both arrays wrt y
-                # temp_x = temp_x[np.argsort(temp_y)]
-                # temp_y = temp_y[np.argsort(temp_y)]
-                #
-                # # Find the indices for ymin, ymax
-                # y_indmin, y_indmax = np.searchsorted(temp_y, (ymin, ymax))
-                # y_indmax = min(len(temp_y)-1, y_indmax)
-                #
-                # # if (y_indmax - y_indmin) < 2:
-                # #     return True
-                #
-                # temp_x = temp_x[y_indmin:y_indmax]
-                # temp_y = temp_y[y_indmin:y_indmax]
-                #
-                # thisx = temp_x
-                # thisy = temp_y
-
                 if not self.plot_x_stack:
                     thisx, thisy, thist = self.get_plot_data(self.plot_data['x'], self.plot_data['y'], None, [xmin, xmax], None, [ymin, ymax])
                 else:
                     thisx, thisy, thist = self.get_plot_data(self.plot_data['x'], self.plot_data['y'], self.plot_x_stack[-1], [xmin, xmax], self.plot_y_stack[-1], [ymin, ymax])
 
                 self.update_graph_proj(thisx, thisy, thist)
-
-                # # self.scat_plan.set_offsets([thisx, thisy])
-                # # Set plot's limits
-                # self.ax_proj.set_xlim(np.min(thisx), np.max(thisx))
-                # self.ax_proj.set_ylim(np.min(thisy), np.max(thisy))
 
                 self.plot_x_stack = self.plot_x_stack[:-1]
                 self.plot_y_stack = self.plot_y_stack[:-1]
@@ -2141,48 +1882,12 @@ class LMAPlotter(object):
                 else:
                     temp_x = self.plot_data['x']
 
-                # # Sort both arrays wrt x
-                # temp_y = temp_y[np.argsort(temp_x)]
-                # temp_x = temp_x[np.argsort(temp_x)]
-                #
-                # # Find the indices for xmin, xmax
-                # x_indmin, x_indmax = np.searchsorted(temp_x, (xmin, xmax))
-                # x_indmax = min(len(temp_x)-1, x_indmax)
-                #
-                # # if (x_indmax - x_indmin) < 2:
-                # #     return True
-                #
-                # temp_x = temp_x[x_indmin:x_indmax]
-                # temp_y = temp_y[x_indmin:x_indmax]
-                #
-                # # Sort both arrays wrt y
-                # temp_x = temp_x[np.argsort(temp_y)]
-                # temp_y = temp_y[np.argsort(temp_y)]
-                #
-                # # Find the indices for ymin, ymax
-                # y_indmin, y_indmax = np.searchsorted(temp_y, (ymin, ymax))
-                # y_indmax = min(len(temp_y)-1, y_indmax)
-                #
-                # # if (y_indmax - y_indmin) < 2:
-                # #     return True
-                #
-                # temp_x = temp_x[y_indmin:y_indmax]
-                # temp_y = temp_y[y_indmin:y_indmax]
-                #
-                # thisx = temp_x
-                # thisy = temp_y
-
                 if not self.plot_x_stack:
                     thisx, thisy, thist = self.get_plot_data(self.plot_data['x'], self.plot_data['y'], None, [xmin, xmax], None, [ymin, ymax])
                 else:
                     thisx, thisy, thist = self.get_plot_data(self.plot_data['x'], self.plot_data['y'], self.plot_x_stack[-1], [xmin, xmax], self.plot_y_stack[-1], [ymin, ymax])
 
                 self.update_graph_proj(thisx, thisy, thist)
-
-                # # self.scat_plan.set_offsets([thisx, thisy])
-                # # Set plot's limits
-                # self.ax_proj.set_xlim(np.min(thisx), np.max(thisx))
-                # self.ax_proj.set_ylim(np.min(thisy), np.max(thisy))
 
                 self.plot_x_stack = []
                 self.plot_y_stack = []
@@ -2370,7 +2075,7 @@ class LMAPlotter(object):
 
 
 def main():
-    fig = plt.figure(figsize=(8,6))
+    fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(111, axisbg='#FFFFCC')
 
     x = np.arange(0.0, 5.0, 0.01)
@@ -2383,7 +2088,7 @@ def main():
     p = Plot(fig, ax)
     p.plot()
     
-    fig = plt.figure(figsize=(8,6))
+    fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(111, axisbg='#FFFFCC')
 
     x = np.arange(0.0, 5.0, 0.01)
