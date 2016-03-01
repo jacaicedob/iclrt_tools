@@ -14,10 +14,12 @@ fileName = '/home/jaime/Documents/LMA/Data/Triggered/2015/150827/LYLOUT_150827_2
 
 fileName = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 08-27-2015/LMA/ChargeAnalysis-1of2-exported.dat'
 
+fileName = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 08-27-2015/LMA/LYLOUT_150827_223000_0600_8stations.dat'
+
 print("Reading File...")
-# f = lma.LMAFile(fileName)
 start = datetime.datetime.now()
-f = lma.XLMAExportedFile(fileName)
+f = lma.LMAFile(fileName)
+# f = lma.XLMAExportedFile(fileName)
 print(datetime.datetime.now() - start)
 
 start = datetime.datetime.now()
@@ -26,14 +28,15 @@ print(datetime.datetime.now() - start)
 
 print("Filtering...")
 
-p.filter_rc2(1.0)
+p.filter_rc2(5.0)
 p.filter_xy([-20E3, 20E3], [-20E3, 20E3])
 p.filter_num_stations(6)
+p.filter_time(['22:37:24.0', '22:37:25.0'])
 
 print("Plotting...")
 
 # p.set_cmap('grey')
-p.set_coloring('charge')
+# p.set_coloring('charge')
 p.plot_alt_t()
 plt.show()
 

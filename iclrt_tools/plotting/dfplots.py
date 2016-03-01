@@ -1739,13 +1739,18 @@ class LMAPlotter(object):
         self.ax_plan.set_ylim(min_y, max_y)
         self.ax_plan.set_xlim(min_x, max_x)
 
-    def plot_proj(self, projection='NS', lims=(-20E3, 20E3), zlims=(0, 20E3)):
+    def plot_proj(self, projection='NS', lims=(-20E3, 20E3), zlims=(0, 20E3), fig=None, ax=None):
         self.plot_x_stack = []
         self.plot_y_stack = []
         self.projection = projection
 
-        self.fig_proj = plt.figure()
-        self.ax_proj = self.fig_proj.add_subplot(111)
+        if fig is None or ax is None:
+            self.fig_proj = plt.figure()
+            self.ax_proj = self.fig_proj.add_subplot(111)
+
+        else:
+            self.fig_proj = fig
+            self.ax_proj = ax
 
         if self.projection == 'NS':
             # This is the yz-plane
