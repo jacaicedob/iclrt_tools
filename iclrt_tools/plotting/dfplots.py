@@ -849,11 +849,28 @@ class RadarPlotter(object):
                 if self.display is None:
                     self.setup_display()
 
+                if field == 'reflectivity':
+                    vmin = -25
+                    vmax = 75
+                    label = 'dBZ'
+                elif field == 'differential_reflectivity':
+                    vmin = -7.9
+                    vmax = 7.9
+                    label = ' '
+                elif field == 'cross_correlation_ratio':
+                    vmin = 0.2
+                    vmax = 1.05
+                    label = ' '
+                elif field == 'differential_phase':
+                    vmin = 0
+                    vmax = 180
+                    label = 'degrees'
+
                 self.display.plot_azimuth_to_rhi(field, azimuth,
-                                                 vmin=-25, vmax=75,
+                                                 vmin=vmin, vmax=vmax,
                                                  fig=fig, ax=ax,
                                                  title_flag=False,
-                                                 colorbar_label='dBZ',
+                                                 colorbar_label=label,
                                                  axislabels_flag=False)
 
     def plot_ppi_rhi(self, field='reflectivity', sweep=0, fig=None, ax=None):
