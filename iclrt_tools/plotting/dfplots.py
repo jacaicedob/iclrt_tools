@@ -888,7 +888,7 @@ class RadarPlotter(object):
                 self.fig_ppi = plt.gcf()
                 self.ax_ppi = plt.gca()
 
-                self.ax_ppi.scatter(0,0, s=50, c='w')
+                self.ax_ppi.scatter(0, 0, s=50, c='w')
                 self.fig_ppi.canvas.mpl_connect('button_release_event', self.onclick)
                 self.fig_ppi.canvas.mpl_connect('key_press_event', self.onkeypress)
                 self.fig_ppi.canvas.mpl_connect('key_release_event', self.onkeyrelease)
@@ -896,7 +896,7 @@ class RadarPlotter(object):
                 self.ax_ppi.set_xlim([-20, 20])
                 self.ax_ppi.set_ylim([-20, 20])
 
-                self.fig_rhi, self.ax_rhi = plt.subplots(1,1)
+                self.fig_rhi, self.ax_rhi = plt.subplots(1, 1)
                 self.display.plot_azimuth_to_rhi(field, self.ICLRT_azimuth,
                                                  vmin=-25, vmax=75,
                                                  fig=self.fig_rhi, ax=self.ax_rhi,
@@ -912,9 +912,13 @@ class RadarPlotter(object):
     def onclick(self, event):
         if event.button == 1 and (event.inaxes is self.ax_ppi):
             if self.sel_point:
-                y = event.xdata*1e3 - self.ICLRT_shift[0]
-                x = event.ydata*1e3 - self.ICLRT_shift[1]
-                theta = math.atan(y/x) * 180/math.pi + 180
+                x = event.xdata*1e3 - self.ICLRT_shift[0]
+                y = event.ydata*1e3 - self.ICLRT_shift[1]
+
+                if x < 0:
+                    theta = 270 - math.degrees(math.atan(y/x))
+                else:
+                    theta = 90 - math.degrees(math.atan(y/x))
 
                 # print(theta)
                 self.ax_rhi.clear()
