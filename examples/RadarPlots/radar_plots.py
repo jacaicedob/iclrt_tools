@@ -123,18 +123,18 @@ for radar_file in radar_files:
     radar_plotter = df.RadarPlotter(radar_file)
 
     print("  - Plotting")
-    fig, ax = plt.subplots(1, 1)
-    radar_plotter.plot_ppi('reflectivity', fig=fig, ax=ax)
-    ax.scatter(0, 0, s=50, c='w')
-    ax.set_xlim([-40, 40])
-    ax.set_ylim([-40, 40])
-    ax.set_xlabel('West - East (km)')
-    ax.set_ylabel('South - North (km)')
-    # ax.set_title(radar_file[2:-7])
-    # save_file = './PNG/' + radar_file[2:-2] + 'png'
-    ax.set_title(radar_file[2:])
-    save_file = './PNG/' + radar_file[2:] + '.png'
-    fig.savefig(save_file, dpi=300, format='png')
+    # fig, ax = plt.subplots(1, 1)
+    # radar_plotter.plot_ppi('reflectivity', fig=fig, ax=ax)
+    # ax.scatter(0, 0, s=50, c='w')
+    # ax.set_xlim([-40, 40])
+    # ax.set_ylim([-40, 40])
+    # ax.set_xlabel('West - East (km)')
+    # ax.set_ylabel('South - North (km)')
+    # # ax.set_title(radar_file[2:-7])
+    # # save_file = './PNG/' + radar_file[2:-2] + 'png'
+    # ax.set_title(radar_file[2:])
+    # save_file = './PNG/' + radar_file[2:] + '.png'
+    # fig.savefig(save_file, dpi=300, format='png')
 
     # fig, ax = plt.subplots(1,3)
     # radar_plotter.plot_pseudo_rhi('reflectivity', azimuth=188.71, fig=fig, ax=ax[0])
@@ -148,5 +148,5 @@ for radar_file in radar_files:
     # ax[2].set_ylim([0, 20])
     # plt.show()
 
-    # radar_plotter.plot_ppi_rhi()
-    # plt.show()
+    radar_plotter.plot_ppi_rhi()
+    plt.show()
