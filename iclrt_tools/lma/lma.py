@@ -1,15 +1,11 @@
 #!/usr/bin/env python
 
 # Add personal packages directory to path
-import sys
-sys.path.append('/home/jaime/Documents/Python Code')
+import datetime
+import numpy as np
 
 # Import custom module
 import iclrt_tools.lat_lon.lat_lon as latlon
-
-# Import other modules
-import datetime
-import numpy as np
 
 
 class LMAFile(object):
