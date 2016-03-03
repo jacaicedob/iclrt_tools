@@ -40,22 +40,25 @@ class syncdf(object):
         for plot in self.plots:
             plot.synced = True
         
-    def onselect(self, xmin, xmax):
+    def _onselect(self, xmin, xmax):
         for plot in self.plots:
-            plot.onselect(xmin, xmax)
+            plot._onselect(xmin, xmax)
             
     def plot_all(self):
         self.spans = []
         self.cids = []
         
         for plot in self.plots:
-            self.spans.append(SpanSelector(plot.ax, self.onselect, 'horizontal', useblit=True,
-                        rectprops=dict(alpha=0.5, facecolor='red') ))
+            self.spans.append(SpanSelector(plot.ax, self._onselect,
+                                           'horizontal', useblit=True,
+                                           rectprops=dict(alpha=0.5,
+                                                          facecolor='red')))
                     
-            self.cids.append(plot.fig.canvas.mpl_connect(\
-                            'button_release_event', plot.onclick))
+            self.cids.append(plot.fig.canvas.mpl_connect(
+                                         'button_release_event', plot._onclick))
             
-            plot.fig.canvas.mpl_connect('key_press_event', plot.onkeypress)
+            plot.fig.canvas.mpl_connect('key_press_event', plot._onkeypress)
+
 
 class Plot(object):
     """
@@ -94,7 +97,7 @@ class Plot(object):
         self.sel_points = False
         self.sel_zero = False
 
-        # Sett all matplotlib keyboard shortcuts to none
+        # Set all matplotlib keyboard shortcuts to none
         mpl.rcParams['keymap.fullscreen'] = ''  # f
         mpl.rcParams['keymap.home'] = ''  # h, r, home
         mpl.rcParams['keymap.back'] = ''  # left, c, backspace
@@ -111,18 +114,18 @@ class Plot(object):
         self.plot()
 
     def plot(self):
-        self.span = SpanSelector(self.ax, self.onselect,
-                                       'horizontal', useblit=True,
-                                       rectprops=dict(alpha=0.2,
-                                       facecolor='red'))
+        self.span = SpanSelector(self.ax, self._onselect,
+                                 'horizontal', useblit=True,
+                                 rectprops=dict(alpha=0.2,
+                                                facecolor='red'))
 
-        self.span_v = SpanSelector(self.ax, self.onselect_v,
-                                       'vertical', useblit=True,
-                                       rectprops=dict(alpha=0.2,
-                                       facecolor='red'))
+        self.span_v = SpanSelector(self.ax, self._onselect_v,
+                                   'vertical', useblit=True,
+                                   rectprops=dict(alpha=0.2,
+                                                  facecolor='red'))
 
         self.rect_sel = RectangleSelector(self.ax,
-                                          self.onselect_rect,
+                                          self._onselect_rect,
                                           button=[1],
                                           drawtype='box',
                                           rectprops=dict(alpha=0.2,
@@ -131,15 +134,15 @@ class Plot(object):
                                                          linewidth=2))
 
         self.fig.canvas.mpl_connect('button_release_event',
-                                    self.onclick)
-        self.fig.canvas.mpl_connect('key_press_event', self.onkeypress)
+                                    self._onclick)
+        self.fig.canvas.mpl_connect('key_press_event', self._onkeypress)
         self.fig.canvas.mpl_connect('key_release_event',
-                                    self.onkeyrelease)
+                                    self._onkeyrelease)
 
         self.span_v.visible = False
         self.rect_sel.set_active(False)
 
-    def onselect(self, xmin, xmax):
+    def _onselect(self, xmin, xmax):
         if xmin == xmax:
             return True
 
@@ -158,7 +161,7 @@ class Plot(object):
 
         self.fig.canvas.draw()
 
-    def onselect_v(self, ymin, ymax):
+    def _onselect_v(self, ymin, ymax):
         if ymin == ymax:
             return True
 
@@ -177,7 +180,7 @@ class Plot(object):
 
         self.fig.canvas.draw()
 
-    def onselect_rect(self, eclick, erelease):
+    def _onselect_rect(self, eclick, erelease):
         xmin_old = self.ax.get_xlim()[0]
         xmax_old = self.ax.get_xlim()[1]
 
@@ -210,7 +213,7 @@ class Plot(object):
 
         self.fig.canvas.draw()
 
-    def onclick(self, event):
+    def _onclick(self, event):
         if event.button == 3 and (event.inaxes is self.ax or self.synced):
             # On OSX, event.button == 2 is a right click
 
@@ -239,7 +242,8 @@ class Plot(object):
 
                 self.points.append([x, y])
 
-                self.ax.scatter(x, y, marker='x', c='r', zorder=10, label='Selection')
+                self.ax.scatter(x, y, marker='x', c='r', zorder=10,
+                                label='Selection')
                 self.fig.canvas.draw()
 
             elif self.sel_zero:
@@ -251,7 +255,7 @@ class Plot(object):
                 self.ax.set_xticklabels(l.tolist())
                 self.fig.canvas.draw()
 
-    def onkeypress(self, event):
+    def _onkeypress(self, event):
         if event.key == 'r':
             if self.x_stack:
                 # Get initial limits from stacks
@@ -298,7 +302,7 @@ class Plot(object):
         elif event.key == ' ' or event.key == 'escape':
             plt.close(self.fig)
 
-    def onkeyrelease(self, event):
+    def _onkeyrelease(self, event):
         if event.key == 'y':
             self.span.visible = True
             self.span_v.visible = False
@@ -390,12 +394,13 @@ class pickerPlot(Plot):
 
         self.fig.canvas.draw()
             
-    def onkeypress(self, event):
+    def _onkeypress(self, event):
         line = self.selected_line
         
         if line:
             dt = abs(np.diff(line.get_xdata())[0]/2)
-            dy = (np.max(line.get_ydata()) - np.min(line.get_ydata()))/len(line.get_xdata())
+            dy = (np.max(line.get_ydata()) -
+                  np.min(line.get_ydata()))/len(line.get_xdata())
 
             ylims = self.ax.get_ylim()
 
@@ -419,42 +424,42 @@ class pickerPlot(Plot):
                 #~ print('Moving up...')
                 line.set_ydata(line.get_ydata() + dy)
 
-                if not(self.fix_axis):
+                if not self.fix_axis:
                     self.ax.set_ylim([ylims[0] + dy, ylims[1] + dy])
             
             elif event.key == 'ctrl+up' and self.move_flag:
                 #~ print('Moving up...')
                 line.set_ydata(line.get_ydata() + 10*dy)
 
-                if not(self.fix_axis):
+                if not self.fix_axis:
                     self.ax.set_ylim([ylims[0] + 10*dy, ylims[1] + 10*dy])
             
             elif event.key == 'alt+up' and self.move_flag:
                 #~ print('Moving up...')
                 line.set_ydata(line.get_ydata() + 100*dy)
 
-                if not(self.fix_axis):
+                if not self.fix_axis:
                     self.ax.set_ylim([ylims[0] + 100*dy, ylims[1] + 100*dy])
                 
             elif event.key == 'down' and self.move_flag:
                 #~ print('Moving down...')
                 line.set_ydata(line.get_ydata() - dy)
 
-                if not(self.fix_axis):
+                if not self.fix_axis:
                     self.ax.set_ylim([ylims[0] - dy, ylims[1] - dy])
             
             elif event.key == 'ctrl+down' and self.move_flag:
                 #~ print('Moving down...')
                 line.set_ydata(line.get_ydata() - 10*dy)
 
-                if not(self.fix_axis):
+                if not self.fix_axis:
                     self.ax.set_ylim([ylims[0] - 10*dy, ylims[1] - 10*dy])
             
             elif event.key == 'alt+down' and self.move_flag:
                 #~ print('Moving down...')
                 line.set_ydata(line.get_ydata() - 100*dy)
 
-                if not(self.fix_axis):
+                if not self.fix_axis:
                     self.ax.set_ylim([ylims[0] - 100*dy, ylims[1] - 100*dy])
 
             self.fig.canvas.draw()
@@ -465,12 +470,12 @@ class pickerPlot(Plot):
             self.rect_sel.set_active(False)
 
         elif event.key == 'f':
-            self.fix_axis = not(self.fix_axis)
+            self.fix_axis = not self.fix_axis
 
         else:
-            super().onkeypress(event)
+            super()._onkeypress(event)
 
-    def onkeyrelease(self, event):
+    def _onkeyrelease(self, event):
         if event.key == 'x':
             self.span.visible = False
             self.span_v.visible = False
@@ -487,7 +492,7 @@ class pickerPlot(Plot):
             self.rect_sel.set_active(False)
 
         else:
-            super().onkeyrelease(event)
+            super()._onkeyrelease(event)
 
 
 class RelativeTimePlot(object):
@@ -510,10 +515,13 @@ class RelativeTimePlot(object):
         
         if self.draw:
             self.fig = plt.figure()
-            self.fig.suptitle('Please select the time zero (Press down \'n\' and left click).')
+            self.fig.suptitle('Please select the time zero (Press down \'n\' '
+                              'and left click).')
             self.ax = self.fig.add_subplot(111)
             self.data_line = self.ax.plot(x,y)[0]
-            self.zero_line = self.ax.plot([self.zero_time, self.zero_time], [self.ax.get_ylim()[0], self.ax.get_ylim()[1]], 'r')[0]
+            self.zero_line = self.ax.plot([self.zero_time, self.zero_time],
+                                          [self.ax.get_ylim()[0],
+                                           self.ax.get_ylim()[1]], 'r')[0]
         
             self.y_bounds = [self.ax.get_ylim()[0], self.ax.get_ylim()[1]]
         
@@ -533,7 +541,7 @@ class RelativeTimePlot(object):
             
         self.x_bounds = [x[0], x[-1]]     
         
-    def onselect(self, xmin, xmax):
+    def _onselect(self, xmin, xmax):
         if xmin == xmax:
             return True
             
@@ -588,7 +596,7 @@ class RelativeTimePlot(object):
         
         self.fig.canvas.draw()
 
-    def onclick(self, event):
+    def _onclick(self, event):
         if event.button == 1 and (event.inaxes is self.ax):
             if self.set_zero:
                 self.zero_time = event.xdata
@@ -644,7 +652,8 @@ class RelativeTimePlot(object):
 #~                 min_y = min(min_y, self.dc_offset)
 
                 ##draw
-                self.ax.set_ylim(min_y-0.1*(max_y-min_y), max_y+0.1*(max_y-min_y))
+                self.ax.set_ylim(min_y-0.1*(max_y-min_y),
+                                 max_y+0.1*(max_y-min_y))
                 self.fig.canvas.draw()
         
         if event.button == 2 and (event.inaxes is self.ax):
@@ -694,10 +703,11 @@ class RelativeTimePlot(object):
 #~                 min_y = min(min_y, self.dc_offset)
 
                 ##draw
-                self.ax.set_ylim(min_y-0.1*(max_y-min_y), max_y+0.1*(max_y-min_y))
+                self.ax.set_ylim(min_y-0.1*(max_y-min_y),
+                                 max_y+0.1*(max_y-min_y))
                 self.fig.canvas.draw()
     
-    def onkeypress(self,event):
+    def _onkeypress(self,event):
         if event.key == 'n':
             self.set_zero = True
             
@@ -751,10 +761,8 @@ class RelativeTimePlot(object):
         
         elif event.key == ' ' or event.key == 'escape':
             plt.close(self.fig)
-        #~ else:
-            #~ print(event.key)
     
-    def onkeyrelease(self, event):
+    def _onkeyrelease(self, event):
         if event.key == 'n':
             self.set_zero = False
     
@@ -768,9 +776,11 @@ class RelativeTimePlot(object):
             lbound = self.x_bounds[0]
             rbound = self.x_bounds[-1]
 
-        t = np.arange(-self.zero_time+lbound, rbound-self.zero_time, delta_t) # seconds
+        # t in seconds
+        t = np.arange(-self.zero_time+lbound, rbound-self.zero_time, delta_t)
         
-        s = self.y[int((lbound - self.x[0])/delta_t):int((rbound - self.x[0])/delta_t)].shape[0]
+        s = self.y[int((lbound - self.x[0])/delta_t):
+                   int((rbound - self.x[0])/delta_t)].shape[0]
         
         if t.shape[0] > s:
             t = t[0:s]
@@ -781,9 +791,12 @@ class RelativeTimePlot(object):
         ax = fig.add_subplot(111)
         
         if offset:
-            ax.plot(t*mult, self.y[int((lbound - self.x[0])/delta_t):int((rbound - self.x[0])/delta_t)] - self.y[self.zero_ind])
+            ax.plot(t*mult, self.y[int((lbound - self.x[0])/delta_t):
+                                   int((rbound - self.x[0])/delta_t)] -
+                    self.y[self.zero_ind])
         else:
-            ax.plot(t*mult, self.y[int((lbound - self.x[0])/delta_t):int((rbound - self.x[0])/delta_t)])
+            ax.plot(t*mult, self.y[int((lbound - self.x[0])/delta_t):
+                                   int((rbound - self.x[0])/delta_t)])
         
         ax.set_xlim(t[0]*mult, t[-1]*mult)
         
@@ -793,18 +806,18 @@ class RelativeTimePlot(object):
     
         if self.draw:
 
-            self.span = SpanSelector(self.ax, self.onselect, 'horizontal', \
-                                     useblit=True, rectprops=dict(alpha=0.5, \
-                                     facecolor='red') )
+            self.span = SpanSelector(self.ax, self._onselect, 'horizontal',
+                                     useblit=True, rectprops=dict(alpha=0.5,
+                                     facecolor='red'))
 
-            self.cid = self.fig.canvas.mpl_connect('button_release_event', \
-                                                   self.onclick)
+            self.cid = self.fig.canvas.mpl_connect('button_release_event',
+                                                   self._onclick)
         
-            self.kp = self.fig.canvas.mpl_connect('key_press_event', \
-                                                  self.onkeypress)
+            self.kp = self.fig.canvas.mpl_connect('key_press_event',
+                                                  self._onkeypress)
         
-            self.kr = self.fig.canvas.mpl_connect('key_release_event', \
-                                                  self.onkeyrelease)
+            self.kr = self.fig.canvas.mpl_connect('key_release_event',
+                                                  self._onkeyrelease)
 
 
 class ImagePlotter(object):
@@ -818,7 +831,8 @@ class RadarPlotter(object):
         self.fileName = file_name
         self.radar = pyart.io.read(self.fileName)
         self.fields = self.radar.fields.keys()
-        self.ICLRT_shift = (32.238e3, 59.873e3)  #(32e3, 61e3)# Distance (x,y) in km from KJAX radar
+        # Distance (x,y) in km from KJAX radar
+        self.ICLRT_shift = (32.238e3, 59.873e3)  #(32e3, 61e3)
         self.ICLRT_azimuth = 208.3  # Azimuth in degrees from KJAX radar
         self.display = None
 
@@ -840,7 +854,8 @@ class RadarPlotter(object):
                                       colorbar_label='dBZ',
                                       axislabels_flag=False)
 
-    def plot_pseudo_rhi(self, field='reflectivity', azimuth=None, fig=None, ax=None):
+    def plot_pseudo_rhi(self, field='reflectivity', azimuth=None,
+                        fig=None, ax=None):
         if azimuth is None:
             azimuth = self.ICLRT_azimuth
 
@@ -889,9 +904,12 @@ class RadarPlotter(object):
                 self.ax_ppi = plt.gca()
 
                 self.ax_ppi.scatter(0, 0, s=50, c='w')
-                self.fig_ppi.canvas.mpl_connect('button_release_event', self.onclick)
-                self.fig_ppi.canvas.mpl_connect('key_press_event', self.onkeypress)
-                self.fig_ppi.canvas.mpl_connect('key_release_event', self.onkeyrelease)
+                self.fig_ppi.canvas.mpl_connect('button_release_event',
+                                                self._onclick)
+                self.fig_ppi.canvas.mpl_connect('key_press_event',
+                                                self._onkeypress)
+                self.fig_ppi.canvas.mpl_connect('key_release_event',
+                                                self._onkeyrelease)
 
                 self.ax_ppi.set_xlim([-20, 20])
                 self.ax_ppi.set_ylim([-20, 20])
@@ -899,7 +917,8 @@ class RadarPlotter(object):
                 self.fig_rhi, self.ax_rhi = plt.subplots(1, 1)
                 self.display.plot_azimuth_to_rhi(field, self.ICLRT_azimuth,
                                                  vmin=-25, vmax=75,
-                                                 fig=self.fig_rhi, ax=self.ax_rhi,
+                                                 fig=self.fig_rhi,
+                                                 ax=self.ax_rhi,
                                                  title_flag=False,
                                                  colorbar_label='dBZ',
                                                  axislabels_flag=False)
@@ -909,7 +928,22 @@ class RadarPlotter(object):
                 self.field = field
                 self.sel_point = False
 
-    def onclick(self, event):
+    def _get_azimuth_from_cartesian(self, x, y):
+        """
+        Returns the azimuth from North of point (x, y)
+        :param x: x coordinate
+        :param y: y coordinate
+        :return: azimuth from North of point (x, y)
+        """
+
+        if x < 0:
+            theta = 270 - math.degrees(math.atan(y/x))
+        else:
+            theta = 90 - math.degrees(math.atan(y/x))
+
+        return theta
+
+    def _onclick(self, event):
         if event.button == 1 and (event.inaxes is self.ax_ppi):
             if self.sel_point:
                 x = event.xdata*1e3 - self.ICLRT_shift[0]
@@ -924,7 +958,8 @@ class RadarPlotter(object):
                 self.ax_rhi.clear()
                 self.display.plot_azimuth_to_rhi(self.field, theta,
                                                  vmin=-25, vmax=75,
-                                                 fig=self.fig_rhi, ax=self.ax_rhi,
+                                                 fig=self.fig_rhi,
+                                                 ax=self.ax_rhi,
                                                  title_flag=False,
                                                  colorbar_flag=False,
                                                  axislabels_flag=False)
@@ -936,11 +971,11 @@ class RadarPlotter(object):
         else:
             return True
 
-    def onkeypress(self, event):
+    def _onkeypress(self, event):
         if event.key == 'a':
             self.sel_point = True
 
-    def onkeyrelease(self, event):
+    def _onkeyrelease(self, event):
         if event.key == 'a':
             self.sel_point = False
 
@@ -1152,7 +1187,8 @@ class LMAPlotter(object):
         self.plot_data['x'] = self.plot_data['x'][indices]
         self.plot_data['y'] = self.plot_data['y'][indices]
         self.plot_data['z'] = self.plot_data['z'][indices]
-        self.plot_data['seconds_of_day'] = self.plot_data['seconds_of_day'][indices]
+        self.plot_data['seconds_of_day'] = self.plot_data[
+                                                     'seconds_of_day'][indices]
         self.plot_data['charge'] = self.plot_data['charge'][indices]
 
     def alt_histogram(self):
@@ -1204,8 +1240,8 @@ class LMAPlotter(object):
         array by 1/factor returned by this function.
 
         :param number: Number to be converted into engineering units
-        :return: a tuple with the factor to convert the number into engineering
-                 units and the text label for those units
+        :return: a tuple with the factor to convert the number into
+                 engineering units and the text label for those units
         """
         units = {
             -12: 1E-12,  # pico
@@ -1371,10 +1407,12 @@ class LMAPlotter(object):
                                 self.plot_data['t'][-1]])
 
         self.ax_alt_t.xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
-        self.ax_alt_t.xaxis.set_minor_formatter(mpl.ticker.FuncFormatter(self.date_format_minor))
+        self.ax_alt_t.xaxis.set_minor_formatter(
+                              mpl.ticker.FuncFormatter(self.date_format_minor))
 
         self.ax_alt_t.xaxis.set_major_locator(mpl.ticker.LinearLocator(5))
-        self.ax_alt_t.xaxis.set_major_formatter(mpl.ticker.FuncFormatter(self.date_format_major))
+        self.ax_alt_t.xaxis.set_major_formatter(
+                              mpl.ticker.FuncFormatter(self.date_format_major))
 
         # for label in self.ax_alt_t.xaxis.get_ticklabels(minor=True):
         #     label.set_rotation(30)
@@ -1383,11 +1421,11 @@ class LMAPlotter(object):
         #     label.set_rotation(30)
 
         # Define event handlers
-        self.span_alt_t = SpanSelector(self.ax_alt_t, self.onselect_alt_t,
+        self.span_alt_t = SpanSelector(self.ax_alt_t, self._onselect_alt_t,
                                        'horizontal', useblit=True,
                                        rectprops=dict(alpha=0.2,
                                                       facecolor='red'))
-        self.span_alt_t_v = SpanSelector(self.ax_alt_t, self.onselect_alt_t_v,
+        self.span_alt_t_v = SpanSelector(self.ax_alt_t, self._onselect_alt_t_v,
                                          'vertical', useblit=True,
                                          rectprops=dict(alpha=0.2,
                                                         facecolor='red'))
@@ -1396,15 +1434,17 @@ class LMAPlotter(object):
 
         self.cid_alt_t = self.fig_alt_t.canvas.mpl_connect(
                                                     'button_release_event',
-                                                    self.onclick_alt_t)
+                                                    self._onclick_alt_t)
 
-        self.kp_alt_t = self.fig_alt_t.canvas.mpl_connect('key_press_event',
-                                                       self.onkeypress_alt_t)
+        self.kp_alt_t = self.fig_alt_t.canvas.mpl_connect(
+                                                        'key_press_event',
+                                                        self._onkeypress_alt_t)
 
-        self.kr_alt_t = self.fig_alt_t.canvas.mpl_connect('key_release_event',
-                                                       self.onkeyrelease_alt_t)
+        self.kr_alt_t = self.fig_alt_t.canvas.mpl_connect(
+                                                      'key_release_event',
+                                                      self._onkeyrelease_alt_t)
 
-    def onselect_alt_t(self, xmin, xmax):
+    def _onselect_alt_t(self, xmin, xmax):
         if xmin == xmax:
             return True
 
@@ -1441,9 +1481,17 @@ class LMAPlotter(object):
 
         try:
             if not self.plot_x_stack:
-                thisx, thisy, thist, thischarge = self.get_plot_data(self.plot_data['t'], self.plot_data['z'], None, [xmin, xmax], None, [ymin_old*1e3, ymax_old*1e3])
+                thisx, thisy, thist, thischarge = self.get_plot_data(
+                                      self.plot_data['t'], self.plot_data['z'],
+                                      None, [xmin, xmax], None, [ymin_old*1e3,
+                                                                 ymax_old*1e3])
             else:
-                thisx, thisy, thist, thischarge = self.get_plot_data(self.plot_data['t'], self.plot_data['z'], self.plot_x_stack[-1], [xmin, xmax], [self.plot_y_stack[-1][0]*1e3, self.plot_y_stack[-1][1]*1e3], [ymin_old*1e3, ymax_old*1e3])
+                thisx, thisy, thist, thischarge = self.get_plot_data(
+                                      self.plot_data['t'], self.plot_data['z'],
+                                      self.plot_x_stack[-1], [xmin, xmax],
+                                      [self.plot_y_stack[-1][0]*1e3,
+                                       self.plot_y_stack[-1][1]*1e3],
+                                      [ymin_old*1e3, ymax_old*1e3])
 
         except IndexError:
             return True
@@ -1457,7 +1505,7 @@ class LMAPlotter(object):
         # Re-draw figure
         self.fig_alt_t.canvas.draw()
 
-    def onselect_alt_t_v(self, ymin, ymax):
+    def _onselect_alt_t_v(self, ymin, ymax):
         if ymin == ymax:
             return True
 
@@ -1480,9 +1528,18 @@ class LMAPlotter(object):
 
         try:
             if not self.plot_x_stack:
-                thisx, thisy, thist, thischarge = self.get_plot_data(self.plot_data['t'], self.plot_data['z'], None, [xmin_old, xmax_old], None, [ymin*1e3, ymax*1e3])
+                thisx, thisy, thist, thischarge = self.get_plot_data(
+                                      self.plot_data['t'], self.plot_data['z'],
+                                      None, [xmin_old, xmax_old], None,
+                                      [ymin*1e3, ymax*1e3])
             else:
-                thisx, thisy, thist, thischarge = self.get_plot_data(self.plot_data['t'], self.plot_data['z'], self.plot_x_stack[-1], [xmin_old, xmax_old], [self.plot_y_stack[-1][0]*1e3, self.plot_y_stack[-1][1]*1e3], [ymin*1e3, ymax*1e3])
+                thisx, thisy, thist, thischarge = self.get_plot_data(
+                                      self.plot_data['t'], self.plot_data['z'],
+                                      self.plot_x_stack[-1], [xmin_old,
+                                                              xmax_old],
+                                      [self.plot_y_stack[-1][0]*1e3,
+                                       self.plot_y_stack[-1][1]*1e3],
+                                      [ymin*1e3, ymax*1e3])
 
         except IndexError:
             return True
@@ -1496,12 +1553,20 @@ class LMAPlotter(object):
         # Re-draw figure
         self.fig_alt_t.canvas.draw()
 
-    def onclick_alt_t(self, event):
-        if event.button == 3 and (event.inaxes is self.ax_alt_t or self.synced):
+    def _onclick_alt_t(self, event):
+        if event.button == 3 and (event.inaxes is self.ax_alt_t or
+                                  self.synced):
 
             if self.plot_x_stack:
 
-                thisx, thisy, thist, thischarge = self.get_plot_data(self.plot_data['t'], self.plot_data['z'], self.plot_x_stack[-1], self.plot_x_stack[-1], [self.plot_y_stack[-1][0]*1e3, self.plot_y_stack[-1][1]*1e3], [self.plot_y_stack[-1][0]*1e3, self.plot_y_stack[-1][1]*1e3])
+                thisx, thisy, thist, thischarge = self.get_plot_data(
+                                      self.plot_data['t'], self.plot_data['z'],
+                                      self.plot_x_stack[-1],
+                                      self.plot_x_stack[-1],
+                                      [self.plot_y_stack[-1][0]*1e3,
+                                       self.plot_y_stack[-1][1]*1e3],
+                                      [self.plot_y_stack[-1][0]*1e3,
+                                       self.plot_y_stack[-1][1]*1e3])
 
                 self.update_graph_alt_t(thisx, thisy, thist, thischarge)
 
@@ -1509,11 +1574,18 @@ class LMAPlotter(object):
 
                 self.fig_alt_t.canvas.draw()
 
-    def onkeypress_alt_t(self, event):
+    def _onkeypress_alt_t(self, event):
         if event.key == 'r':
             if self.plot_x_stack:
 
-                thisx, thisy, thist, thischarge = self.get_plot_data(self.plot_data['t'], self.plot_data['z'], self.plot_x_stack[0], self.plot_x_stack[0], [self.plot_y_stack[0][0]*1e3, self.plot_y_stack[0][1]*1e3], [self.plot_y_stack[0][0]*1e3, self.plot_y_stack[0][1]*1e3])
+                thisx, thisy, thist, thischarge = self.get_plot_data(
+                                      self.plot_data['t'], self.plot_data['z'],
+                                      self.plot_x_stack[0],
+                                      self.plot_x_stack[0],
+                                      [self.plot_y_stack[0][0]*1e3,
+                                       self.plot_y_stack[0][1]*1e3],
+                                      [self.plot_y_stack[0][0]*1e3,
+                                       self.plot_y_stack[0][1]*1e3])
 
                 self.update_graph_alt_t(thisx, thisy, thist, thischarge)
 
@@ -1528,7 +1600,7 @@ class LMAPlotter(object):
         elif event.key == ' ' or event.key == 'escape':
             plt.close(self.fig_alt_t)
 
-    def onkeyrelease_alt_t(self, event):
+    def _onkeyrelease_alt_t(self, event):
         if event.key == 'y':
             self.span_alt_t.visible = True
             self.span_alt_t_v.visible = False
@@ -1581,10 +1653,12 @@ class LMAPlotter(object):
         self.ax_alt_t.set_xlim(min_x, max_x)
 
         self.ax_alt_t.xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
-        self.ax_alt_t.xaxis.set_minor_formatter(mpl.ticker.FuncFormatter(self.date_format_minor))
+        self.ax_alt_t.xaxis.set_minor_formatter(
+                              mpl.ticker.FuncFormatter(self.date_format_minor))
 
         self.ax_alt_t.xaxis.set_major_locator(mpl.ticker.LinearLocator(5))
-        self.ax_alt_t.xaxis.set_major_formatter(mpl.ticker.FuncFormatter(self.date_format_major))
+        self.ax_alt_t.xaxis.set_major_formatter(
+                              mpl.ticker.FuncFormatter(self.date_format_major))
 
         # for label in self.ax_alt_t.xaxis.get_ticklabels(minor=True):
         #     label.set_rotation(30)
@@ -1618,7 +1692,7 @@ class LMAPlotter(object):
         self.ax_plan.set_xlabel('West - East')
 
         self.rect_sel_plan = RectangleSelector(self.ax_plan,
-                                               self.onselect_plan,
+                                               self._onselect_plan,
                                                button=[1],
                                                drawtype='box',
                                                rectprops=dict(alpha=0.2,
@@ -1628,12 +1702,12 @@ class LMAPlotter(object):
 
         self.cid_plan = self.fig_plan.canvas.mpl_connect(
                                                         'button_release_event',
-                                                        self.onclick_plan)
+                                                        self._onclick_plan)
 
         self.kp_plan = self.fig_plan.canvas.mpl_connect('key_press_event',
-                                                        self.onkeypress_plan)
+                                                        self._onkeypress_plan)
 
-    def onselect_plan(self, eclick, erelease):
+    def _onselect_plan(self, eclick, erelease):
         xmin_old = self.ax_plan.get_xlim()[0]
         xmax_old = self.ax_plan.get_xlim()[1]
 
@@ -1671,7 +1745,7 @@ class LMAPlotter(object):
         # Re-draw figure
         self.fig_plan.canvas.draw()
 
-    def onclick_plan(self, event):
+    def _onclick_plan(self, event):
         if event.button == 3 and (event.inaxes is self.ax_plan or self.synced):
 
             # print(self.plot_x_stack)
@@ -1696,7 +1770,7 @@ class LMAPlotter(object):
 
                 self.fig_plan.canvas.draw()
 
-    def onkeypress_plan(self, event):
+    def _onkeypress_plan(self, event):
         if event.key == 'r':
             if self.plot_x_stack:
                 # Get initial limits from stacks
@@ -1760,7 +1834,8 @@ class LMAPlotter(object):
         self.ax_plan.set_ylim(min_y, max_y)
         self.ax_plan.set_xlim(min_x, max_x)
 
-    def plot_proj(self, projection='NS', lims=(-20E3, 20E3), zlims=(0, 20E3), fig=None, ax=None):
+    def plot_proj(self, projection='NS', lims=(-20E3, 20E3), zlims=(0, 20E3),
+                  fig=None, ax=None):
         self.plot_x_stack = []
         self.plot_y_stack = []
         self.projection = projection
@@ -1800,7 +1875,7 @@ class LMAPlotter(object):
             return True
 
         self.rect_sel_proj = RectangleSelector(self.ax_proj,
-                                               self.onselect_proj,
+                                               self._onselect_proj,
                                                button=[1],
                                                drawtype='box',
                                                rectprops=dict(alpha=0.2,
@@ -1810,12 +1885,12 @@ class LMAPlotter(object):
 
         self.cid_proj = self.fig_proj.canvas.mpl_connect(
                                                         'button_release_event',
-                                                        self.onclick_proj)
+                                                        self._onclick_proj)
 
         self.kp_proj = self.fig_proj.canvas.mpl_connect('key_press_event',
-                                                        self.onkeypress_proj)
+                                                        self._onkeypress_proj)
 
-    def onselect_proj(self, eclick, erelease):
+    def _onselect_proj(self, eclick, erelease):
         xmin_old = self.ax_proj.get_xlim()[0]
         xmax_old = self.ax_proj.get_xlim()[1]
 
@@ -1857,7 +1932,7 @@ class LMAPlotter(object):
         # Re-draw figure
         self.fig_proj.canvas.draw()
 
-    def onclick_proj(self, event):
+    def _onclick_proj(self, event):
         if event.button == 3 and (event.inaxes is self.ax_proj or self.synced):
 
             # print(self.plot_x_stack)
@@ -1890,7 +1965,7 @@ class LMAPlotter(object):
 
                 self.fig_proj.canvas.draw()
 
-    def onkeypress_proj(self, event):
+    def _onkeypress_proj(self, event):
         if event.key == 'r':
             if self.plot_x_stack:
                 # Get initial limits from stacks
@@ -1962,7 +2037,8 @@ class LMAPlotter(object):
         self.ax_proj.set_ylim(min_y, max_y)
         self.ax_proj.set_xlim(min_x, max_x)
 
-    def plot_3D(self, xlims=[-20E3, 20E3], ylims=[-20E3, 20E3], zlims=[0, 20E3], projections=False, colorbar=False):
+    def plot_3D(self, xlims=[-20E3, 20E3], ylims=[-20E3, 20E3],
+                zlims=[0, 20E3], projections=False, colorbar=False):
         self.fig_3d = plt.figure()
         self.ax_3d = self.fig_3d.add_subplot(111, projection='3d')
 
@@ -1971,17 +2047,25 @@ class LMAPlotter(object):
         zlims = np.array(zlims) * 1e-3
 
         if projections:
-            self.ax_3d.plot(self.plot_data['x']*1e-3, self.plot_data['y']*1e-3, linestyle='None', color='grey', marker='.', markeredgewidth=0, alpha=0.1, zdir='z', zs=zlims[0])
-            self.ax_3d.plot(self.plot_data['x']*1e-3, self.plot_data['z']*1e-3, linestyle='None', color='grey', marker='.', markeredgewidth=0, alpha=0.1, zdir='y', zs=ylims[-1])
-            self.ax_3d.plot(self.plot_data['y']*1e-3, self.plot_data['z']*1e-3, linestyle='None', color='grey', marker='.', markeredgewidth=0, alpha=0.1, zdir='x', zs=xlims[0])
-
+            self.ax_3d.plot(self.plot_data['x']*1e-3, self.plot_data['y']*1e-3,
+                            linestyle='None', color='grey', marker='.',
+                            markeredgewidth=0, alpha=0.1, zdir='z',
+                            zs=zlims[0])
+            self.ax_3d.plot(self.plot_data['x']*1e-3, self.plot_data['z']*1e-3,
+                            linestyle='None', color='grey', marker='.',
+                            markeredgewidth=0, alpha=0.1, zdir='y',
+                            zs=ylims[-1])
+            self.ax_3d.plot(self.plot_data['y']*1e-3, self.plot_data['z']*1e-3,
+                            linestyle='None', color='grey', marker='.',
+                            markeredgewidth=0, alpha=0.1, zdir='x',
+                            zs=xlims[0])
 
         self.scat_3d = self.ax_3d.scatter(self.plot_data['x']*1e-3,
-                             self.plot_data['y']*1e-3, self.plot_data['z']*1e-3,
-                             marker='.', c=self.plot_data['seconds_of_day'],
-                             cmap=self.cmap, s=30, lw=0)
-
-
+                                          self.plot_data['y']*1e-3,
+                                          self.plot_data['z']*1e-3,
+                                          marker='.',
+                                          c=self.plot_data['seconds_of_day'],
+                                          cmap=self.cmap, s=30, lw=0)
 
         self.ax_3d.set_xlim(xlims)
         self.ax_3d.set_ylim(ylims)
@@ -1992,13 +2076,14 @@ class LMAPlotter(object):
         self.ax_3d.set_zlabel('Altitude (km)')
 
         if colorbar:
-            ticks_loc = [self.plot_data['seconds_of_day'][0], self.plot_data['seconds_of_day'][int(len(self.plot_data['seconds_of_day'])/2)], self.plot_data['seconds_of_day'][-1]]
-            cb = self.fig_3d.colorbar(self.scat_3d, orientation='vertical', ticks=ticks_loc)
+            ticks_loc = [self.plot_data['seconds_of_day'][0],
+                         self.plot_data['seconds_of_day'][int(len(self.plot_data['seconds_of_day'])/2)], self.plot_data['seconds_of_day'][-1]]
+            cb = self.fig_3d.colorbar(self.scat_3d, orientation='vertical',
+                                      ticks=ticks_loc)
             times = [self.plot_data['t'][0].strftime('%H:%M:%S.%f'),
                      self.plot_data['t'][int(len(self.plot_data['t'])/2)].strftime('%H:%M:%S.%f'),
                      self.plot_data['t'][-1].strftime('%H:%M:%S.%f')]
             cb.ax.set_yticklabels(times)
-
 
     def plot_all(self):
         self.fig_all = plt.figure()
@@ -2028,7 +2113,8 @@ class LMAPlotter(object):
 
         s = 30
         lw = 0
-        c = cm.rainbow(np.linspace(0, 1, len(self.plot_data['t'])))  # Color by points
+        # Color by points
+        c = cm.rainbow(np.linspace(0, 1, len(self.plot_data['t'])))
         # c = self.plot_data['seconds_of_day']  # Color by time
         marker = '.'
 
@@ -2070,22 +2156,26 @@ class LMAPlotter(object):
                                  self.plot_data['y']*1E-3, marker=marker,
                                  c=c, cmap=self.cmap, s=s, lw=lw)
         self.ax_all_NS.set_xlim([0, np.max(self.plot_data['z']*1e-3)])
-        self.ax_all_NS.set_ylim([np.min(self.plot_data['y'])*1e-3, np.max(self.plot_data['y']*1e-3)])
+        self.ax_all_NS.set_ylim([np.min(self.plot_data['y'])*1e-3,
+                                 np.max(self.plot_data['y']*1e-3)])
 
         # Altitude vs. EW projection subplot
         self.scat_all_EW = self.ax_all_EW.scatter(self.plot_data['x']*1E-3,
                                  self.plot_data['z']*1E-3, marker=marker,
                                  c=c, cmap=self.cmap, s=s, lw=lw)
         self.ax_all_EW.set_ylim([0, np.max(self.plot_data['z']*1e-3)])
-        self.ax_all_EW.set_xlim([np.min(self.plot_data['x'])*1e-3, np.max(self.plot_data['x']*1e-3)])
+        self.ax_all_EW.set_xlim([np.min(self.plot_data['x'])*1e-3,
+                                 np.max(self.plot_data['x']*1e-3)])
 
         # Altitude vs. plan projection subplot
         self.scat_all_plan = self.ax_all_plan.scatter(self.plot_data['x']*1E-3,
                              self.plot_data['y']*1E-3, marker=marker,
                              c=c, cmap=self.cmap, s=s, lw=lw)
 
-        self.ax_all_plan.set_xlim([np.min(self.plot_data['x'])*1e-3, np.max(self.plot_data['x']*1e-3)])
-        self.ax_all_plan.set_ylim([np.min(self.plot_data['y'])*1e-3, np.max(self.plot_data['y']*1e-3)])
+        self.ax_all_plan.set_xlim([np.min(self.plot_data['x'])*1e-3,
+                                   np.max(self.plot_data['x']*1e-3)])
+        self.ax_all_plan.set_ylim([np.min(self.plot_data['y'])*1e-3,
+                                   np.max(self.plot_data['y']*1e-3)])
 
         # Altitude histogram subplot
         hist, bin_centers, num_pts = self.alt_histogram()
