@@ -45,6 +45,11 @@ class SpanSelectionException(Exception):
         super(SpanSelectionException, self).__init__(message)
 
 
+class RectangleSelectionException(Exception):
+    def __init__(self, message):
+        super(RectangleSelectionException, self).__init__(message)
+
+
 class SyncDf(object):
     """
     class to synchronize dfplots (when you zoom in on one graph, all of
@@ -161,10 +166,60 @@ class SpanSelect(object):
 
         return x_stack, y_stack, y_bounds
 
-#
-# class RectangleSelect(object):
 
+class RectangleSelect(object):
+    def __init__(self, rect_sel):
+        self.fig = rect_sel.ax.figure
+        self.ax = rect_sel.ax
 
+        self.rect_sel = rect_sel
+        self.set_active()
+
+    def set_active(self, active=False):
+        """ Set the state of the rectangular selector. """
+
+        self.rect_sel.set_active(active)
+
+    def set_visibility(self, vis=True):
+        """ Set the visibility of the rectangular selector. """
+
+        self.rect_sel.visible = vis
+
+    def onselect_rect(self, eclick, erelease):
+        """ Handle RectangleSelector events. """
+
+        x_start = eclick.xdata
+        y_start = eclick.ydata
+
+        x_end = erelease.xdata
+        y_end = erelease.ydata
+
+        if x_start == x_end or y_start == y_end:
+            raise RectangleSelectionException
+
+        xmin_old = self.ax.get_xlim()[0]
+        xmax_old = self.ax.get_xlim()[1]
+
+        ymin_old = self.ax.get_ylim()[0]
+        ymax_old = self.ax.get_ylim()[1]
+
+        x_stack = [xmin_old, xmax_old]
+        y_stack = [ymin_old, ymax_old]
+
+        xmin = np.min([x_start, x_end])
+        xmax = np.max([x_start, x_end])
+
+        ymin = np.min([y_start, y_end])
+        ymax = np.max([y_start, y_end])
+
+        x_bounds = [xmin, xmax]
+        y_bounds = [ymin, ymax]
+
+        self.ax.set_xlim(x_bounds)
+        self.ax.set_ylim(y_bounds)
+        self.fig.canvas.draw()
+
+        return x_stack, y_stack, x_bounds, y_bounds
 
 class Plot(object):
     """
@@ -269,23 +324,22 @@ class Plot(object):
 
         self.span = SpanSelect(span, span_v)
 
-        self.rect_sel = RectangleSelector(self.ax,
-                                          self._onselect_rect,
-                                          button=[1],
-                                          drawtype='box',
-                                          rectprops=dict(alpha=0.2,
-                                                         facecolor='red',
-                                                         edgecolor='red',
-                                                         linewidth=2))
+        rect_sel = RectangleSelector(self.ax,
+                                     self._onselect_rect,
+                                     button=[1],
+                                     drawtype='box',
+                                     rectprops=dict(alpha=0.2,
+                                                    facecolor='red',
+                                                    edgecolor='red',
+                                                    linewidth=2))
+
+        self.rect_sel = RectangleSelect(rect_sel)
 
         self.fig.canvas.mpl_connect('button_release_event',
                                     self._onclick)
         self.fig.canvas.mpl_connect('key_press_event', self._onkeypress)
         self.fig.canvas.mpl_connect('key_release_event',
                                     self._onkeyrelease)
-
-        # self.span_v.visible = False
-        self.rect_sel.set_active(False)
 
     def _reset_mpl_shortcuts(self):
         """ Set all keyboard shortcuts to None. """
@@ -314,24 +368,6 @@ class Plot(object):
         except SpanSelectionException:
             return True
 
-        # if xmin == xmax:
-        #     return True
-        #
-        # # Save the current graph's limits
-        # xmin_old = self.ax.get_xlim()[0]
-        # xmax_old = self.ax.get_xlim()[1]
-        #
-        # ymin_old = self.ax.get_ylim()[0]
-        # ymax_old = self.ax.get_ylim()[1]
-        #
-        # self.x_stack.append([xmin_old, xmax_old])
-        # self.y_stack.append([ymin_old, ymax_old])
-        #
-        # self.x_bounds = [xmin, xmax]
-        # self.ax.set_xlim(self.x_bounds)
-        #
-        # self.fig.canvas.draw()
-
     def _onselect_v(self, ymin, ymax):
         """ Handle vertical SpanSelector events. """
 
@@ -343,58 +379,18 @@ class Plot(object):
         except SpanSelectionException:
             return True
 
-        # if ymin == ymax:
-        #     return True
-        #
-        # # Save the current graph's limits
-        # xmin_old = self.ax.get_xlim()[0]
-        # xmax_old = self.ax.get_xlim()[1]
-        #
-        # ymin_old = self.ax.get_ylim()[0]
-        # ymax_old = self.ax.get_ylim()[1]
-        #
-        # self.x_stack.append([xmin_old, xmax_old])
-        # self.y_stack.append([ymin_old, ymax_old])
-        #
-        # self.y_bounds = [ymin, ymax]
-        # self.ax.set_ylim(self.y_bounds)
-        #
-        # self.fig.canvas.draw()
-
     def _onselect_rect(self, eclick, erelease):
         """ Handle RectangleSelector events. """
 
-        xmin_old = self.ax.get_xlim()[0]
-        xmax_old = self.ax.get_xlim()[1]
-
-        ymin_old = self.ax.get_ylim()[0]
-        ymax_old = self.ax.get_ylim()[1]
-
-        self.x_stack.append([xmin_old, xmax_old])
-        self.y_stack.append([ymin_old, ymax_old])
-
-        x_start = eclick.xdata
-        y_start = eclick.ydata
-
-        x_end = erelease.xdata
-        y_end = erelease.ydata
-
-        if x_start == x_end or y_start == y_end:
+        try:
+            x_stack, y_stack, x_bounds, y_bounds = self.rect_sel.onselect_rect(
+                                                              eclick, erelease)
+            self.x_stack.append(x_stack)
+            self.y_stack.append(y_stack)
+            self.x_bounds = x_bounds
+            self.y_bounds = y_bounds
+        except RectangleSelectionException:
             return True
-
-        xmin = np.min([x_start, x_end])
-        xmax = np.max([x_start, x_end])
-
-        ymin = np.min([y_start, y_end])
-        ymax = np.max([y_start, y_end])
-
-        self.x_bounds = [xmin, xmax]
-        self.ax.set_xlim(self.x_bounds)
-
-        self.y_bounds = [ymin, ymax]
-        self.ax.set_ylim(self.y_bounds)
-
-        self.fig.canvas.draw()
 
     def _onclick(self, event):
         """ Handle click events (right to go back, and left to annotate). """
@@ -465,28 +461,20 @@ class Plot(object):
 
         elif event.key == 'y':
             self.span.set_visibility(False, True)
-            # self.span.visible = False
-            # self.span_v.visible = True
             self.rect_sel.set_active(False)
 
         elif event.key == 'o':
             self.span.set_visibility(False, False)
-            # self.span.visible = False
-            # self.span_v.visible = False
-            self.rect_sel.visible = True
+            self.rect_sel.set_visibility(True)
             self.rect_sel.set_active(True)
 
         elif event.key == 'a':
             self.span.set_visibility(False, False)
-            # self.span.visible = False
-            # self.span_v.visible = False
             self.rect_sel.set_active(False)
             self.sel_points = True
 
         elif event.key == 'z':
             self.span.set_visibility(False, False)
-            # self.span.visible = False
-            # self.span_v.visible = False
             self.rect_sel.set_active(False)
             self.sel_zero = True
 
@@ -498,27 +486,19 @@ class Plot(object):
 
         if event.key == 'y':
             self.span.set_visibility(True, False)
-            # self.span.visible = True
-            # self.span_v.visible = False
             self.rect_sel.set_active(False)
 
         elif event.key == 'o':
             self.span.set_visibility(True, False)
             self.rect_sel.set_active(False)
-            # self.span.visible = True
-            # self.span_v.visible = False
 
         elif event.key == 'a':
             self.span.set_visibility(True, False)
-            # self.span.visible = True
-            # self.span_v.visible = False
             self.rect_sel.set_active(False)
             self.sel_points = False
 
         elif event.key == 'z':
             self.span.set_visibility(True, False)
-            # self.span.visible = True
-            # self.span_v.visible = False
             self.rect_sel.set_active(False)
             self.sel_zero = False
 
@@ -2515,7 +2495,7 @@ def main():
     x = np.arange(0.0, 5.0, 0.01)
     y = np.sin(2*np.pi*x) + 0.5*np.random.randn(len(x))
 
-    ax.plot(x, y, '-')
+    ax.scatter(x, y)
     ax.set_ylim(-2,2)
     ax.set_title('Press left mouse button and drag to test')
     
