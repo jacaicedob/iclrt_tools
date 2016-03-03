@@ -1,16 +1,25 @@
-#!/usr/bin/env python
 """
-The SpanSelector is a mouse widget to select a xmin/xmax range and plot the
-detail view of the selected region in the lower axes
+iclrt_tools.plotting.dfplots
+============================
+
+Class for creating various types of plots.
+
+    ImagePlotter
+    LMAPlotter
+    pickerPlot
+    Plot
+    RadarPlotter
+    RelativeTimePlot
+    SyncDF
 """
 
 import matplotlib as mpl
-import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import SpanSelector, RectangleSelector
 from matplotlib import cm, dates
 from matplotlib.gridspec import GridSpec
 from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
 import datetime
 import math
 import pyart
@@ -19,6 +28,8 @@ import iclrt_tools.lma.lma as lma
 
 
 def plot(x, y, **kwargs):
+    """Plot a basic graph using the Plot class."""
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(x, y, **kwargs)
@@ -28,7 +39,8 @@ def plot(x, y, **kwargs):
 
     return p
 
-class syncdf(object):
+
+class SyncDf(object):
     """
     class to synchronize dfplots (when you zoom in on one graph, all of
     them do)
@@ -62,10 +74,58 @@ class syncdf(object):
 
 class Plot(object):
     """
-    Plot graphs to mimic df32 program (written by Jaime Caicedo and Brian
-    Hare)
-    """
+    An object for having interacting plotting (zoom, annotation, etc.).
+
+        Parameters
+        ----------
+        figure: matplotlib.Figure
+            Figure instance to plot.
+        ax: matplotlib.Axes
+            Axis on figure to plot.
+        synced: bool
+            Boolean to sync multiple Plot instances.
+        max_points: float
+            Maximum number of points to plot.
+
+        Attributes
+        ----------
+        fig: matplotlib.Figure
+            Figure used to plot.
+        ax: matplotlib.Axes
+            Axis used to plot.
+        max_points: float
+            Maximum number of points to plot.
+        set_offset: bool
+            Zero-offsets the graph.
+        lines: list
+            List of matplotlib.lines.Line2D that the plot has
+        x_stack: list
+            Holds the x limits of the previous graphs for zooming.
+        y_stack: list
+            Holds the y limits of the previous graphs for zooming.
+        points = list
+            Holds the selected points when annotating the graph.
+        x_bounds: list
+            Holds the x limits of the current graph.
+        y_bounds: list
+            Holds the y limits of the current graph.
+        sel_points: bool
+            Flag used to activate/deactivate annotation.
+        sel_zero: bool
+            Flag used to activate/deactivate setting a zero point.
+        span: matplotlob.widget.SpanSelector
+            Selector widget to zoom in the x direction.
+        span_v: matplotlob.widget.SpanSelector
+            Selector widget to zoom in the y direction.
+        rect_sel: matplotlob.widget.RectangleSelector
+            Selector widget to zoom in the x,y directions using a rectangle.
+
+
+        """
+
     def __init__(self, figure, ax, synced=False, max_points=1E9):
+        """ Initialize the object. """
+
         self.fig = figure
         self.ax = ax
         self.max_points = max_points
@@ -114,6 +174,8 @@ class Plot(object):
         self.plot()
 
     def plot(self):
+        """ Plot the graph and setup selectors. """
+
         self.span = SpanSelector(self.ax, self._onselect,
                                  'horizontal', useblit=True,
                                  rectprops=dict(alpha=0.2,
@@ -143,6 +205,8 @@ class Plot(object):
         self.rect_sel.set_active(False)
 
     def _onselect(self, xmin, xmax):
+        """ Handle horinzontal SpanSelector events. """
+
         if xmin == xmax:
             return True
 
@@ -162,6 +226,8 @@ class Plot(object):
         self.fig.canvas.draw()
 
     def _onselect_v(self, ymin, ymax):
+        """ Handle vertical SpanSelector events. """
+
         if ymin == ymax:
             return True
 
@@ -181,6 +247,8 @@ class Plot(object):
         self.fig.canvas.draw()
 
     def _onselect_rect(self, eclick, erelease):
+        """ Handle RectangleSelector events. """
+
         xmin_old = self.ax.get_xlim()[0]
         xmax_old = self.ax.get_xlim()[1]
 
@@ -214,6 +282,8 @@ class Plot(object):
         self.fig.canvas.draw()
 
     def _onclick(self, event):
+        """ Handle click events (right to go back, and left to annotate). """
+
         if event.button == 3 and (event.inaxes is self.ax or self.synced):
             # On OSX, event.button == 2 is a right click
 
@@ -256,6 +326,8 @@ class Plot(object):
                 self.fig.canvas.draw()
 
     def _onkeypress(self, event):
+        """ Handle keypress events. """
+
         if event.key == 'r':
             if self.x_stack:
                 # Get initial limits from stacks
@@ -303,6 +375,8 @@ class Plot(object):
             plt.close(self.fig)
 
     def _onkeyrelease(self, event):
+        """ Handle keyrelease events. """
+
         if event.key == 'y':
             self.span.visible = True
             self.span_v.visible = False
@@ -328,13 +402,33 @@ class Plot(object):
 
 class pickerPlot(Plot):
     """
-    This class enables the picker attribute of lines and sets up the
+    A Plot object that enables the picker attribute of lines and sets up the
     environment to enable the movement of lines in the canvas.
     (written by Jaime Caicedo)
+
+    Parameters
+    ----------
+    fig: matplotlib.Figure
+        Figure to hold the plot.
+    ax: matplotlib.Axes
+            Axis to hold the plot.
+
+    Attributes
+    ----------
+    move_flag: bool
+        Flag used to (de)activate the movement of lines in the plot.
+    selected_line: matplotlib.lines.Line2D
+        Currently selected line to move in the plot.
+    line_width: float
+        Width of the currently selected line.
+    fix_axis: bool
+        Flag used to move the axes along with the line, keeping the line
+        'centered' at its original position.
+
     """
       
     def __init__(self, fig, ax):
-        super().__init__(fig, ax)
+        super(pickerPlot, self).__init__(fig, ax)
         self.move_flag = False
         self.selected_line = None
 
@@ -369,11 +463,11 @@ class pickerPlot(Plot):
         self.fix_axis = False
 
     def plot(self):
-        super().plot()
-        self.fig.canvas.mpl_connect('pick_event', self.onpick)
+        super(pickerPlot, self).plot()
+        self.fig.canvas.mpl_connect('pick_event', self._onpick)
         self.span.visible = False
 
-    def onpick(self, event):
+    def _onpick(self, event):
         if event.artist == self.ax:
             pass
 
@@ -473,7 +567,7 @@ class pickerPlot(Plot):
             self.fix_axis = not self.fix_axis
 
         else:
-            super()._onkeypress(event)
+            super(pickerPlot, self)._onkeypress(event)
 
     def _onkeyrelease(self, event):
         if event.key == 'x':
@@ -492,7 +586,7 @@ class pickerPlot(Plot):
             self.rect_sel.set_active(False)
 
         else:
-            super()._onkeyrelease(event)
+            super(pickerPlot, self)._onkeyrelease(event)
 
 
 class RelativeTimePlot(object):
@@ -827,22 +921,69 @@ class ImagePlotter(object):
 
 
 class RadarPlotter(object):
-    def __init__(self, file_name):
-        self.fileName = file_name
-        self.radar = pyart.io.read(self.fileName)
+    """
+    An object to plot interactive radar plots using the PyART module.
+
+    Parameters
+    ----------
+    file_name: str
+        Name of file to plot.
+    shift: (float, float), optional
+        Distance (x, y) in km from radar to center the plots.
+
+    Attributes
+    ----------
+    file_name: str
+        String containing the radar filename.
+    radar: pyart.core.Radar
+        Radar object.
+    fields: dict
+        Dictionary of available fields (radar products) in the file.
+    display: pyart.graph.radardisplay
+        Display to plot the radar data.
+
+
+    """
+
+    ICLRT_shift = (32.238e3, 59.873e3)  # Distance (x,y) in km from KJAX radar
+    ICLRT_azimuth = 208.3  # Azimuth in degrees from KJAX radar
+
+    def __init__(self, file_name, shift=None):
+        """ Initialize the object. """
+
+        self.file_name = file_name
+        self.radar = pyart.io.read(self.file_name)
         self.fields = self.radar.fields.keys()
-        # Distance (x,y) in km from KJAX radar
-        self.ICLRT_shift = (32.238e3, 59.873e3)  #(32e3, 61e3)
-        self.ICLRT_azimuth = 208.3  # Azimuth in degrees from KJAX radar
+
+        if shift is not None:
+            self.shift = shift
+        else:
+            self.shift = self.ICLRT_shift
+
         self.display = None
 
-    def setup_display(self, shift=None):
-        if shift is None:
-            shift = self.ICLRT_shift
+    def setup_display(self):
+        """ Initialize the PyART display. """
 
-        self.display = pyart.graph.RadarDisplay(self.radar, shift)
+        self.display = pyart.graph.RadarDisplay(self.radar, self.shift)
 
     def plot_ppi(self, field='reflectivity', sweep=0, fig=None, ax=None):
+        """
+        Plot PPI (wrapper function).
+
+        Parameters
+        ----------
+        field: str
+            Desired field (radar product) to plot.
+        sweep: int, optional
+            Desired sweep to plot.
+        fig: matplotlib.Figure, optional
+            Desired figure to use.
+        ax: matplotlib.Axes, optional
+            Desired axis to use.
+
+        """
+
         if field in self.fields:
             if sweep <= self.radar.nsweeps:
                 if self.display is None:
@@ -856,6 +997,22 @@ class RadarPlotter(object):
 
     def plot_pseudo_rhi(self, field='reflectivity', azimuth=None,
                         fig=None, ax=None):
+        """
+        Plot RHI from PPI (wrapper function).
+
+        Parameters
+        ----------
+        field: str
+            Desired field (radar product) to plot.
+        azimuth: float, optional
+            Desired azimuth from North to calculate and plot RHI.
+        fig: matplotlib.Figure, optional
+            Desired figure to use.
+        ax: matplotlib.Axes, optional
+            Desired axis to use.
+
+        """
+
         if azimuth is None:
             azimuth = self.ICLRT_azimuth
 
@@ -889,6 +1046,22 @@ class RadarPlotter(object):
                                                  axislabels_flag=False)
 
     def plot_ppi_rhi(self, field='reflectivity', sweep=0, fig=None, ax=None):
+        """
+        Interactively plot pseudo RHI and PPI in separate figures.
+
+        Parameters
+        ----------
+        field: str
+            Desired field (radar product) to plot.
+        sweep: int, optional
+            Desired sweep to plot.
+        fig: matplotlib.Figure, optional
+            Desired figure to use.
+        ax: matplotlib.Axes, optional
+            Desired axis to use.
+
+        """
+
         if field in self.fields:
             if sweep <= self.radar.nsweeps:
                 if self.display is None:
@@ -930,10 +1103,20 @@ class RadarPlotter(object):
 
     def _get_azimuth_from_cartesian(self, x, y):
         """
-        Returns the azimuth from North of point (x, y)
-        :param x: x coordinate
-        :param y: y coordinate
-        :return: azimuth from North of point (x, y)
+        Return the azimuth (in degrees) from North of point (x, y).
+
+        Parameters
+        ----------
+        x: float
+            Cartesian coordinate in km.
+        y: float
+            Cartesian coordinate in km.
+
+        Returns
+        -------
+        theta: float
+            Azimuth (in degrees) from North.
+
         """
 
         if x < 0:
@@ -944,15 +1127,14 @@ class RadarPlotter(object):
         return theta
 
     def _onclick(self, event):
+        """ Handle onclick events. """
+
         if event.button == 1 and (event.inaxes is self.ax_ppi):
             if self.sel_point:
-                x = event.xdata*1e3 - self.ICLRT_shift[0]
-                y = event.ydata*1e3 - self.ICLRT_shift[1]
+                x = event.xdata*1e3 - self.shift[0]
+                y = event.ydata*1e3 - self.shift[1]
 
-                if x < 0:
-                    theta = 270 - math.degrees(math.atan(y/x))
-                else:
-                    theta = 90 - math.degrees(math.atan(y/x))
+                theta = self._get_azimuth_from_cartesian(x, y)
 
                 # print(theta)
                 self.ax_rhi.clear()
@@ -972,10 +1154,14 @@ class RadarPlotter(object):
             return True
 
     def _onkeypress(self, event):
+        """ Handle onkeypress events. """
+
         if event.key == 'a':
             self.sel_point = True
 
     def _onkeyrelease(self, event):
+        """ Handle onkeyrelease events. """
+
         if event.key == 'a':
             self.sel_point = False
 
