@@ -40,6 +40,11 @@ def plot(x, y, **kwargs):
     return p
 
 
+class SpanSelectionException(Exception):
+    def __init__(self, message):
+        super(SpanSelectionException, self).__init__(message)
+
+
 class SyncDf(object):
     """
     class to synchronize dfplots (when you zoom in on one graph, all of
@@ -70,6 +75,95 @@ class SyncDf(object):
                                          'button_release_event', plot._onclick))
             
             plot.fig.canvas.mpl_connect('key_press_event', plot._onkeypress)
+
+
+class SpanSelect(object):
+    """
+    An object to implement horizontal and vertical selection using a
+    mpl.widget.SpanSelector.
+
+    Parameters
+    ----------
+    span: mpl.widget.SpanSelector
+        Horizontal SpanSelector.
+    span_v: mpl.widget.SpanSelector
+        Vertical SpanSelector.
+
+    Attributes
+    ----------
+    fig: mpl.Figure
+        Figure instance.
+    ax: mpl.Axes
+        Axes instance.
+    span: mpl.widget.SpanSelector
+        Horizontal SpanSelector.
+    span_v: mpl.widget.SpanSelector
+        Vertical SpanSelector.
+
+    """
+
+    def __init__(self, span, span_v):
+        self.fig = span.ax.figure
+        self.ax = span.ax
+
+        self.span = span
+        self.span_v = span_v
+
+        self.set_visibility()
+
+    def set_visibility(self, h_vis=True, v_vis=False):
+        """ Set the visibility of the horizontal and vertical selectors. """
+
+        self.span.visible = h_vis
+        self.span_v.visible = v_vis
+
+    def onselect(self, xmin, xmax):
+        """ Handle horinzontal SpanSelector events. """
+
+        if xmin == xmax:
+            raise SpanSelectionException("Start and End are the same.")
+
+        # Save the current graph's limits
+        xmin_old = self.ax.get_xlim()[0]
+        xmax_old = self.ax.get_xlim()[1]
+
+        ymin_old = self.ax.get_ylim()[0]
+        ymax_old = self.ax.get_ylim()[1]
+
+        x_stack = [xmin_old, xmax_old]
+        y_stack = [ymin_old, ymax_old]
+        x_bounds = [xmin, xmax]
+
+        self.ax.set_xlim(x_bounds)
+        self.fig.canvas.draw()
+
+        return x_stack, y_stack, x_bounds
+
+    def onselect_v(self, ymin, ymax):
+        """ Handle vertical SpanSelector events. """
+
+        if ymin == ymax:
+            raise SpanSelectionException("Start and End are the same.")
+
+        # Save the current graph's limits
+        xmin_old = self.ax.get_xlim()[0]
+        xmax_old = self.ax.get_xlim()[1]
+
+        ymin_old = self.ax.get_ylim()[0]
+        ymax_old = self.ax.get_ylim()[1]
+
+        x_stack = [xmin_old, xmax_old]
+        y_stack = [ymin_old, ymax_old]
+        y_bounds = [ymin, ymax]
+
+        self.ax.set_ylim(y_bounds)
+        self.fig.canvas.draw()
+
+        return x_stack, y_stack, y_bounds
+
+#
+# class RectangleSelect(object):
+
 
 
 class Plot(object):
@@ -157,34 +251,23 @@ class Plot(object):
         self.sel_points = False
         self.sel_zero = False
 
-        # Set all matplotlib keyboard shortcuts to none
-        mpl.rcParams['keymap.fullscreen'] = ''  # f
-        mpl.rcParams['keymap.home'] = ''  # h, r, home
-        mpl.rcParams['keymap.back'] = ''  # left, c, backspace
-        mpl.rcParams['keymap.forward'] = ''  # right, v
-        # mpl.rcParams['keymap.pan'] = ''  # p
-        mpl.rcParams['keymap.zoom'] = ''  # o
-        # mpl.rcParams['keymap.save'] = ''  # s
-        # mpl.rcParams['keymap.quit'] = ''  # ctrl+w, cmd+w
-        mpl.rcParams['keymap.grid'] = ''  # g
-        mpl.rcParams['keymap.yscale'] = ''  # l
-        mpl.rcParams['keymap.xscale'] = ''  # L, k
-        mpl.rcParams['keymap.all_axes'] = ''  # a
-
+        self._reset_mpl_shortcuts()
         self.plot()
 
     def plot(self):
         """ Plot the graph and setup selectors. """
 
-        self.span = SpanSelector(self.ax, self._onselect,
+        span = SpanSelector(self.ax, self._onselect,
                                  'horizontal', useblit=True,
                                  rectprops=dict(alpha=0.2,
                                                 facecolor='red'))
 
-        self.span_v = SpanSelector(self.ax, self._onselect_v,
+        span_v = SpanSelector(self.ax, self._onselect_v,
                                    'vertical', useblit=True,
                                    rectprops=dict(alpha=0.2,
                                                   facecolor='red'))
+
+        self.span = SpanSelect(span, span_v)
 
         self.rect_sel = RectangleSelector(self.ax,
                                           self._onselect_rect,
@@ -201,50 +284,82 @@ class Plot(object):
         self.fig.canvas.mpl_connect('key_release_event',
                                     self._onkeyrelease)
 
-        self.span_v.visible = False
+        # self.span_v.visible = False
         self.rect_sel.set_active(False)
+
+    def _reset_mpl_shortcuts(self):
+        """ Set all keyboard shortcuts to None. """
+
+        # Set all matplotlib keyboard shortcuts to none
+        mpl.rcParams['keymap.fullscreen'] = ''  # f
+        mpl.rcParams['keymap.home'] = ''  # h, r, home
+        mpl.rcParams['keymap.back'] = ''  # left, c, backspace
+        mpl.rcParams['keymap.forward'] = ''  # right, v
+        # mpl.rcParams['keymap.pan'] = ''  # p
+        mpl.rcParams['keymap.zoom'] = ''  # o
+        # mpl.rcParams['keymap.save'] = ''  # s
+        # mpl.rcParams['keymap.quit'] = ''  # ctrl+w, cmd+w
+        mpl.rcParams['keymap.grid'] = ''  # g
+        mpl.rcParams['keymap.yscale'] = ''  # l
+        mpl.rcParams['keymap.xscale'] = ''  # L, k
+        mpl.rcParams['keymap.all_axes'] = ''  # a
 
     def _onselect(self, xmin, xmax):
         """ Handle horinzontal SpanSelector events. """
-
-        if xmin == xmax:
+        try:
+            x_stack, y_stack, x_bounds = self.span.onselect(xmin, xmax)
+            self.x_stack.append(x_stack)
+            self.y_stack.append(y_stack)
+            self.x_bounds = x_bounds
+        except SpanSelectionException:
             return True
 
-        # Save the current graph's limits
-        xmin_old = self.ax.get_xlim()[0]
-        xmax_old = self.ax.get_xlim()[1]
-
-        ymin_old = self.ax.get_ylim()[0]
-        ymax_old = self.ax.get_ylim()[1]
-
-        self.x_stack.append([xmin_old, xmax_old])
-        self.y_stack.append([ymin_old, ymax_old])
-
-        self.x_bounds = [xmin, xmax]
-        self.ax.set_xlim(self.x_bounds)
-
-        self.fig.canvas.draw()
+        # if xmin == xmax:
+        #     return True
+        #
+        # # Save the current graph's limits
+        # xmin_old = self.ax.get_xlim()[0]
+        # xmax_old = self.ax.get_xlim()[1]
+        #
+        # ymin_old = self.ax.get_ylim()[0]
+        # ymax_old = self.ax.get_ylim()[1]
+        #
+        # self.x_stack.append([xmin_old, xmax_old])
+        # self.y_stack.append([ymin_old, ymax_old])
+        #
+        # self.x_bounds = [xmin, xmax]
+        # self.ax.set_xlim(self.x_bounds)
+        #
+        # self.fig.canvas.draw()
 
     def _onselect_v(self, ymin, ymax):
         """ Handle vertical SpanSelector events. """
 
-        if ymin == ymax:
+        try:
+            x_stack, y_stack, y_bounds = self.span.onselect_v(ymin, ymax)
+            self.x_stack.append(x_stack)
+            self.y_stack.append(y_stack)
+            self.y_bounds = y_bounds
+        except SpanSelectionException:
             return True
 
-        # Save the current graph's limits
-        xmin_old = self.ax.get_xlim()[0]
-        xmax_old = self.ax.get_xlim()[1]
-
-        ymin_old = self.ax.get_ylim()[0]
-        ymax_old = self.ax.get_ylim()[1]
-
-        self.x_stack.append([xmin_old, xmax_old])
-        self.y_stack.append([ymin_old, ymax_old])
-
-        self.y_bounds = [ymin, ymax]
-        self.ax.set_ylim(self.y_bounds)
-
-        self.fig.canvas.draw()
+        # if ymin == ymax:
+        #     return True
+        #
+        # # Save the current graph's limits
+        # xmin_old = self.ax.get_xlim()[0]
+        # xmax_old = self.ax.get_xlim()[1]
+        #
+        # ymin_old = self.ax.get_ylim()[0]
+        # ymax_old = self.ax.get_ylim()[1]
+        #
+        # self.x_stack.append([xmin_old, xmax_old])
+        # self.y_stack.append([ymin_old, ymax_old])
+        #
+        # self.y_bounds = [ymin, ymax]
+        # self.ax.set_ylim(self.y_bounds)
+        #
+        # self.fig.canvas.draw()
 
     def _onselect_rect(self, eclick, erelease):
         """ Handle RectangleSelector events. """
@@ -349,25 +464,29 @@ class Plot(object):
                 self.fig.canvas.draw()
 
         elif event.key == 'y':
-            self.span.visible = False
-            self.span_v.visible = True
+            self.span.set_visibility(False, True)
+            # self.span.visible = False
+            # self.span_v.visible = True
             self.rect_sel.set_active(False)
 
         elif event.key == 'o':
-            self.span.visible = False
-            self.span_v.visible = False
+            self.span.set_visibility(False, False)
+            # self.span.visible = False
+            # self.span_v.visible = False
             self.rect_sel.visible = True
             self.rect_sel.set_active(True)
 
         elif event.key == 'a':
-            self.span.visible = False
-            self.span_v.visible = False
+            self.span.set_visibility(False, False)
+            # self.span.visible = False
+            # self.span_v.visible = False
             self.rect_sel.set_active(False)
             self.sel_points = True
 
         elif event.key == 'z':
-            self.span.visible = False
-            self.span_v.visible = False
+            self.span.set_visibility(False, False)
+            # self.span.visible = False
+            # self.span_v.visible = False
             self.rect_sel.set_active(False)
             self.sel_zero = True
 
@@ -378,24 +497,28 @@ class Plot(object):
         """ Handle keyrelease events. """
 
         if event.key == 'y':
-            self.span.visible = True
-            self.span_v.visible = False
+            self.span.set_visibility(True, False)
+            # self.span.visible = True
+            # self.span_v.visible = False
             self.rect_sel.set_active(False)
 
         elif event.key == 'o':
+            self.span.set_visibility(True, False)
             self.rect_sel.set_active(False)
-            self.span.visible = True
-            self.span_v.visible = False
+            # self.span.visible = True
+            # self.span_v.visible = False
 
         elif event.key == 'a':
-            self.span.visible = True
-            self.span_v.visible = False
+            self.span.set_visibility(True, False)
+            # self.span.visible = True
+            # self.span_v.visible = False
             self.rect_sel.set_active(False)
             self.sel_points = False
 
         elif event.key == 'z':
-            self.span.visible = True
-            self.span_v.visible = False
+            self.span.set_visibility(True, False)
+            # self.span.visible = True
+            # self.span_v.visible = False
             self.rect_sel.set_active(False)
             self.sel_zero = False
 
@@ -941,7 +1064,12 @@ class RadarPlotter(object):
         Dictionary of available fields (radar products) in the file.
     display: pyart.graph.radardisplay
         Display to plot the radar data.
-
+    sel_point: bool
+        Flag used to (de)activate the selection of a point in PPI to get the
+        RHI at an azimuth angle from the radar.
+    sel_line: bool
+        Flag used to (de)activate the selection of a line in the PPI to get the
+        RHI scan along that line.
 
     """
 
@@ -1158,12 +1286,16 @@ class RadarPlotter(object):
 
         if event.key == 'a':
             self.sel_point = True
+        elif event.key == 'l':
+            self.sel_line = True
 
     def _onkeyrelease(self, event):
         """ Handle onkeyrelease events. """
 
         if event.key == 'a':
             self.sel_point = False
+        elif event.key == 'l':
+            self.sel_line = False
 
 
 class LMAPlotter(object):
