@@ -134,7 +134,7 @@ class SpanSelect(object):
         self.span.visible = h_vis
         self.span_v.visible = v_vis
 
-    def onselect(self, xmin, xmax):
+    def on_select(self, xmin, xmax):
         """
         Handle horinzontal SpanSelector events.
 
@@ -182,7 +182,7 @@ class SpanSelect(object):
 
         return x_stack, y_stack, x_bounds
 
-    def onselect_v(self, ymin, ymax):
+    def on_select_v(self, ymin, ymax):
         """
         Handle vertical SpanSelector events.
 
@@ -288,7 +288,7 @@ class RectangleSelect(object):
 
         self.rect_sel.visible = vis
 
-    def onselect_rect(self, eclick, erelease):
+    def on_select_rect(self, eclick, erelease):
         """
         Handle RectangleSelector events.
 
@@ -348,24 +348,88 @@ class RectangleSelect(object):
 
 
 class PointAnnotation(object):
-    def __init__(self, ax):
+    """
+    An object to allow graph annotation with points.
+
+    """
+    def __init__(self, ax, marker='x'):
         """ Initialize the object. """
 
         self.fig = ax.figure
         self.ax = ax
         self.points = []
+        self.marker = marker
 
-    def onclick(self, event):
+    def set_marker(self, marker):
+        self.marker = marker
+
+    def on_click(self, event):
         """ Handle mpl MouseEvent events. """
 
         x = event.xdata
         y = event.ydata
 
         self.points.append([x, y])
-        self.ax.scatter(x, y, marker='x', c='r', zorder=10,
+        self.ax.scatter(x, y, marker=self.marker, c='r', zorder=10,
                         label='Selection')
         self.fig.canvas.draw()
 
+
+class LineAnnotation(object):
+    """
+    An object to allow graph annotation with a line.
+
+    """
+    def __init__(self, ax):
+        """ Initialize object. """
+
+        self.fig = ax.figure
+        self.ax = ax
+        self.points = []
+
+        self.line, = self.ax.plot([0], [0], 'orange')
+        self.scat = self.ax.scatter([0], [0])
+
+        self.fig.canvas.mpl_connect('button_press_event',
+                                    self.on_click)
+
+    def on_click(self, event):
+        """ Handle mpl MouseEvent button_press events. """
+
+        if len(self.points) == 0:
+            self.points.append((event.xdata, event.ydata))
+            self.scat.set_offsets(np.append(self.scat.get_offsets(),
+                                            (self.points[0][0],
+                                             self.points[0][1])))
+
+        elif len(self.points) == 1:
+            self.points.append((event.xdata, event.ydata))
+            self.scat.set_offsets(np.append(self.scat.get_offsets(),
+                                            (self.points[1][0],
+                                             self.points[1][1])))
+        else:
+            self._reset_plot()
+            self.points.append((event.xdata, event.ydata))
+            self.scat.set_offsets(np.append(self.scat.get_offsets(),
+                                            (self.points[0][0],
+                                             self.points[0][1])))
+
+    def _reset_plot(self):
+        """
+        Reset the plot by deleting all lines, scatters, and points plotted
+        by this instance.
+
+        """
+
+        for line in self.ax.get_lines():
+            if line == self.line:
+                line.remove()
+
+        self.scat.set_offsets(np.array([]))
+        self.points = []
+        self.line, = self.ax.plot([0], [0], 'orange')
+
+        self.fig.canvas.draw()
 
 
 class Plot(object):
@@ -401,14 +465,19 @@ class Plot(object):
             Holds the y limits of the previous graphs for zooming.
         pt_annotate: PointAnnotation
             Plots and holds the selected points when annotating the graph.
+        ln_annotate: LineAnnotation
+            Plots and holds the selected points (and the line through them)
+            when annotating the graph.
         x_bounds: list
             Holds the x limits of the current graph.
         y_bounds: list
             Holds the y limits of the current graph.
         sel_points: bool
-            Flag used to activate/deactivate annotation.
+            Flag used to (de)activate point annotation.
         sel_zero: bool
-            Flag used to activate/deactivate setting a zero point.
+            Flag used to (de)activate setting a zero point.
+        draw_line: bool
+            Flag used to (de)activate line annotation.
         span: SpanSelect
             Selector widget to zoom in the x,y direction.
         rect_sel: RectangleSelect
@@ -450,6 +519,7 @@ class Plot(object):
         self.synced = synced
         self.sel_points = False
         self.sel_zero = False
+        self.draw_line = False
 
         self._reset_mpl_shortcuts()
         self.plot()
@@ -457,12 +527,12 @@ class Plot(object):
     def plot(self):
         """ Plot the graph and setup selectors and events. """
 
-        span = SpanSelector(self.ax, self._onselect,
+        span = SpanSelector(self.ax, self._on_select,
                             'horizontal', useblit=True,
                             rectprops=dict(alpha=0.2,
                                            facecolor='red'))
 
-        span_v = SpanSelector(self.ax, self._onselect_v,
+        span_v = SpanSelector(self.ax, self._on_select_v,
                               'vertical', useblit=True,
                               rectprops=dict(alpha=0.2,
                                              facecolor='red'))
@@ -470,7 +540,7 @@ class Plot(object):
         self.span = SpanSelect(span, span_v)
 
         rect_sel = RectangleSelector(self.ax,
-                                     self._onselect_rect,
+                                     self._on_select_rect,
                                      button=[1],
                                      drawtype='box',
                                      rectprops=dict(alpha=0.2,
@@ -481,12 +551,13 @@ class Plot(object):
         self.rect_sel = RectangleSelect(rect_sel)
 
         self.pt_annotate = PointAnnotation(self.ax)
+        self.ln_annotate = LineAnnotation(self.ax)
 
         self.fig.canvas.mpl_connect('button_release_event',
-                                    self._onclick)
-        self.fig.canvas.mpl_connect('key_press_event', self._onkeypress)
+                                    self._on_click)
+        self.fig.canvas.mpl_connect('key_press_event', self._on_keypress)
         self.fig.canvas.mpl_connect('key_release_event',
-                                    self._onkeyrelease)
+                                    self._on_keyrelease)
 
     def _reset_mpl_shortcuts(self):
         """ Set all keyboard shortcuts to None. """
@@ -505,32 +576,32 @@ class Plot(object):
         mpl.rcParams['keymap.xscale'] = ''  # L, k
         mpl.rcParams['keymap.all_axes'] = ''  # a
 
-    def _onselect(self, xmin, xmax):
+    def _on_select(self, xmin, xmax):
         """ Handle horinzontal SpanSelector events. """
         try:
-            x_stack, y_stack, x_bounds = self.span.onselect(xmin, xmax)
+            x_stack, y_stack, x_bounds = self.span.on_select(xmin, xmax)
             self.x_stack.append(x_stack)
             self.y_stack.append(y_stack)
             self.x_bounds = x_bounds
         except SpanSelectionException:
             return True
 
-    def _onselect_v(self, ymin, ymax):
+    def _on_select_v(self, ymin, ymax):
         """ Handle vertical SpanSelector events. """
 
         try:
-            x_stack, y_stack, y_bounds = self.span.onselect_v(ymin, ymax)
+            x_stack, y_stack, y_bounds = self.span.on_select_v(ymin, ymax)
             self.x_stack.append(x_stack)
             self.y_stack.append(y_stack)
             self.y_bounds = y_bounds
         except SpanSelectionException:
             return True
 
-    def _onselect_rect(self, eclick, erelease):
+    def _on_select_rect(self, eclick, erelease):
         """ Handle RectangleSelector events. """
 
         try:
-            x_stack, y_stack, x_bounds, y_bounds = self.rect_sel.onselect_rect(
+            x_stack, y_stack, x_bounds, y_bounds = self.rect_sel.on_select_rect(
                                                               eclick, erelease)
             self.x_stack.append(x_stack)
             self.y_stack.append(y_stack)
@@ -539,7 +610,7 @@ class Plot(object):
         except RectangleSelectionException:
             return True
 
-    def _onclick(self, event):
+    def _on_click(self, event):
         """ Handle click events (right to go back, and left to annotate). """
 
         if event.button == 3 and (event.inaxes is self.ax or self.synced):
@@ -565,7 +636,10 @@ class Plot(object):
 
         elif event.button == 1 and (event.inaxes is self.ax):
             if self.sel_points:
-                self.pt_annotate.onclick(event)
+                self.pt_annotate.on_click(event)
+
+            elif self.draw_line:
+                self.ln_annotate.on_click(event)
 
             elif self.sel_zero:
                 x = event.xdata
@@ -576,7 +650,7 @@ class Plot(object):
                 self.ax.set_xticks(l)
                 self.fig.canvas.draw()
 
-    def _onkeypress(self, event):
+    def _on_keypress(self, event):
         """
         Handle keypress events.
 
@@ -635,6 +709,11 @@ class Plot(object):
             self.rect_sel.set_active(False)
             self.sel_points = True
 
+        elif event.key == 'l':
+            self.span.set_visibility(False, False)
+            self.rect_sel.set_active(False)
+            self.draw_line = True
+
         elif event.key == 'z':
             self.span.set_visibility(False, False)
             self.rect_sel.set_active(False)
@@ -643,7 +722,7 @@ class Plot(object):
         elif event.key == ' ' or event.key == 'escape':
             plt.close(self.fig)
 
-    def _onkeyrelease(self, event):
+    def _on_keyrelease(self, event):
         """ Handle keyrelease events. """
 
         if event.key == 'y':
@@ -658,6 +737,11 @@ class Plot(object):
             self.span.set_visibility(True, False)
             self.rect_sel.set_active(False)
             self.sel_points = False
+
+        elif event.key == 'l':
+            self.span.set_visibility(True, False)
+            self.rect_sel.set_active(False)
+            self.draw_line = False
 
         elif event.key == 'z':
             self.span.set_visibility(True, False)
