@@ -388,10 +388,8 @@ class LineAnnotation(object):
         self.points = []
 
         self.line, = self.ax.plot([0], [0], 'orange')
-        self.scat = self.ax.scatter([0], [0])
-
-        self.fig.canvas.mpl_connect('button_press_event',
-                                    self.on_click)
+        self.scat = self.ax.scatter([0], [0], c='orange', marker='D')
+        self._reset_plot()
 
     def on_click(self, event):
         """ Handle mpl MouseEvent button_press events. """
@@ -413,6 +411,37 @@ class LineAnnotation(object):
             self.scat.set_offsets(np.append(self.scat.get_offsets(),
                                             (self.points[0][0],
                                              self.points[0][1])))
+
+        if len(self.points) == 2:
+            self.line.set_data([self.points[0][0], self.points[1][0]],
+                               [self.points[0][1], self.points[1][1]])
+            self.print_line_info()
+
+        self.fig.canvas.draw()
+
+    def print_line_info(self):
+        """ Print the line (y = mx + b) information. """
+
+        pt1 = self.points[0]
+        pt2 = self.points[1]
+        vertical = False
+
+        try:
+            m = (pt2[1] - pt1[1]) / (pt2[0] - pt1[0])
+
+            if m == float('Inf') or m == float('-Inf'):
+                vertical = True
+
+        except ZeroDivisionError:
+            vertical = True
+
+        if not vertical:
+            b = pt1[1] - m * pt1[0]
+
+        if vertical:
+            print("x = {0:0.2f}".format(pt1[0]))
+        else:
+            print("y = {0:0.2f}x + {1:0.2f}".format(m, b))
 
     def _reset_plot(self):
         """
@@ -531,12 +560,10 @@ class Plot(object):
                             'horizontal', useblit=True,
                             rectprops=dict(alpha=0.2,
                                            facecolor='red'))
-
         span_v = SpanSelector(self.ax, self._on_select_v,
                               'vertical', useblit=True,
                               rectprops=dict(alpha=0.2,
                                              facecolor='red'))
-
         self.span = SpanSelect(span, span_v)
 
         rect_sel = RectangleSelector(self.ax,
@@ -547,7 +574,6 @@ class Plot(object):
                                                     facecolor='red',
                                                     edgecolor='red',
                                                     linewidth=2))
-
         self.rect_sel = RectangleSelect(rect_sel)
 
         self.pt_annotate = PointAnnotation(self.ax)
@@ -698,6 +724,9 @@ class Plot(object):
         elif event.key == 'y':
             self.span.set_visibility(False, True)
             self.rect_sel.set_active(False)
+            self.sel_points = False
+            self.draw_line = False
+            self.sel_zero = False
 
         elif event.key == 'o':
             self.span.set_visibility(False, False)
@@ -708,15 +737,21 @@ class Plot(object):
             self.span.set_visibility(False, False)
             self.rect_sel.set_active(False)
             self.sel_points = True
+            self.draw_line = False
+            self.sel_zero = False
 
         elif event.key == 'l':
             self.span.set_visibility(False, False)
             self.rect_sel.set_active(False)
+            self.sel_points = False
             self.draw_line = True
+            self.sel_zero = False
 
         elif event.key == 'z':
             self.span.set_visibility(False, False)
             self.rect_sel.set_active(False)
+            self.sel_points = False
+            self.draw_line = False
             self.sel_zero = True
 
         elif event.key == ' ' or event.key == 'escape':
@@ -728,24 +763,36 @@ class Plot(object):
         if event.key == 'y':
             self.span.set_visibility(True, False)
             self.rect_sel.set_active(False)
+            self.sel_points = False
+            self.draw_line = False
+            self.sel_zero = False
 
         elif event.key == 'o':
             self.span.set_visibility(True, False)
             self.rect_sel.set_active(False)
+            self.sel_points = False
+            self.draw_line = False
+            self.sel_zero = False
 
         elif event.key == 'a':
             self.span.set_visibility(True, False)
             self.rect_sel.set_active(False)
             self.sel_points = False
+            self.draw_line = False
+            self.sel_zero = False
 
         elif event.key == 'l':
             self.span.set_visibility(True, False)
             self.rect_sel.set_active(False)
+            self.sel_points = False
             self.draw_line = False
+            self.sel_zero = False
 
         elif event.key == 'z':
             self.span.set_visibility(True, False)
             self.rect_sel.set_active(False)
+            self.sel_points = False
+            self.draw_line = False
             self.sel_zero = False
 
 
