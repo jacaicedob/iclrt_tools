@@ -1455,7 +1455,8 @@ class RadarPlotter(object):
                                                  axislabels_flag=False,
                                                  cmap=pyart.graph.cm.NWSRef)
 
-    def plot_ppi_rhi(self, field='reflectivity', sweep=0, fig=None, ax=None):
+    def plot_ppi_rhi(self, field='reflectivity', sweep=0, start_azimuth=None,
+                     fig=None, ax=None):
         """
         Interactively plot pseudo RHI and PPI in separate figures.
 
@@ -1477,25 +1478,28 @@ class RadarPlotter(object):
                 if self.display is None:
                     self.setup_display()
 
+                if start_azimuth is not None:
+                    self.azimuth = start_azimuth
+
                 if field == 'reflectivity':
                     vmin = -25
                     vmax = 75
-                    label = 'dBZ'
+                    label = 'Reflectivity (dBZ)'
                     cmap = pyart.graph.cm.NWSRef
                 elif field == 'differential_reflectivity':
                     vmin = -7.9
                     vmax = 7.9
-                    label = None
+                    label = 'Diff. Reflectivity'
                     cmap = None
                 elif field == 'cross_correlation_ratio':
                     vmin = 0.2
                     vmax = 1.05
-                    label = None
+                    label = 'Cross Corr. Ratio'
                     cmap = None
                 elif field == 'differential_phase':
                     vmin = 0
                     vmax = 180
-                    label = 'degrees'
+                    label = 'Diff. Phase (degrees)'
                     cmap = None
 
                 self.display.plot_ppi(field, sweep=sweep, vmin=vmin,
@@ -1515,17 +1519,17 @@ class RadarPlotter(object):
                 self._set_azimuth_line_data(self.azimuth)
 
                 origin = (self.shift[0]*1e-3, self.shift[1]*1e-3)
-                radius = math.sqrt((self.shift[0]*1e-3) ** 2 +
-                                   (self.shift[1]*1e-3) ** 2)
+                self.radius = math.sqrt((self.ICLRT_shift[0]*1e-3) ** 2 +
+                                        (self.ICLRT_shift[1]*1e-3) ** 2)
 
-                self.ax_ppi.add_artist(plt.Circle(origin, radius,
+                self.ax_ppi.add_artist(plt.Circle(origin, self.radius,
                                                   linestyle='--',
                                                   color='black', fill=False))
                 for i in range(10):
-                    self.ax_ppi.add_artist(plt.Circle(origin, radius + (i+1)*5,
+                    self.ax_ppi.add_artist(plt.Circle(origin, self.radius + (i+1)*5,
                                                       linestyle='--',
                                                       color='black', fill=False))
-                    self.ax_ppi.add_artist(plt.Circle(origin, radius - (i+1)*5,
+                    self.ax_ppi.add_artist(plt.Circle(origin, self.radius - (i+1)*5,
                                                       linestyle='--',
                                                       color='black', fill=False))
 
@@ -1536,9 +1540,6 @@ class RadarPlotter(object):
                 self.fig_ppi.canvas.mpl_connect('key_release_event',
                                                 self._onkeyrelease)
 
-                # self.ax_ppi.set_xlim([-20, 20])
-                # self.ax_ppi.set_ylim([-20, 20])
-
                 self.fig_rhi, self.ax_rhi = plt.subplots(1, 1)
                 self.display.plot_azimuth_to_rhi(field, self.azimuth,
                                                  vmin=vmin, vmax=vmax,
@@ -1548,8 +1549,10 @@ class RadarPlotter(object):
                                                  colorbar_label=label,
                                                  axislabels_flag=False,
                                                  cmap=cmap)
-                # self.ax_rhi.set_xlim([-10, 10])
-                # self.ax_rhi.set_ylim([0, 10])
+
+                self.ax_rhi.plot([self.radius, self.radius],
+                                 [self.ax_rhi.get_ylim()[0],
+                                  self.ax_rhi.get_ylim()[-1]], '--k')
 
                 self.field = field
                 self.sel_point = False
@@ -1630,6 +1633,11 @@ class RadarPlotter(object):
                                                  colorbar_flag=False,
                                                  axislabels_flag=False,
                                                  cmap=pyart.graph.cm.NWSRef)
+
+                self.ax_rhi.plot([self.radius, self.radius],
+                                 [self.ax_rhi.get_ylim()[0],
+                                  self.ax_rhi.get_ylim()[-1]], '--k')
+
                 self.ax_rhi.set_xlim(x_lims)
                 self.ax_rhi.set_ylim(y_lims)
 
