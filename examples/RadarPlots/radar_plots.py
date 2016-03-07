@@ -11,8 +11,8 @@ from radar_start_to_first_flash import *
 
 for radar_file in radar_files:
     print("Reading radar file: " + radar_file)
-    radar_plotter = df.RadarPlotter(radar_file)
-    # radar_plotter.setup_display(shift=[0, 0])
+    radar_plotter = df.RadarPlotter(radar_file, shift=[0, 0])
+    radar_plotter.setup_display()
 
     print("  - Plotting")
     # fig, ax = plt.subplots(1, 1)

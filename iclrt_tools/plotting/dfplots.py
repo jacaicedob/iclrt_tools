@@ -1361,7 +1361,12 @@ class RadarPlotter(object):
         else:
             self.shift = self.ICLRT_shift
 
-        self.azimuth = self._get_azimuth_from_cartesian(0, 0)
+        if shift[0] == 0 and self.shift[1] == 0:
+            self.azimuth = self._get_azimuth_from_cartesian(
+                                                -self.ICLRT_shift[0]*1e-3,
+                                                -self.ICLRT_shift[1]*1e-3)
+        else:
+            self.azimuth = self._get_azimuth_from_cartesian(0, 0)
 
         self.display = None
 
@@ -1472,18 +1477,57 @@ class RadarPlotter(object):
                 if self.display is None:
                     self.setup_display()
 
-                self.display.plot_ppi(field, sweep=sweep, vmin=-25,
-                                      vmax=75, fig=fig, ax=ax,
+                if field == 'reflectivity':
+                    vmin = -25
+                    vmax = 75
+                    label = 'dBZ'
+                    cmap = pyart.graph.cm.NWSRef
+                elif field == 'differential_reflectivity':
+                    vmin = -7.9
+                    vmax = 7.9
+                    label = None
+                    cmap = None
+                elif field == 'cross_correlation_ratio':
+                    vmin = 0.2
+                    vmax = 1.05
+                    label = None
+                    cmap = None
+                elif field == 'differential_phase':
+                    vmin = 0
+                    vmax = 180
+                    label = 'degrees'
+                    cmap = None
+
+                self.display.plot_ppi(field, sweep=sweep, vmin=vmin,
+                                      vmax=vmax, fig=fig, ax=ax,
                                       title_flag=False,
-                                      colorbar_label='dBZ',
-                                      axislabels_flag=False)
+                                      colorbar_label=label,
+                                      axislabels_flag=False,
+                                      cmap=cmap)
 
                 self.fig_ppi = plt.gcf()
                 self.ax_ppi = plt.gca()
 
-                self.ax_ppi.scatter(0, 0, s=50, c='w')
-                self.az_line, = self.ax_ppi.plot([0], [0], 'k')
+                self.ax_ppi.scatter(-self.ICLRT_shift[0]*1e-3,
+                                    -self.ICLRT_shift[1]*1e-3,
+                                    s=50, c='w')
+                self.az_line, = self.ax_ppi.plot([0], [0], '--k')
                 self._set_azimuth_line_data(self.azimuth)
+
+                origin = (self.shift[0]*1e-3, self.shift[1]*1e-3)
+                radius = math.sqrt((self.shift[0]*1e-3) ** 2 +
+                                   (self.shift[1]*1e-3) ** 2)
+
+                self.ax_ppi.add_artist(plt.Circle(origin, radius,
+                                                  linestyle='--',
+                                                  color='black', fill=False))
+                for i in range(10):
+                    self.ax_ppi.add_artist(plt.Circle(origin, radius + (i+1)*5,
+                                                      linestyle='--',
+                                                      color='black', fill=False))
+                    self.ax_ppi.add_artist(plt.Circle(origin, radius - (i+1)*5,
+                                                      linestyle='--',
+                                                      color='black', fill=False))
 
                 self.fig_ppi.canvas.mpl_connect('button_release_event',
                                                 self._onclick)
@@ -1492,19 +1536,20 @@ class RadarPlotter(object):
                 self.fig_ppi.canvas.mpl_connect('key_release_event',
                                                 self._onkeyrelease)
 
-                self.ax_ppi.set_xlim([-20, 20])
-                self.ax_ppi.set_ylim([-20, 20])
+                # self.ax_ppi.set_xlim([-20, 20])
+                # self.ax_ppi.set_ylim([-20, 20])
 
                 self.fig_rhi, self.ax_rhi = plt.subplots(1, 1)
                 self.display.plot_azimuth_to_rhi(field, self.azimuth,
-                                                 vmin=-25, vmax=75,
+                                                 vmin=vmin, vmax=vmax,
                                                  fig=self.fig_rhi,
                                                  ax=self.ax_rhi,
                                                  title_flag=False,
-                                                 colorbar_label='dBZ',
-                                                 axislabels_flag=False)
-                self.ax_rhi.set_xlim([-70, 70])
-                self.ax_rhi.set_ylim([0, 20])
+                                                 colorbar_label=label,
+                                                 axislabels_flag=False,
+                                                 cmap=cmap)
+                # self.ax_rhi.set_xlim([-10, 10])
+                # self.ax_rhi.set_ylim([0, 10])
 
                 self.field = field
                 self.sel_point = False
@@ -1574,6 +1619,8 @@ class RadarPlotter(object):
                 self._set_azimuth_line_data(theta)
 
                 # print(x, y, theta)
+                x_lims = self.ax_rhi.get_xlim()
+                y_lims = self.ax_rhi.get_ylim()
                 self.ax_rhi.clear()
                 self.display.plot_azimuth_to_rhi(self.field, theta,
                                                  vmin=-25, vmax=75,
@@ -1581,9 +1628,10 @@ class RadarPlotter(object):
                                                  ax=self.ax_rhi,
                                                  title_flag=False,
                                                  colorbar_flag=False,
-                                                 axislabels_flag=False)
-                self.ax_rhi.set_xlim([-70, 70])
-                self.ax_rhi.set_ylim([0, 20])
+                                                 axislabels_flag=False,
+                                                 cmap=pyart.graph.cm.NWSRef)
+                self.ax_rhi.set_xlim(x_lims)
+                self.ax_rhi.set_ylim(y_lims)
 
                 self.fig_rhi.canvas.draw()
                 self.fig_ppi.canvas.draw()
