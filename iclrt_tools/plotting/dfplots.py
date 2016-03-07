@@ -1394,7 +1394,8 @@ class RadarPlotter(object):
                                       vmax=75, fig=fig, ax=ax,
                                       title_flag=False,
                                       colorbar_label='dBZ',
-                                      axislabels_flag=False)
+                                      axislabels_flag=False,
+                                      cmap=pyart.graph.cm.NWSRef)
 
     def plot_pseudo_rhi(self, field='reflectivity', azimuth=None,
                         fig=None, ax=None):
@@ -1444,7 +1445,8 @@ class RadarPlotter(object):
                                                  fig=fig, ax=ax,
                                                  title_flag=False,
                                                  colorbar_label=label,
-                                                 axislabels_flag=False)
+                                                 axislabels_flag=False,
+                                                 cmap=pyart.graph.cm.NWSRef)
 
     def plot_ppi_rhi(self, field='reflectivity', sweep=0, fig=None, ax=None):
         """
