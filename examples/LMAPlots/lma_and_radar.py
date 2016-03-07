@@ -58,4 +58,3 @@ for i, event in enumerate(events):
     # lma_plotter.plot_proj(lims=[-20, 20], zlims=zlims[i], fig=fig, ax=ax)
 
     plt.show()
-    

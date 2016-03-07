@@ -15,11 +15,11 @@ for radar_file in radar_files:
     # radar_plotter.setup_display(shift=[0, 0])
 
     print("  - Plotting")
-    fig, ax = plt.subplots(1, 1)
-    radar_plotter.plot_ppi('reflectivity', fig=fig, ax=ax)
-    ax.scatter(0, 0, s=50, c='w')
-    ax.set_xlim([-40, 40])
-    ax.set_ylim([-40, 40])
+    # fig, ax = plt.subplots(1, 1)
+    # radar_plotter.plot_ppi('reflectivity', fig=fig, ax=ax)
+    # ax.scatter(0, 0, s=50, c='w')
+    # ax.set_xlim([-40, 40])
+    # ax.set_ylim([-40, 40])
     # ax.set_xlabel('West - East (km)')
     # ax.set_ylabel('South - North (km)')
     # # ax.set_title(radar_file[2:-7])
@@ -40,21 +40,21 @@ for radar_file in radar_files:
     # ax[2].set_ylim([0, 20])
     # plt.show()
 
-    line, = ax.plot([0], [0], 'k')
-    line.set_data([radar_plotter.ICLRT_shift[0]/1e3,
-                   radar_plotter.ICLRT_shift[0]/1e3 - 200*math.cos((
-                                                     270-212.053)*math.pi/180)],
-                  [radar_plotter.ICLRT_shift[1]/1e3,
-                   radar_plotter.ICLRT_shift[1]/1e3 - 200*math.sin((
-                                                      270-212.053)*math.pi/180)])
+    # line, = ax.plot([0], [0], 'k')
+    # line.set_data([radar_plotter.ICLRT_shift[0]/1e3,
+    #                radar_plotter.ICLRT_shift[0]/1e3 - 200*math.cos((
+    #                                                  270-212.053)*math.pi/180)],
+    #               [radar_plotter.ICLRT_shift[1]/1e3,
+    #                radar_plotter.ICLRT_shift[1]/1e3 - 200*math.sin((
+    #                                                   270-212.053)*math.pi/180)])
+    #
+    #
+    # fig, ax = plt.subplots(1, 1)
+    # radar_plotter.plot_pseudo_rhi(azimuth=212.053, fig=fig, ax=ax)
+    # ax.set_xlim([-48, 60])
+    # ax.set_ylim([0, 20])
+    # ax.set_title(radar_file[2:])
+    # plt.show()
 
-
-    fig, ax = plt.subplots(1, 1)
-    radar_plotter.plot_pseudo_rhi(azimuth=212.053, fig=fig, ax=ax)
-    ax.set_xlim([-48, 60])
-    ax.set_ylim([0, 20])
-    ax.set_title(radar_file[2:])
-    plt.show()
-
-    # radar_plotter.plot_ppi_rhi()
+    radar_plotter.plot_ppi_rhi()
     plt.show()

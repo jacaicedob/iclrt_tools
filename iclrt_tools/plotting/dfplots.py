@@ -1361,6 +1361,8 @@ class RadarPlotter(object):
         else:
             self.shift = self.ICLRT_shift
 
+        self.azimuth = self._get_azimuth_from_cartesian(0, 0)
+
         self.display = None
 
     def setup_display(self):
@@ -1416,7 +1418,7 @@ class RadarPlotter(object):
         """
 
         if azimuth is None:
-            azimuth = self.ICLRT_azimuth
+            azimuth = self.azimuth
 
         if field in self.fields:
             if azimuth <= 360:
@@ -1480,6 +1482,9 @@ class RadarPlotter(object):
                 self.ax_ppi = plt.gca()
 
                 self.ax_ppi.scatter(0, 0, s=50, c='w')
+                self.az_line, = self.ax_ppi.plot([0], [0], 'k')
+                self._set_azimuth_line_data(self.azimuth)
+
                 self.fig_ppi.canvas.mpl_connect('button_release_event',
                                                 self._onclick)
                 self.fig_ppi.canvas.mpl_connect('key_press_event',
@@ -1491,7 +1496,7 @@ class RadarPlotter(object):
                 self.ax_ppi.set_ylim([-20, 20])
 
                 self.fig_rhi, self.ax_rhi = plt.subplots(1, 1)
-                self.display.plot_azimuth_to_rhi(field, self.ICLRT_azimuth,
+                self.display.plot_azimuth_to_rhi(field, self.azimuth,
                                                  vmin=-25, vmax=75,
                                                  fig=self.fig_rhi,
                                                  ax=self.ax_rhi,
@@ -1504,16 +1509,42 @@ class RadarPlotter(object):
                 self.field = field
                 self.sel_point = False
 
+    def _set_azimuth_line_data(self, azimuth, rho=200):
+        """
+        Set the data for self.az_line when plotting RHI scans along with PPI.
+
+        Parameters
+        ----------
+        azimuth: float
+            The azimuth (in degrees) from North of the radar.
+        rho: float, optional
+            Length of the line in km
+
+        """
+        x0 = self.shift[0]*1e-3
+        y0 = self.shift[1]*1e-3
+
+        if azimuth < 180:
+            x1 = rho * math.cos(math.radians(90 - azimuth))
+            y1 = rho * math.sin(math.radians(90 - azimuth))
+
+        elif azimuth < 360:
+            x1 = -rho * math.cos(math.radians(270 - azimuth))
+            y1 = -rho * math.sin(math.radians(270 - azimuth))
+
+        self.az_line.set_data([x0, x0 + x1], [y0, y0 + y1])
+
     def _get_azimuth_from_cartesian(self, x, y):
         """
-        Return the azimuth (in degrees) from North of point (x, y).
+        Return the azimuth (in degrees) from North of point (x, y), where the
+        radar is at (0, 0).
 
         Parameters
         ----------
         x: float
-            Cartesian coordinate in km.
+            Cartesian coordinate in m.
         y: float
-            Cartesian coordinate in km.
+            Cartesian coordinate in m.
 
         Returns
         -------
@@ -1521,6 +1552,8 @@ class RadarPlotter(object):
             Azimuth (in degrees) from North.
 
         """
+        x -= self.shift[0]
+        y -= self.shift[1]
 
         if x < 0:
             theta = 270 - math.degrees(math.atan(y/x))
@@ -1534,12 +1567,13 @@ class RadarPlotter(object):
 
         if event.button == 1 and (event.inaxes is self.ax_ppi):
             if self.sel_point:
-                x = event.xdata*1e3 - self.shift[0]
-                y = event.ydata*1e3 - self.shift[1]
+                x = event.xdata*1e3
+                y = event.ydata*1e3
 
                 theta = self._get_azimuth_from_cartesian(x, y)
+                self._set_azimuth_line_data(theta)
 
-                # print(theta)
+                # print(x, y, theta)
                 self.ax_rhi.clear()
                 self.display.plot_azimuth_to_rhi(self.field, theta,
                                                  vmin=-25, vmax=75,
@@ -1552,6 +1586,7 @@ class RadarPlotter(object):
                 self.ax_rhi.set_ylim([0, 20])
 
                 self.fig_rhi.canvas.draw()
+                self.fig_ppi.canvas.draw()
 
         else:
             return True
