@@ -1554,6 +1554,14 @@ class RadarPlotter(object):
                                  [self.ax_rhi.get_ylim()[0],
                                   self.ax_rhi.get_ylim()[-1]], '--k')
 
+                self.ax_rhi.plot([self.radius + 5, self.radius + 5],
+                                 [self.ax_rhi.get_ylim()[0],
+                                  self.ax_rhi.get_ylim()[-1]], '--k')
+
+                self.ax_rhi.plot([self.radius - 5, self.radius - 5],
+                                 [self.ax_rhi.get_ylim()[0],
+                                  self.ax_rhi.get_ylim()[-1]], '--k')
+
                 self.field = field
                 self.sel_point = False
 
@@ -1635,6 +1643,14 @@ class RadarPlotter(object):
                                                  cmap=pyart.graph.cm.NWSRef)
 
                 self.ax_rhi.plot([self.radius, self.radius],
+                                 [self.ax_rhi.get_ylim()[0],
+                                  self.ax_rhi.get_ylim()[-1]], '--k')
+
+                self.ax_rhi.plot([self.radius + 5, self.radius + 5],
+                                 [self.ax_rhi.get_ylim()[0],
+                                  self.ax_rhi.get_ylim()[-1]], '--k')
+
+                self.ax_rhi.plot([self.radius - 5, self.radius - 5],
                                  [self.ax_rhi.get_ylim()[0],
                                   self.ax_rhi.get_ylim()[-1]], '--k')
 
