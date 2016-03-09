@@ -8,17 +8,22 @@ import os
 
 sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 08-27-2015/Figures/')
 
+# sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 03-04-2016/Figures/')
+
 from radar_start_to_first_flash import *
+# from radar_entire_storm_ppi import *
 
 for radar_file in radar_files:
     print("Reading radar file: " + radar_file)
     radar_plotter = df.RadarPlotter(radar_file, shift=[0, 0])
+    # radar_plotter = df.RadarPlotter(radar_file)
     radar_plotter.setup_display()
+    radar_plotter.filter_data()
 
     for field in fields:
         print("  - Plotting {0}".format(field))
         # fig, ax = plt.subplots(1, 1)
-        # radar_plotter.plot_ppi('reflectivity', fig=fig, ax=ax)
+        # radar_plotter.plot_ppi(field, fig=fig, ax=ax)
         # ax.scatter(0, 0, s=50, c='w')
         # ax.set_xlim([-40, 40])
         # ax.set_ylim([-40, 40])
@@ -27,7 +32,8 @@ for radar_file in radar_files:
         # # ax.set_title(radar_file[2:-7])
         # # save_file = './PNG/' + radar_file[2:-2] + 'png'
         # ax.set_title(radar_file[2:])
-        # save_file = './PNG/' + radar_file[2:] + '.png'
+        # # save_file = './PNG/' + radar_file[2:] + '.png'
+        # save_file = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 03-04-2016/Figures/out/' + radar_file[2:-5] + '_' + field + '_PPI.png'
         # fig.savefig(save_file, dpi=300, format='png')
 
         # fig, ax = plt.subplots(1,3)
@@ -51,24 +57,25 @@ for radar_file in radar_files:
         #                                                   270-212.053)*math.pi/180)])
         #
         #
-        # fig, ax = plt.subplots(1, 1)
+        fig, ax = plt.subplots(1, 1)
         # radar_plotter.plot_pseudo_rhi(azimuth=212.053, fig=fig, ax=ax)
         # ax.set_xlim([-48, 60])
         # ax.set_ylim([0, 20])
         # ax.set_title(radar_file[2:])
         # plt.show()
 
+        # Plot dual-pol data
         radar_plotter.plot_ppi_rhi(field=field, start_azimuth=212.053)
-        fig_rhi = radar_plotter.fig_rhi
-        fig_ppi = radar_plotter.fig_ppi
+        fig_rhi = radar_plotter._fig_rhi
+        fig_ppi = radar_plotter._fig_ppi
 
-        ax_rhi = radar_plotter.ax_rhi
-        ax_ppi = radar_plotter.ax_ppi
+        ax_rhi = radar_plotter._ax_rhi
+        ax_ppi = radar_plotter._ax_ppi
 
-        ax_ppi.set_xlim([-radar_plotter.ICLRT_shift[0]*1e-3 - 20,
-                         -radar_plotter.ICLRT_shift[0]*1e-3 + 20])
-        ax_ppi.set_ylim([-radar_plotter.ICLRT_shift[1]*1e-3 - 20,
-                         -radar_plotter.ICLRT_shift[1]*1e-3 + 20])
+        ax_ppi.set_xlim([radar_plotter.iclrt_x_y[0]*1e-3 - 20,
+                         radar_plotter.iclrt_x_y[0]*1e-3 + 20])
+        ax_ppi.set_ylim([radar_plotter.iclrt_x_y[1]*1e-3 - 20,
+                         radar_plotter.iclrt_x_y[1]*1e-3 + 20])
 
         ax_ppi.set_title(radar_file[2:])
         ax_rhi.set_title(radar_file[2:])
@@ -79,15 +86,15 @@ for radar_file in radar_files:
         ax_rhi.set_xlabel('Distance from radar (km)')
         ax_rhi.set_ylabel('Altitude (km)')
 
-        ax_rhi.set_xlim([radar_plotter.radius - 10, radar_plotter.radius + 10])
+        ax_rhi.set_xlim([radar_plotter._radius - 10, radar_plotter._radius + 10])
         ax_rhi.set_ylim([0, 12])
-
-        save_file = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 08-27-2015/Figures/out/' + radar_file[2:-7] + '_' + field + '_PPI.png'
-        fig_ppi.savefig(save_file, dpi=300, format='png')
-        plt.close(fig_ppi)
-
-        save_file = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 08-27-2015/Figures/out/' + radar_file[2:-7] + '_' + field + '_RHI.png'
-        fig_rhi.savefig(save_file, dpi=300, format='png')
-        plt.close(fig_rhi)
-        # plt.show()
+        #
+        # save_file = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 08-27-2015/Figures/out/' + radar_file[2:-7] + '_' + field + '_PPI.png'
+        # fig_ppi.savefig(save_file, dpi=300, format='png')
+        # plt.close(fig_ppi)
+        #
+        # save_file = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 08-27-2015/Figures/out/' + radar_file[2:-7] + '_' + field + '_RHI.png'
+        # fig_rhi.savefig(save_file, dpi=300, format='png')
+        # plt.close(fig_rhi)
+        plt.show()
 

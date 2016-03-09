@@ -546,7 +546,7 @@ class Plot(object):
         self.x_bounds = self.ax.get_xlim()
         self.y_bounds = self.ax.get_ylim()
         self.synced = synced
-        self.sel_points = False
+        self._sel_points = False
         self.sel_zero = False
         self.draw_line = False
 
@@ -661,7 +661,7 @@ class Plot(object):
                 self.fig.canvas.draw()
 
         elif event.button == 1 and (event.inaxes is self.ax):
-            if self.sel_points:
+            if self._sel_points:
                 self.pt_annotate.on_click(event)
 
             elif self.draw_line:
@@ -724,7 +724,7 @@ class Plot(object):
         elif event.key == 'y':
             self.span.set_visibility(False, True)
             self.rect_sel.set_active(False)
-            self.sel_points = False
+            self._sel_points = False
             self.draw_line = False
             self.sel_zero = False
 
@@ -736,21 +736,21 @@ class Plot(object):
         elif event.key == 'a':
             self.span.set_visibility(False, False)
             self.rect_sel.set_active(False)
-            self.sel_points = True
+            self._sel_points = True
             self.draw_line = False
             self.sel_zero = False
 
         elif event.key == 'l':
             self.span.set_visibility(False, False)
             self.rect_sel.set_active(False)
-            self.sel_points = False
+            self._sel_points = False
             self.draw_line = True
             self.sel_zero = False
 
         elif event.key == 'z':
             self.span.set_visibility(False, False)
             self.rect_sel.set_active(False)
-            self.sel_points = False
+            self._sel_points = False
             self.draw_line = False
             self.sel_zero = True
 
@@ -763,35 +763,35 @@ class Plot(object):
         if event.key == 'y':
             self.span.set_visibility(True, False)
             self.rect_sel.set_active(False)
-            self.sel_points = False
+            self._sel_points = False
             self.draw_line = False
             self.sel_zero = False
 
         elif event.key == 'o':
             self.span.set_visibility(True, False)
             self.rect_sel.set_active(False)
-            self.sel_points = False
+            self._sel_points = False
             self.draw_line = False
             self.sel_zero = False
 
         elif event.key == 'a':
             self.span.set_visibility(True, False)
             self.rect_sel.set_active(False)
-            self.sel_points = False
+            self._sel_points = False
             self.draw_line = False
             self.sel_zero = False
 
         elif event.key == 'l':
             self.span.set_visibility(True, False)
             self.rect_sel.set_active(False)
-            self.sel_points = False
+            self._sel_points = False
             self.draw_line = False
             self.sel_zero = False
 
         elif event.key == 'z':
             self.span.set_visibility(True, False)
             self.rect_sel.set_active(False)
-            self.sel_points = False
+            self._sel_points = False
             self.draw_line = False
             self.sel_zero = False
 
@@ -1335,18 +1335,24 @@ class RadarPlotter(object):
         Radar object.
     fields: dict
         Dictionary of available fields (radar products) in the file.
+    gatefilter: pyart.correct.GateFilter
+        GateFilter object used to filter the radar data and that is passed to
+        all the plotting functions.
     display: pyart.graph.radardisplay
         Display to plot the radar data.
-    sel_point: bool
+    shift: tuple
+        Tuple containing the shift in km.
+    _sel_point: bool
         Flag used to (de)activate the selection of a point in PPI to get the
         RHI at an azimuth angle from the radar.
-    sel_line: bool
+    _sel_line: bool
         Flag used to (de)activate the selection of a line in the PPI to get the
         RHI scan along that line.
 
     """
 
-    ICLRT_shift = (32.238e3, 59.873e3)  # Distance (x,y) in km from KJAX radar
+    # ICLRT_shift = (32.238e3, 59.873e3)  # Distance (x,y) in km from KJAX radar
+    ICLRT_center = (29.9429917, -82.0332305)  # lat, lon of ICLRT
     ICLRT_azimuth = 208.3  # Azimuth in degrees from KJAX radar
 
     def __init__(self, file_name, shift=None):
@@ -1356,19 +1362,50 @@ class RadarPlotter(object):
         self.radar = pyart.io.read(self.file_name)
         self.fields = self.radar.fields.keys()
 
+        # Calculate the (x, y) coordinates of the site with respect to the
+        # radar which is located at (0, 0)
+        lat = self.ICLRT_center[0]
+        lon = self.ICLRT_center[1]
+        lat_0 = self.radar.latitude['data']
+        lon_0 = self.radar.longitude['data']
+
+        x, y = pyart.core.transforms.geographic_to_cartesian_aeqd(
+                                                              lon, lat,
+                                                              lon_0, lat_0)
+
+        self.iclrt_x_y = x[0], y[0]
+
         if shift is not None:
             self.shift = shift
         else:
-            self.shift = self.ICLRT_shift
+            # Reverse the sign of x, y so that the shift is applied correctly
+            self.shift = -self.iclrt_x_y[0], -self.iclrt_x_y[1]
 
-        if shift[0] == 0 and self.shift[1] == 0:
-            self.azimuth = self._get_azimuth_from_cartesian(
-                                                -self.ICLRT_shift[0]*1e-3,
-                                                -self.ICLRT_shift[1]*1e-3)
+        if self.shift[0] == 0 and self.shift[1] == 0:
+            self._azimuth = 205.0
         else:
-            self.azimuth = self._get_azimuth_from_cartesian(0, 0)
+            self._azimuth = self._get_azimuth_from_cartesian(0, 0)
 
         self.display = None
+        self.gatefilter = None
+        
+        self._sel_point = None
+        self._sel_line = None
+        self._fig_ppi = None
+        self._fig_rhi = None
+        self._ax_ppi = None
+        self._ax_rhi = None
+        self._az_line = None
+        self._radius = None
+
+    def filter_data(self):
+        """ Filter the data to remove noise. """
+
+        self.gatefilter = pyart.correct.GateFilter(self.radar)
+
+        # Remove non-meteorological echoes (CC < 0.7) and estimation
+        # artifacts (CC > 1.0)
+        self.gatefilter.exclude_outside('cross_correlation_ratio', 0.7, 1.0)
 
     def setup_display(self):
         """ Initialize the PyART display. """
@@ -1397,12 +1434,38 @@ class RadarPlotter(object):
                 if self.display is None:
                     self.setup_display()
 
-                self.display.plot_ppi(field, sweep=sweep, vmin=-25,
-                                      vmax=75, fig=fig, ax=ax,
+                if field == 'reflectivity':
+                    vmin = -25
+                    vmax = 75
+                    label = 'Reflectivity (dBZ)'
+                    cmap = pyart.graph.cm.NWSRef
+                elif field == 'differential_reflectivity':
+                    vmin = -7.9
+                    vmax = 7.9
+                    label = 'Diff. Reflectivity'
+                    cmap = None
+                elif field == 'cross_correlation_ratio':
+                    vmin = 0.2
+                    vmax = 1.05
+                    label = 'Cross Corr. Ratio'
+                    cmap = None
+                elif field == 'differential_phase':
+                    vmin = 0
+                    vmax = 180
+                    label = 'Diff. Phase (degrees)'
+                    cmap = None
+                else:
+                    vmin = None
+                    vmax = None
+                    label = None
+                    cmap = None
+
+                self.display.plot_ppi(field, sweep=sweep, vmin=vmin,
+                                      vmax=vmax, fig=fig, ax=ax,
                                       title_flag=False,
-                                      colorbar_label='dBZ',
+                                      colorbar_label=label,
                                       axislabels_flag=False,
-                                      cmap=pyart.graph.cm.NWSRef)
+                                      cmap=cmap, gatefilter=self.gatefilter)
 
     def plot_pseudo_rhi(self, field='reflectivity', azimuth=None,
                         fig=None, ax=None):
@@ -1423,63 +1486,12 @@ class RadarPlotter(object):
         """
 
         if azimuth is None:
-            azimuth = self.azimuth
+            azimuth = self._azimuth
 
         if field in self.fields:
             if azimuth <= 360:
                 if self.display is None:
                     self.setup_display()
-
-                if field == 'reflectivity':
-                    vmin = -25
-                    vmax = 75
-                    label = 'dBZ'
-                elif field == 'differential_reflectivity':
-                    vmin = -7.9
-                    vmax = 7.9
-                    label = ' '
-                elif field == 'cross_correlation_ratio':
-                    vmin = 0.2
-                    vmax = 1.05
-                    label = ' '
-                elif field == 'differential_phase':
-                    vmin = 0
-                    vmax = 180
-                    label = 'degrees'
-
-                self.display.plot_azimuth_to_rhi(field, azimuth,
-                                                 vmin=vmin, vmax=vmax,
-                                                 fig=fig, ax=ax,
-                                                 title_flag=False,
-                                                 colorbar_label=label,
-                                                 axislabels_flag=False,
-                                                 cmap=pyart.graph.cm.NWSRef)
-
-    def plot_ppi_rhi(self, field='reflectivity', sweep=0, start_azimuth=None,
-                     fig=None, ax=None):
-        """
-        Interactively plot pseudo RHI and PPI in separate figures.
-
-        Parameters
-        ----------
-        field: str
-            Desired field (radar product) to plot.
-        sweep: int, optional
-            Desired sweep to plot.
-        fig: matplotlib.Figure, optional
-            Desired figure to use.
-        ax: matplotlib.Axes, optional
-            Desired axis to use.
-
-        """
-
-        if field in self.fields:
-            if sweep <= self.radar.nsweeps:
-                if self.display is None:
-                    self.setup_display()
-
-                if start_azimuth is not None:
-                    self.azimuth = start_azimuth
 
                 if field == 'reflectivity':
                     vmin = -25
@@ -1501,73 +1513,147 @@ class RadarPlotter(object):
                     vmax = 180
                     label = 'Diff. Phase (degrees)'
                     cmap = None
+                else:
+                    vmin = None
+                    vmax = None
+                    label = None
+                    cmap = None
+
+                self.display.plot_azimuth_to_rhi(field, azimuth,
+                                                 vmin=vmin, vmax=vmax,
+                                                 fig=fig, ax=ax,
+                                                 title_flag=False,
+                                                 colorbar_label=label,
+                                                 axislabels_flag=False,
+                                                 cmap=cmap,
+                                                 gatefilter=self.gatefilter)
+
+    def plot_ppi_rhi(self, field='reflectivity', sweep=0, start_azimuth=None,
+                     fig=None, ax=None):
+        """
+        Interactively plot pseudo RHI and PPI in separate figures.
+
+        Parameters
+        ----------
+        field: str
+            Desired field (radar product) to plot.
+        sweep: int, optional
+            Desired sweep to plot.
+        fig: matplotlib.Figure, optional
+            Desired figure to use.
+        ax: matplotlib.Axes, optional
+            Desired axis to use.
+        start_azimuth: float, optional
+            Initial azimuth angle (in degrees) at which to calculate the
+            RHI slice.
+
+        """
+
+        if field in self.fields:
+            if sweep <= self.radar.nsweeps:
+                if self.display is None:
+                    self.setup_display()
+
+                if start_azimuth is not None:
+                    self._azimuth = start_azimuth
+
+                if field == 'reflectivity':
+                    vmin = -25
+                    vmax = 75
+                    label = 'Reflectivity (dBZ)'
+                    cmap = pyart.graph.cm.NWSRef
+                elif field == 'differential_reflectivity':
+                    vmin = -7.9
+                    vmax = 7.9
+                    label = 'Diff. Reflectivity'
+                    cmap = None
+                elif field == 'cross_correlation_ratio':
+                    vmin = 0.2
+                    vmax = 1.05
+                    label = 'Cross Corr. Ratio'
+                    cmap = None
+                elif field == 'differential_phase':
+                    vmin = 0
+                    vmax = 180
+                    label = 'Diff. Phase (degrees)'
+                    cmap = None
+                else:
+                    vmin = None
+                    vmax = None
+                    label = None
+                    cmap = None
 
                 self.display.plot_ppi(field, sweep=sweep, vmin=vmin,
                                       vmax=vmax, fig=fig, ax=ax,
                                       title_flag=False,
                                       colorbar_label=label,
                                       axislabels_flag=False,
-                                      cmap=cmap)
+                                      cmap=cmap, gatefilter=self.gatefilter)
 
-                self.fig_ppi = plt.gcf()
-                self.ax_ppi = plt.gca()
+                self._fig_ppi = plt.gcf()
+                self._ax_ppi = plt.gca()
 
-                self.ax_ppi.scatter(-self.ICLRT_shift[0]*1e-3,
-                                    -self.ICLRT_shift[1]*1e-3,
-                                    s=50, c='w')
-                self.az_line, = self.ax_ppi.plot([0], [0], '--k')
-                self._set_azimuth_line_data(self.azimuth)
+                self._ax_ppi.scatter(self.iclrt_x_y[0]*1e-3,
+                                     self.iclrt_x_y[1]*1e-3,
+                                     s=50, c='w')
+                self._az_line, = self._ax_ppi.plot([0], [0], '--k')
+                self._set_azimuth_line_data(self._azimuth)
 
                 origin = (self.shift[0]*1e-3, self.shift[1]*1e-3)
-                self.radius = math.sqrt((self.ICLRT_shift[0]*1e-3) ** 2 +
-                                        (self.ICLRT_shift[1]*1e-3) ** 2)
+                self._radius = math.sqrt((self.iclrt_x_y[0]*1e-3) ** 2 +
+                                         (self.iclrt_x_y[1]*1e-3) ** 2)
 
-                self.ax_ppi.add_artist(plt.Circle(origin, self.radius,
-                                                  linestyle='--',
-                                                  color='black', fill=False))
+                self._ax_ppi.add_artist(plt.Circle(origin, self._radius,
+                                                   linestyle='--',
+                                                   color='black', fill=False))
                 for i in range(10):
-                    self.ax_ppi.add_artist(plt.Circle(origin, self.radius + (i+1)*5,
-                                                      linestyle='--',
-                                                      color='black', fill=False))
-                    self.ax_ppi.add_artist(plt.Circle(origin, self.radius - (i+1)*5,
-                                                      linestyle='--',
-                                                      color='black', fill=False))
+                    self._ax_ppi.add_artist(plt.Circle(origin,
+                                                       self._radius + (i+1)*5,
+                                                       linestyle='--',
+                                                       color='black',
+                                                       fill=False))
+                    self._ax_ppi.add_artist(plt.Circle(origin,
+                                                       self._radius - (i+1)*5,
+                                                       linestyle='--',
+                                                       color='black',
+                                                       fill=False))
 
-                self.fig_ppi.canvas.mpl_connect('button_release_event',
-                                                self._onclick)
-                self.fig_ppi.canvas.mpl_connect('key_press_event',
-                                                self._onkeypress)
-                self.fig_ppi.canvas.mpl_connect('key_release_event',
-                                                self._onkeyrelease)
+                self._fig_ppi.canvas.mpl_connect('button_release_event',
+                                                 self._onclick)
+                self._fig_ppi.canvas.mpl_connect('key_press_event',
+                                                 self._onkeypress)
+                self._fig_ppi.canvas.mpl_connect('key_release_event',
+                                                 self._onkeyrelease)
 
-                self.fig_rhi, self.ax_rhi = plt.subplots(1, 1)
-                self.display.plot_azimuth_to_rhi(field, self.azimuth,
+                self._fig_rhi, self._ax_rhi = plt.subplots(1, 1)
+                self.display.plot_azimuth_to_rhi(field, self._azimuth,
                                                  vmin=vmin, vmax=vmax,
-                                                 fig=self.fig_rhi,
-                                                 ax=self.ax_rhi,
+                                                 fig=self._fig_rhi,
+                                                 ax=self._ax_rhi,
                                                  title_flag=False,
                                                  colorbar_label=label,
                                                  axislabels_flag=False,
-                                                 cmap=cmap)
+                                                 cmap=cmap,
+                                                 gatefilter=self.gatefilter)
 
-                self.ax_rhi.plot([self.radius, self.radius],
-                                 [self.ax_rhi.get_ylim()[0],
-                                  self.ax_rhi.get_ylim()[-1]], '--k')
+                self._ax_rhi.plot([self._radius, self._radius],
+                                 [self._ax_rhi.get_ylim()[0],
+                                  self._ax_rhi.get_ylim()[-1]], '--k')
 
-                self.ax_rhi.plot([self.radius + 5, self.radius + 5],
-                                 [self.ax_rhi.get_ylim()[0],
-                                  self.ax_rhi.get_ylim()[-1]], '--k')
+                self._ax_rhi.plot([self._radius + 5, self._radius + 5],
+                                 [self._ax_rhi.get_ylim()[0],
+                                  self._ax_rhi.get_ylim()[-1]], '--k')
 
-                self.ax_rhi.plot([self.radius - 5, self.radius - 5],
-                                 [self.ax_rhi.get_ylim()[0],
-                                  self.ax_rhi.get_ylim()[-1]], '--k')
+                self._ax_rhi.plot([self._radius - 5, self._radius - 5],
+                                 [self._ax_rhi.get_ylim()[0],
+                                  self._ax_rhi.get_ylim()[-1]], '--k')
 
                 self.field = field
-                self.sel_point = False
+                self._sel_point = False
 
     def _set_azimuth_line_data(self, azimuth, rho=200):
         """
-        Set the data for self.az_line when plotting RHI scans along with PPI.
+        Set the data for self._az_line when plotting RHI scans along with PPI.
 
         Parameters
         ----------
@@ -1577,6 +1663,7 @@ class RadarPlotter(object):
             Length of the line in km
 
         """
+
         x0 = self.shift[0]*1e-3
         y0 = self.shift[1]*1e-3
 
@@ -1584,11 +1671,11 @@ class RadarPlotter(object):
             x1 = rho * math.cos(math.radians(90 - azimuth))
             y1 = rho * math.sin(math.radians(90 - azimuth))
 
-        elif azimuth < 360:
+        else:  # azimuth < 360
             x1 = -rho * math.cos(math.radians(270 - azimuth))
             y1 = -rho * math.sin(math.radians(270 - azimuth))
 
-        self.az_line.set_data([x0, x0 + x1], [y0, y0 + y1])
+        self._az_line.set_data([x0, x0 + x1], [y0, y0 + y1])
 
     def _get_azimuth_from_cartesian(self, x, y):
         """
@@ -1608,6 +1695,7 @@ class RadarPlotter(object):
             Azimuth (in degrees) from North.
 
         """
+
         x -= self.shift[0]
         y -= self.shift[1]
 
@@ -1621,8 +1709,8 @@ class RadarPlotter(object):
     def _onclick(self, event):
         """ Handle onclick events. """
 
-        if event.button == 1 and (event.inaxes is self.ax_ppi):
-            if self.sel_point:
+        if event.button == 1 and (event.inaxes is self._ax_ppi):
+            if self._sel_point:
                 x = event.xdata*1e3
                 y = event.ydata*1e3
 
@@ -1630,35 +1718,36 @@ class RadarPlotter(object):
                 self._set_azimuth_line_data(theta)
 
                 # print(x, y, theta)
-                x_lims = self.ax_rhi.get_xlim()
-                y_lims = self.ax_rhi.get_ylim()
-                self.ax_rhi.clear()
+                x_lims = self._ax_rhi.get_xlim()
+                y_lims = self._ax_rhi.get_ylim()
+                self._ax_rhi.clear()
                 self.display.plot_azimuth_to_rhi(self.field, theta,
                                                  vmin=-25, vmax=75,
-                                                 fig=self.fig_rhi,
-                                                 ax=self.ax_rhi,
+                                                 fig=self._fig_rhi,
+                                                 ax=self._ax_rhi,
                                                  title_flag=False,
                                                  colorbar_flag=False,
                                                  axislabels_flag=False,
-                                                 cmap=pyart.graph.cm.NWSRef)
+                                                 cmap=pyart.graph.cm.NWSRef,
+                                                 gatefilter=self.gatefilter)
 
-                self.ax_rhi.plot([self.radius, self.radius],
-                                 [self.ax_rhi.get_ylim()[0],
-                                  self.ax_rhi.get_ylim()[-1]], '--k')
+                self._ax_rhi.plot([self._radius, self._radius],
+                                 [self._ax_rhi.get_ylim()[0],
+                                  self._ax_rhi.get_ylim()[-1]], '--k')
 
-                self.ax_rhi.plot([self.radius + 5, self.radius + 5],
-                                 [self.ax_rhi.get_ylim()[0],
-                                  self.ax_rhi.get_ylim()[-1]], '--k')
+                self._ax_rhi.plot([self._radius + 5, self._radius + 5],
+                                 [self._ax_rhi.get_ylim()[0],
+                                  self._ax_rhi.get_ylim()[-1]], '--k')
 
-                self.ax_rhi.plot([self.radius - 5, self.radius - 5],
-                                 [self.ax_rhi.get_ylim()[0],
-                                  self.ax_rhi.get_ylim()[-1]], '--k')
+                self._ax_rhi.plot([self._radius - 5, self._radius - 5],
+                                 [self._ax_rhi.get_ylim()[0],
+                                  self._ax_rhi.get_ylim()[-1]], '--k')
 
-                self.ax_rhi.set_xlim(x_lims)
-                self.ax_rhi.set_ylim(y_lims)
+                self._ax_rhi.set_xlim(x_lims)
+                self._ax_rhi.set_ylim(y_lims)
 
-                self.fig_rhi.canvas.draw()
-                self.fig_ppi.canvas.draw()
+                self._fig_rhi.canvas.draw()
+                self._fig_ppi.canvas.draw()
 
         else:
             return True
@@ -1667,17 +1756,17 @@ class RadarPlotter(object):
         """ Handle onkeypress events. """
 
         if event.key == 'a':
-            self.sel_point = True
+            self._sel_point = True
         elif event.key == 'l':
-            self.sel_line = True
+            self._sel_line = True
 
     def _onkeyrelease(self, event):
         """ Handle onkeyrelease events. """
 
         if event.key == 'a':
-            self.sel_point = False
+            self._sel_point = False
         elif event.key == 'l':
-            self.sel_line = False
+            self._sel_line = False
 
 
 class LMAPlotter(object):
