@@ -1991,7 +1991,7 @@ class LMAPlotter(object):
     def date_format_major(self, x, pos=None):
         x = dates.num2date(x)
 
-        if pos == 0 or pos==-1:
+        if pos == 0 or pos == -1:
             fmt = '%H:%M:%S.%f'
 
         else:
