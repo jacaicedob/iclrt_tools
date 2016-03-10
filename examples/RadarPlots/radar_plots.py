@@ -6,8 +6,9 @@ import sys
 import math
 import os
 
-sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 08-27-2015/Figures/')
+# sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 08-27-2015/Figures/')
 # sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 03-04-2016/Figures/')
+sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 07-17-2012/Figures/')
 
 import radar_entire_storm_ppi as entire
 import radar_start_to_first_flash as first
@@ -84,6 +85,7 @@ def entire_storm_ppi_rhi(azimuth=205):
             fig_rhi.savefig(save_file, dpi=300, format='png')
             plt.close(fig_rhi)
 
+
 def start_to_first_flash_ppi():
     for radar_file in first.radar_files:
         print("Reading radar file: " + radar_file)
@@ -109,7 +111,9 @@ def start_to_first_flash_ppi():
             plt.close(fig)
 
 
-def start_to_first_flash_ppi_rhi(azimuth=205):
+def start_to_first_flash_ppi_rhi(azimuth=205, coord=None, file_ind=-7):
+    coord_set = False
+
     for radar_file in first.radar_files:
         print("Reading radar file: " + radar_file)
 
@@ -119,21 +123,31 @@ def start_to_first_flash_ppi_rhi(azimuth=205):
         radar_plotter.filter_data()
         radar_plotter.setup_display()
 
+        if not coord_set:
+            if coord is not None:
+                coord = (coord[0] + radar_plotter.iclrt_x_y[0],
+                         coord[1] + radar_plotter.iclrt_x_y[1])
+            else:
+                coord = radar_plotter.iclrt_x_y
+
+            coord_set = True
+
         for field in first.fields:
             print("  - Plotting {0}".format(field))
 
             # Plot dual-pol data
-            radar_plotter.plot_ppi_rhi(field=field, start_azimuth=azimuth)
+            radar_plotter.plot_ppi_rhi(field=field, start_azimuth=azimuth,
+                                       start_coord=coord)
             fig_rhi = radar_plotter._fig_rhi
             fig_ppi = radar_plotter._fig_ppi
 
             ax_rhi = radar_plotter._ax_rhi
             ax_ppi = radar_plotter._ax_ppi
 
-            ax_ppi.set_xlim([radar_plotter.iclrt_x_y[0]*1e-3 - 20,
-                             radar_plotter.iclrt_x_y[0]*1e-3 + 20])
-            ax_ppi.set_ylim([radar_plotter.iclrt_x_y[1]*1e-3 - 20,
-                             radar_plotter.iclrt_x_y[1]*1e-3 + 20])
+            ax_ppi.set_xlim([coord[0]*1e-3 - 20,
+                             coord[0]*1e-3 + 20])
+            ax_ppi.set_ylim([coord[1]*1e-3 - 20,
+                             coord[1]*1e-3 + 20])
 
             ax_ppi.set_title(radar_file[2:])
             ax_rhi.set_title(radar_file[2:])
@@ -145,20 +159,20 @@ def start_to_first_flash_ppi_rhi(azimuth=205):
             ax_rhi.set_ylabel('Altitude (km)')
 
             ax_rhi.set_xlim([radar_plotter._radius - 10, radar_plotter._radius + 10])
-            ax_rhi.set_ylim([0, 12])
+            ax_rhi.set_ylim([0, 15])
 
-            save_file = first.save_parent + radar_file[2:-7] + '_' + field + '_PPI.png'
+            save_file = first.save_parent + radar_file[2:file_ind] + '_' + field + '_PPI.png'
             fig_ppi.savefig(save_file, dpi=300, format='png')
             plt.close(fig_ppi)
 
-            save_file = first.save_parent + radar_file[2:-7] + '_' + field + '_RHI.png'
+            save_file = first.save_parent + radar_file[2:file_ind] + '_' + field + '_RHI.png'
             fig_rhi.savefig(save_file, dpi=300, format='png')
             plt.close(fig_rhi)
 
 
 if __name__ == "__main__":
     # start_to_first_flash_ppi_rhi(212.053)
-    start_to_first_flash_ppi_rhi(212.053)
+    start_to_first_flash_ppi_rhi(first.azimuth, (0, -14.2e3), -4)
 
 
         # fig, ax = plt.subplots(1,3)
