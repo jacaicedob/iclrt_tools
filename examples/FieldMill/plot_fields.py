@@ -55,6 +55,9 @@ f.filter_time(['21:46:45.0', '22:44:44.0'])
 f2.filter_time(['21:46:45.0', '22:44:44.0'])
 
 t = f.t
+fair_field = np.average(f.E[:int(len(f.E)/10)])
+fair_field2 = np.average(f2.E[:int(len(f2.E)/10)])
+
 target_time = datetime.datetime.strptime('22:37:24.7', '%H:%M:%S.%f')
 target_time = datetime.datetime(f.t[0].year, f.t[0].month, f.t[0].day,
                                 target_time.hour, target_time.minute,
@@ -67,8 +70,17 @@ ax1.plot(f.t, f.E)
 ax2.plot(f2.t, f2.E)
 ax1.scatter(f.t[ind], f.E[ind], marker='x', c='red')
 ax2.scatter(f.t[ind], f.E[ind], marker='x', c='red')
+
 ax1.plot([target_time, target_time],
          [ax1.get_ylim()[0], ax1.get_ylim()[1]], '--r')
 ax2.plot([target_time, target_time],
          [ax2.get_ylim()[0], ax2.get_ylim()[1]], '--r')
+
+ax1.plot([ax1.get_xlim()[0], ax1.get_xlim()[1]],
+         [fair_field, fair_field], '--r')
+ax2.plot([ax2.get_xlim()[0], ax2.get_xlim()[1]],
+         [fair_field2, fair_field2], '--r')
+
+ax2.xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(10))
+
 plt.show()
