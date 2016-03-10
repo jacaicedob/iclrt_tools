@@ -19,11 +19,16 @@ class FieldMillData(object):
     """
     def __init__(self, file_name):
         self.file_name = file_name
+        self.t = np.array([])
+        self.E = np.array([])
+        self.station = None
+        self.type = None
         self.read_data()
 
     def read_data(self):
         times = []
         Es = []
+        self.t = np.array([])
 
         with open(self.file_name) as csv_file:
             reader = csv.reader(csv_file)
@@ -40,19 +45,40 @@ class FieldMillData(object):
                     if row[0] == '':
                         continue
                     times.append(row[0])
-                    Es.append(row[3])
+                    Es.append(float(row[3]))
 
-        self.t = []
         self.E = np.array(Es)
 
         for t in times:
             try:
-                self.t.append(datetime.datetime.strptime(t, '%Y-%m-%d %H:%M:%S.%f'))
+                self.t = np.append(self.t, np.array([datetime.datetime.strptime(
+                                                  t, '%Y-%m-%d %H:%M:%S.%f')]))
             except ValueError:
-                self.t.append(datetime.datetime.strptime(t, '%Y-%m-%d %H:%M:%S'))
+                self.t = np.append(self.t, np.array([datetime.datetime.strptime(
+                                                     t, '%Y-%m-%d %H:%M:%S')]))
                 pass
 
         return self.t, self.E
+
+    def filter_time(self, tlims):
+        # Convert the time limits to timedelta objects
+        t0 = datetime.datetime.strptime(tlims[0], '%H:%M:%S.%f')
+        t1 = datetime.datetime.strptime(tlims[1], '%H:%M:%S.%f')
+
+        t0 = datetime.datetime(self.t[0].year, self.t[0].month, self.t[0].day,
+                               t0.hour, t0.minute, t0.second, t0.microsecond)
+
+        t1 = datetime.datetime(self.t[0].year, self.t[0].month, self.t[0].day,
+                               t1.hour, t1.minute, t1.second, t1.microsecond)
+
+        # Filter the data
+        ind = self.t >= t0
+        self.t = self.t[ind]
+        self.E = self.E[ind]
+
+        ind = self.t <= t1
+        self.t = self.t[ind]
+        self.E = self.E[ind]
 
 
 class FieldMillDataold(object):
