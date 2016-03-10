@@ -2,7 +2,6 @@
 
 # Add personal packages directory to path
 import sys
-sys.path.append('/home/jaime/Documents/Python Code')
 
 # Import all other modules
 import iclrt_tools.field_mill.field_mill as fm
@@ -13,57 +12,27 @@ import matplotlib as mpl
 import datetime
 import numpy as np
 
-def date_format_major(x, pos=None):
-    x = mpl.dates.num2date(x)
+# sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 08-27-2015/Figures/')
 
-    if pos == 0 or pos == -1:
-        fmt = '%H:%M:%S.%f'
+sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 07-17-2012/Figures/')
 
-    else:
-        fmt = '%H:%M:%S.%f'
+import field_mill_to_first_flash as first
 
-    label = x.strftime(fmt)
-    ind_dot = label.find('.')
-    label = label[:ind_dot+5]
-    label = label.rstrip('0')
-    label = label.rstrip('.')
+f = fm.FieldMillData(first.file_name)
+f2 = fm.FieldMillData(first.file_name2)
 
-    return label
-
-def date_format_minor(x, pos=None):
-    x = mpl.dates.num2date(x)
-
-    fmt = '%H:%M:%S.%f'
-
-    label = x.strftime(fmt)
-    ind_dot = label.find('.')
-    label = label[:ind_dot+5]
-    label = label.rstrip('0')
-    label = label.rstrip('.')
-
-    return label
-
-
-file_name = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 08-27-2015/FieldMill/Launch Control_Tab60.dat'
-
-file_name2 = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 08-27-2015/FieldMill/Office Trailer_Tab60.dat'
-
-f = fm.FieldMillData(file_name)
-f2 = fm.FieldMillData(file_name2)
-
-f.filter_time(['21:46:45.0', '22:44:44.0'])
-f2.filter_time(['21:46:45.0', '22:44:44.0'])
+f.filter_time(first.t1_filter)
+f2.filter_time(first.t2_filter)
 
 t = f.t
 fair_field = np.average(f.E[:int(len(f.E)/10)])
 fair_field2 = np.average(f2.E[:int(len(f2.E)/10)])
 
-target_time = datetime.datetime.strptime('22:37:24.7', '%H:%M:%S.%f')
+target_time = datetime.datetime.strptime(first.t_first_flash, '%H:%M:%S.%f')
 target_time = datetime.datetime(f.t[0].year, f.t[0].month, f.t[0].day,
                                 target_time.hour, target_time.minute,
                                 target_time.second, target_time.microsecond)
 ind = np.argmin(np.abs(target_time - f.t))
-print(ind)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, sharey=True)
 ax1.plot(f.t, f.E)
