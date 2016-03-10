@@ -7,7 +7,6 @@ import math
 import os
 
 sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 08-27-2015/Figures/')
-
 # sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 03-04-2016/Figures/')
 
 import radar_entire_storm_ppi as entire
