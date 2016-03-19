@@ -1359,7 +1359,11 @@ class RadarPlotter(object):
         """ Initialize the object. """
 
         self.file_name = file_name
-        self.radar = pyart.io.read(self.file_name)
+        try:
+            self.radar = pyart.io.read(self.file_name)
+        except TypeError:
+            self.radar = pyart.io.read_nexrad_archive(self.file_name)
+
         self.fields = self.radar.fields.keys()
 
         # Calculate the (x, y) coordinates of the site with respect to the
@@ -1529,7 +1533,7 @@ class RadarPlotter(object):
                                                  gatefilter=self.gatefilter)
 
     def plot_ppi_rhi(self, field='reflectivity', sweep=0, start_azimuth=None,
-                     fig=None, ax=None):
+                     start_coord=None, fig=None, ax=None):
         """
         Interactively plot pseudo RHI and PPI in separate figures.
 
@@ -1556,6 +1560,11 @@ class RadarPlotter(object):
 
                 if start_azimuth is not None:
                     self._azimuth = start_azimuth
+
+                if start_coord is not None:
+                    self._start_coord = start_coord
+                else:
+                    self._start_coord = self.iclrt_x_y
 
                 if field == 'reflectivity':
                     vmin = -25
@@ -1600,8 +1609,8 @@ class RadarPlotter(object):
                 self._set_azimuth_line_data(self._azimuth)
 
                 origin = (self.shift[0]*1e-3, self.shift[1]*1e-3)
-                self._radius = math.sqrt((self.iclrt_x_y[0]*1e-3) ** 2 +
-                                         (self.iclrt_x_y[1]*1e-3) ** 2)
+                self._radius = math.sqrt((self._start_coord[0]*1e-3) ** 2 +
+                                         (self._start_coord[1]*1e-3) ** 2)
 
                 self._ax_ppi.add_artist(plt.Circle(origin, self._radius,
                                                    linestyle='--',
@@ -1770,9 +1779,17 @@ class RadarPlotter(object):
 
 
 class LMAPlotter(object):
-    def __init__(self, lma_file):
+    def __init__(self, lma_file, shift=(0, 0)):
+        # The shift variable is used to match the RadarPlotter shift variable.
+        # In the RadarPlotter, the shift moves the radar (0, 0) to
+        # (shift[0], shift[1]), making the desired position as (0, 0).
+        # In this application, we want to make the LMAPlotter (0, 0) match
+        # the RadarPlotter coordinates when the radar is at (0, 0) and thus,
+        # the desired position needs to be at (-shift[0], -shift[1]).
+        self.shift = -shift[0], -shift[1]
+
         if not isinstance(lma_file, lma.LMAFile):
-            lma_file = lma.LMAFile(lma_file)
+            lma_file = lma.LMAFile(lma_file, self.shift)
 
         self.raw_data = lma_file.data
         self.filtered_data = self.raw_data
@@ -1787,6 +1804,7 @@ class LMAPlotter(object):
 
         # Filter the data to default values
         # self.fix_charge()
+        self.init_data()
         self.filter_rc2()
         self.filter_num_stations()
         self.filter_alt()
@@ -1918,6 +1936,19 @@ class LMAPlotter(object):
 
         # Update all other variables
         self.update_data()
+
+    def init_data(self):
+        self.plot_data['t'] = np.array([s.time for s in self.filtered_data])
+        self.plot_data['x'] = np.array([s.xyz_coords[0] for s in
+                                        self.filtered_data])
+        self.plot_data['y'] = np.array([s.xyz_coords[1] for s in
+                                        self.filtered_data])
+        self.plot_data['z'] = np.array([s.xyz_coords[2] for s in
+                                        self.filtered_data])
+        self.plot_data['seconds_of_day'] = np.array([s.seconds_of_day for s in
+                                                     self.filtered_data])
+        self.plot_data['charge'] = np.array([s.charge for s in
+                                             self.filtered_data])
 
     def update_data(self):
         self.plot_data['t'] = np.array([s.time for s in self.filtered_data])
