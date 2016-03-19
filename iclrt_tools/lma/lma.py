@@ -9,8 +9,9 @@ import iclrt_tools.lat_lon.lat_lon as latlon
 
 
 class LMAFile(object):
-    def __init__(self, file_name, load_data=True):
+    def __init__(self, file_name, load_data=True, shift=(0, 0)):
         self.file_name = file_name
+        self.shift = shift
 
         # Initialize all variables
         self.date = None
@@ -101,15 +102,15 @@ class LMAFile(object):
                     source = LMASource(self.date, words[0], words[1], words[2],
                                        words[3], words[4], words[5], words[6])
 
-                    source.set_xyz_coords(self.center_coordinate)
+                    source.set_xyz_coords(self.center_coordinate, self.shift)
                     self.data.append(source)
 
         self.data_loaded = True
 
 
 class XLMAExportedFile(LMAFile):
-    def __init__(self, file_name, load_data=True):
-        super(XLMAExportedFile, self).__init__(file_name, False)
+    def __init__(self, file_name, load_data=True, shift=(0, 0)):
+        super(XLMAExportedFile, self).__init__(file_name, False, shift)
 
         self.file_name = file_name
         self.center_coordinate = latlon.Location(29.9429917, -82.0332305, 0.00)
@@ -133,14 +134,15 @@ class XLMAExportedFile(LMAFile):
                     source = LMASource(self.date, words[0], words[1], words[2],
                                        words[3], words[4], words[6], words[9], words[8])
 
-                    source.set_xyz_coords(self.center_coordinate)
+                    source.set_xyz_coords(self.center_coordinate, self.shift)
                     self.data.append(source)
 
         self.data_loaded = True
 
 
 class LMASource(object):
-    def __init__(self, date, seconds_of_day, lat, lon, alt, rc2, power, mask, charge=0):
+    def __init__(self, date, seconds_of_day, lat, lon, alt, rc2,
+                 power, mask, charge=0):
         if isinstance(date, datetime.datetime):
             self.date = date
         else:
@@ -159,7 +161,7 @@ class LMASource(object):
         self.num_stations = self.mask.count('1')
         self.xyz_coords = None
 
-    def set_xyz_coords(self, center):
+    def set_xyz_coords(self, center, shift=(0, 0)):
         """
         :param center: Location object for center
         :return: relative x,y,z of the source with relation to center
@@ -200,7 +202,7 @@ class LMASource(object):
 
         x, y, z = ssl[0], ssl[1], ssl[2]
 
-        self.xyz_coords = x, y, z
+        self.xyz_coords = x + shift[0], y + shift[1], z
 
     def __repr__(self):
         if self.charge < 0:
