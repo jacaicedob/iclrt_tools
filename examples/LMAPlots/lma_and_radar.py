@@ -31,7 +31,7 @@ for i, event in enumerate(events):
     ax.set_title('Base Reflectivity Z (Plan)')
     lma_plotter.scale_data(1E-3)
     lma_plotter.set_cmap('grey')
-    lma_plotter.plot_plan(fig=fig, ax=ax)  #, xlims=[-20, 20], ylims=[-20, 20])
+    lma_plotter.plot_plan(fig=fig, ax=ax, xlims=[-70, 0], ylims=[-90, 0])
 
     # fig, ax = plt.subplots(1, 1)
     # radar_plotter.plot_pseudo_rhi('reflectivity', fig=fig, ax=ax)
