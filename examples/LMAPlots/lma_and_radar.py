@@ -5,17 +5,17 @@ import matplotlib.pyplot as plt
 import sys
 
 sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 08-27-2015/Figures/')
-# from rtl_events import *
-from start_to_first_flash import *
+from lma_radar_rtl_events import *
+# from radar_start_to_first_flash import *
 
 for i, event in enumerate(events):
     print(event)
 
-    print("  Reading LMA file...")
-    lma_plotter = df.LMAPlotter(lma_files[i])
-
     print("  Reading radar file...")
-    radar_plotter = df.RadarPlotter(radar_files[i])
+    radar_plotter = df.RadarPlotter(radar_files[i], shift=(0, 0))
+
+    print("  Reading LMA file...")
+    lma_plotter = df.LMAPlotter(lma_files[i], shift=radar_plotter.iclrt_x_y)
 
     print("  Filtering LMA dada...")
     lma_plotter.filter_time(times[i])
@@ -31,7 +31,7 @@ for i, event in enumerate(events):
     ax.set_title('Base Reflectivity Z (Plan)')
     lma_plotter.scale_data(1E-3)
     lma_plotter.set_cmap('grey')
-    lma_plotter.plot_plan(fig=fig, ax=ax, xlims=[-20, 20], ylims=[-20, 20])
+    lma_plotter.plot_plan(fig=fig, ax=ax)  #, xlims=[-20, 20], ylims=[-20, 20])
 
     # fig, ax = plt.subplots(1, 1)
     # radar_plotter.plot_pseudo_rhi('reflectivity', fig=fig, ax=ax)

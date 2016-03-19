@@ -171,37 +171,12 @@ def start_to_first_flash_ppi_rhi(azimuth=205, coord=None, file_ind=-7):
 
 
 if __name__ == "__main__":
-    # start_to_first_flash_ppi_rhi(212.053)
-    start_to_first_flash_ppi_rhi(first.azimuth, (0, -14.2e3), -4)
+    # start_to_first_flash_ppi_rhi(first.azimuth)
+    # start_to_first_flash_ppi_rhi(first.azimuth, (0, -14.2e3), -4)
+    # start_to_first_flash_ppi()
 
-
-        # fig, ax = plt.subplots(1,3)
-        # radar_plotter.plot_pseudo_rhi('reflectivity', azimuth=188.71, fig=fig, ax=ax[0])
-        # radar_plotter.plot_pseudo_rhi('reflectivity', fig=fig, ax=ax[1])
-        # radar_plotter.plot_pseudo_rhi('reflectivity', azimuth=232.64, fig=fig, ax=ax[2])
-        # ax[0].set_xlim([-20, 80])
-        # ax[0].set_ylim([0, 20])
-        # ax[1].set_xlim([-20, 80])
-        # ax[1].set_ylim([0, 20])
-        # ax[2].set_xlim([-20, 80])
-        # ax[2].set_ylim([0, 20])
-        # plt.show()
-
-        # line, = ax.plot([0], [0], 'k')
-        # line.set_data([radar_plotter.ICLRT_shift[0]/1e3,
-        #                radar_plotter.ICLRT_shift[0]/1e3 - 200*math.cos((
-        #                                                  270-212.053)*math.pi/180)],
-        #               [radar_plotter.ICLRT_shift[1]/1e3,
-        #                radar_plotter.ICLRT_shift[1]/1e3 - 200*math.sin((
-        #                                                   270-212.053)*math.pi/180)])
-        #
-        #
-        # fig, ax = plt.subplots(1, 1)
-        # radar_plotter.plot_pseudo_rhi(azimuth=212.053, fig=fig, ax=ax)
-        # ax.set_xlim([-48, 60])
-        # ax.set_ylim([0, 20])
-        # ax.set_title(radar_file[2:])
-        # plt.show()
-
-
-        # plt.show()
+    # file = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 03-04-2016/Radar/KJAX/Level2_KJAX_20160304_0607.ar2v'
+    file = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 07-17-2012/Radar/KJAX/Level-II/KJAX20120717_200110_V06'
+    radar_plotter = df.RadarPlotter(file, shift=[0, 0])
+    radar_plotter.plot_ppi_rhi()
+    plt.show()
