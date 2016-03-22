@@ -1416,7 +1416,8 @@ class RadarPlotter(object):
 
         self.display = pyart.graph.RadarDisplay(self.radar, self.shift)
 
-    def plot_ppi(self, field='reflectivity', sweep=0, fig=None, ax=None):
+    def plot_ppi(self, field='reflectivity', sweep=0, fig=None, ax=None,
+                 start_coord=None):
         """
         Plot PPI (wrapper function).
 
@@ -1470,6 +1471,12 @@ class RadarPlotter(object):
                                       colorbar_label=label,
                                       axislabels_flag=False,
                                       cmap=cmap, gatefilter=self.gatefilter)
+
+                # ax = plt.gca()
+                print(start_coord[0]*1e-3, start_coord[1]*1e-3)
+                ax.scatter(start_coord[0]*1e-3,
+                           start_coord[1]*1e-3,
+                           s=50, marker='x', c='k')
 
     def plot_pseudo_rhi(self, field='reflectivity', azimuth=None,
                         fig=None, ax=None):
@@ -1627,6 +1634,10 @@ class RadarPlotter(object):
                                                        color='black',
                                                        fill=False))
 
+                self._ax_ppi.scatter(self._start_coord[0]*1e-3,
+                                     self._start_coord[1]*1e-3,
+                                     s=50, marker='x', c='k')
+
                 self._fig_ppi.canvas.mpl_connect('button_release_event',
                                                  self._onclick)
                 self._fig_ppi.canvas.mpl_connect('key_press_event',
@@ -1713,6 +1724,7 @@ class RadarPlotter(object):
         else:
             theta = 90 - math.degrees(math.atan(y/x))
 
+        print(theta)
         return theta
 
     def _onclick(self, event):

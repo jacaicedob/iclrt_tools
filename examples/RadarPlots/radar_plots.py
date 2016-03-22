@@ -86,23 +86,36 @@ def entire_storm_ppi_rhi(azimuth=205):
             plt.close(fig_rhi)
 
 
-def start_to_first_flash_ppi():
+def start_to_first_flash_ppi(coord=None):
+    coord_set = False
+
     for radar_file in first.radar_files:
         print("Reading radar file: " + radar_file)
 
-        # radar_plotter = df.RadarPlotter(radar_file, shift=[0, 0])
-        radar_plotter = df.RadarPlotter(radar_file)
+        radar_plotter = df.RadarPlotter(radar_file, shift=[0, 0])
+        # radar_plotter = df.RadarPlotter(radar_file)
 
         radar_plotter.filter_data()
         radar_plotter.setup_display()
 
+        if not coord_set:
+            if coord is not None:
+                coord = (coord[0] + radar_plotter.iclrt_x_y[0],
+                         coord[1] + radar_plotter.iclrt_x_y[1])
+            else:
+                coord = radar_plotter.iclrt_x_y
+
+            coord_set = True
+
         for field in first.fields:
             print("  - Plotting {0}".format(field))
             fig, ax = plt.subplots(1, 1)
-            radar_plotter.plot_ppi(field, fig=fig, ax=ax)
-            ax.scatter(0, 0, s=50, c='w')
-            ax.set_xlim([-40, 40])
-            ax.set_ylim([-40, 40])
+            radar_plotter.plot_ppi(field, fig=fig, ax=ax, start_coord=coord)
+            ax.scatter(radar_plotter.iclrt_x_y[0]*1e-3,
+                       radar_plotter.iclrt_x_y[1]*1e-3,
+                       s=50, c='w')
+            ax.set_xlim([radar_plotter.iclrt_x_y[0]*1e-3-40, radar_plotter.iclrt_x_y[0]*1e-3+40])
+            ax.set_ylim([radar_plotter.iclrt_x_y[1]*1e-3-40, radar_plotter.iclrt_x_y[1]*1e-3+40])
             ax.set_xlabel('West - East (km)')
             ax.set_ylabel('South - North (km)')
             ax.set_title(radar_file[2:])
@@ -113,9 +126,16 @@ def start_to_first_flash_ppi():
 
 def start_to_first_flash_ppi_rhi(azimuth=205, coord=None, file_ind=-7):
     coord_set = False
+    flag = False
 
-    for radar_file in first.radar_files:
+    if azimuth == None:
+        flag = True
+
+    for i, radar_file in enumerate(first.radar_files):
         print("Reading radar file: " + radar_file)
+
+        if flag:
+            azimuth = first.azimuths[i]
 
         radar_plotter = df.RadarPlotter(radar_file, shift=[0, 0])
         # radar_plotter = df.RadarPlotter(radar_file)
@@ -158,8 +178,10 @@ def start_to_first_flash_ppi_rhi(azimuth=205, coord=None, file_ind=-7):
             ax_rhi.set_xlabel('Distance from radar (km)')
             ax_rhi.set_ylabel('Altitude (km)')
 
-            ax_rhi.set_xlim([radar_plotter._radius - 10, radar_plotter._radius + 10])
+            ax_rhi.set_xlim([radar_plotter._radius - 30, radar_plotter._radius + 30])
             ax_rhi.set_ylim([0, 15])
+
+            # plt.show()
 
             save_file = first.save_parent + radar_file[2:file_ind] + '_' + field + '_PPI.png'
             fig_ppi.savefig(save_file, dpi=300, format='png')
@@ -171,12 +193,12 @@ def start_to_first_flash_ppi_rhi(azimuth=205, coord=None, file_ind=-7):
 
 
 if __name__ == "__main__":
-    # start_to_first_flash_ppi_rhi(first.azimuth)
-    # start_to_first_flash_ppi_rhi(first.azimuth, (0, -14.2e3), -4)
-    # start_to_first_flash_ppi()
+    start_to_first_flash_ppi_rhi(azimuth=first.azimuth, coord=first.flash_x_y)
+    #start_to_first_flash_ppi_rhi(None, (0, -14.2e3), -4)
+    # start_to_first_flash_ppi(coord=first.flash_x_y)
 
     # file = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 03-04-2016/Radar/KJAX/Level2_KJAX_20160304_0607.ar2v'
-    file = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 07-17-2012/Radar/KJAX/Level-II/KJAX20120717_200110_V06'
-    radar_plotter = df.RadarPlotter(file, shift=[0, 0])
-    radar_plotter.plot_ppi_rhi()
-    plt.show()
+    # file = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 07-17-2012/Radar/KJAX/Level-II/KJAX20120717_200110_V06'
+    # radar_plotter = df.RadarPlotter(file, shift=[0, 0])
+    # radar_plotter.plot_ppi_rhi()
+    # plt.show()
