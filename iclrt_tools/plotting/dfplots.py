@@ -1473,10 +1473,10 @@ class RadarPlotter(object):
                                       cmap=cmap, gatefilter=self.gatefilter)
 
                 # ax = plt.gca()
-                print(start_coord[0]*1e-3, start_coord[1]*1e-3)
-                ax.scatter(start_coord[0]*1e-3,
-                           start_coord[1]*1e-3,
-                           s=50, marker='x', c='k')
+                # print(start_coord[0]*1e-3, start_coord[1]*1e-3)
+                # ax.scatter(start_coord[0]*1e-3,
+                #            start_coord[1]*1e-3,
+                #            s=50, marker='x', c='k')
 
     def plot_pseudo_rhi(self, field='reflectivity', azimuth=None,
                         fig=None, ax=None):
@@ -1570,6 +1570,7 @@ class RadarPlotter(object):
 
                 if start_coord is not None:
                     self._start_coord = start_coord
+                    # self._get_azimuth_from_cartesian(start_coord[0], start_coord[1])
                 else:
                     self._start_coord = self.iclrt_x_y
 
@@ -1621,17 +1622,18 @@ class RadarPlotter(object):
 
                 self._ax_ppi.add_artist(plt.Circle(origin, self._radius,
                                                    linestyle='--',
-                                                   color='black', fill=False))
+                                                   color='gray', fill=False))
+
                 for i in range(10):
                     self._ax_ppi.add_artist(plt.Circle(origin,
                                                        self._radius + (i+1)*5,
                                                        linestyle='--',
-                                                       color='black',
+                                                       color='gray',
                                                        fill=False))
                     self._ax_ppi.add_artist(plt.Circle(origin,
                                                        self._radius - (i+1)*5,
                                                        linestyle='--',
-                                                       color='black',
+                                                       color='gray',
                                                        fill=False))
 
                 self._ax_ppi.scatter(self._start_coord[0]*1e-3,
@@ -1656,17 +1658,27 @@ class RadarPlotter(object):
                                                  cmap=cmap,
                                                  gatefilter=self.gatefilter)
 
+                try:
+                    z = self._start_coord[2] / 1e3
+                    self._ax_rhi.scatter(self._radius, z, s=50, marker='x',
+                                         c='k')
+                except:
+                    pass
+
                 self._ax_rhi.plot([self._radius, self._radius],
-                                 [self._ax_rhi.get_ylim()[0],
-                                  self._ax_rhi.get_ylim()[-1]], '--k')
+                                  [self._ax_rhi.get_ylim()[0],
+                                  self._ax_rhi.get_ylim()[-1]],
+                                  ls='--', c='grey')
 
                 self._ax_rhi.plot([self._radius + 5, self._radius + 5],
-                                 [self._ax_rhi.get_ylim()[0],
-                                  self._ax_rhi.get_ylim()[-1]], '--k')
+                                  [self._ax_rhi.get_ylim()[0],
+                                  self._ax_rhi.get_ylim()[-1]],
+                                  ls='--', c='grey')
 
                 self._ax_rhi.plot([self._radius - 5, self._radius - 5],
-                                 [self._ax_rhi.get_ylim()[0],
-                                  self._ax_rhi.get_ylim()[-1]], '--k')
+                                  [self._ax_rhi.get_ylim()[0],
+                                  self._ax_rhi.get_ylim()[-1]],
+                                  ls='--', c='grey')
 
                 self.field = field
                 self._sel_point = False

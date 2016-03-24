@@ -7,14 +7,14 @@ import math
 import os
 
 # sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 08-27-2015/Figures/')
-# sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 03-04-2016/Figures/')
-sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 07-17-2012/Figures/')
+sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 03-04-2016/Figures/')
+# sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 07-17-2012/Figures/')
 
 import radar_entire_storm_ppi as entire
-import radar_start_to_first_flash as first
+# import radar_start_to_first_flash as first
 
 
-def entire_storm_ppi():
+def entire_storm_ppi(file_ind=-5):
     for radar_file in entire.radar_files:
         print("Reading radar file: " + radar_file)
 
@@ -29,12 +29,12 @@ def entire_storm_ppi():
             fig, ax = plt.subplots(1, 1)
             radar_plotter.plot_ppi(field, fig=fig, ax=ax)
             ax.scatter(0, 0, s=50, c='w')
-            ax.set_xlim([-40, 40])
-            ax.set_ylim([-40, 40])
+            ax.set_xlim([-50, 50])
+            ax.set_ylim([-50, 50])
             ax.set_xlabel('West - East (km)')
             ax.set_ylabel('South - North (km)')
             ax.set_title(radar_file[2:])
-            save_file = entire.save_parent + radar_file[2:-5] + '_' + field + '_PPI.png'
+            save_file = entire.save_parent + radar_file[2:file_ind] + '_' + field + '_PPI.png'
             fig.savefig(save_file, dpi=300, format='png')
             plt.close(fig)
 
@@ -145,8 +145,15 @@ def start_to_first_flash_ppi_rhi(azimuth=205, coord=None, file_ind=-7):
 
         if not coord_set:
             if coord is not None:
-                coord = (coord[0] + radar_plotter.iclrt_x_y[0],
-                         coord[1] + radar_plotter.iclrt_x_y[1])
+                try:
+                    z = coord[2]
+                    coord = (coord[0] + radar_plotter.iclrt_x_y[0],
+                             coord[1] + radar_plotter.iclrt_x_y[1],
+                             z)
+
+                except:
+                    coord = (coord[0] + radar_plotter.iclrt_x_y[0],
+                             coord[1] + radar_plotter.iclrt_x_y[1])
             else:
                 coord = radar_plotter.iclrt_x_y
 
@@ -181,7 +188,16 @@ def start_to_first_flash_ppi_rhi(azimuth=205, coord=None, file_ind=-7):
             ax_rhi.set_xlim([radar_plotter._radius - 30, radar_plotter._radius + 30])
             ax_rhi.set_ylim([0, 15])
 
+            xlims = ax_rhi.get_xlim()
+            ax_rhi.plot([xlims[0], xlims[1]], [first.fzl, first.fzl],
+                        ls='dotted', c='gray')  # plot FZL
+            ax_rhi.plot([xlims[0], xlims[1]], [first.minus_10, first.minus_10],
+                        ls='dotted', c='gray')  # plot FZL
+            ax_rhi.plot([xlims[0], xlims[1]], [first.minus_20, first.minus_20],
+                        ls='dotted', c='gray')  # plot FZL
+
             # plt.show()
+            # continue
 
             save_file = first.save_parent + radar_file[2:file_ind] + '_' + field + '_PPI.png'
             fig_ppi.savefig(save_file, dpi=300, format='png')
@@ -193,9 +209,10 @@ def start_to_first_flash_ppi_rhi(azimuth=205, coord=None, file_ind=-7):
 
 
 if __name__ == "__main__":
-    start_to_first_flash_ppi_rhi(azimuth=first.azimuth, coord=first.flash_x_y)
-    #start_to_first_flash_ppi_rhi(None, (0, -14.2e3), -4)
+    # start_to_first_flash_ppi_rhi(first.azimuth, coord=first.flash_x_y_z,
+    #                              file_ind=first.file_ind)
     # start_to_first_flash_ppi(coord=first.flash_x_y)
+    entire_storm_ppi(entire.file_ind)
 
     # file = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 03-04-2016/Radar/KJAX/Level2_KJAX_20160304_0607.ar2v'
     # file = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 07-17-2012/Radar/KJAX/Level-II/KJAX20120717_200110_V06'
