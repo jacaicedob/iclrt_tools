@@ -16,9 +16,11 @@ fileName = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolutio
 
 fileName = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 08-27-2015/LMA/LYLOUT_150827_223000_0600_8stations.dat'
 
+fileName = '/home/jaime/Documents/LMA/Data/Triggered/2014/071414/UF14-26/LYLOUT_140714_190754_0008.dat'
+
 print("Reading File...")
 start = datetime.datetime.now()
-f = lma.LMAFile(fileName, shift=())
+f = lma.LMAFile(fileName, shift=(0, 0))
 # f = lma.XLMAExportedFile(fileName)
 print(datetime.datetime.now() - start)
 
@@ -28,10 +30,10 @@ print(datetime.datetime.now() - start)
 
 print("Filtering...")
 
-p.filter_rc2(5.0)
+p.filter_rc2(1.0)
 # p.filter_xy([-20E3, 20E3], [-20E3, 20E3])
-p.filter_num_stations(6)
-p.filter_time(['22:37:24.0', '22:37:25.0'])
+p.filter_num_stations(7)
+# p.filter_time(['22:37:24.0', '22:37:25.0'])
 
 print("Plotting...")
 
