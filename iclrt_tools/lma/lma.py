@@ -45,7 +45,12 @@ class LMAFile(object):
 
                 elif 'Data start time' in line:
                     date = line.split(':')[1].split()[0]
-                    self.date = datetime.datetime.strptime(date, '%m/%d/%y')
+                    try:
+                        self.date = datetime.datetime.strptime(date,
+                                                               '%m/%d/%y')
+                    except ValueError:
+                        self.date = datetime.datetime.strptime(date,
+                                                               '%m/%d/%Y')
 
                 elif 'Coordinate center (lat,lon,alt):' in line:
                     values = line.split(":")[1].split()
