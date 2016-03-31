@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import datetime
-
 import seaborn as sns
 
-def init():
+import iclrt_tools.plotting.dfplots as df
+
+def init_lma():
     # File names for first and second part of storm analysis
     file_name = '/home/jaime/Documents/ResearchTopics/Publications/LightningEvolution/Storm-08-27-2015/LMA/ChargeAnalysis-1of2-exported.csv'
     file_name_2 = '/home/jaime/Documents/ResearchTopics/Publications/LightningEvolution/Storm-08-27-2015/LMA/ChargeAnalysis-2of2-exported.csv'
@@ -22,7 +22,7 @@ def init():
 
     # Add 1-day to the seconds of day
     d = datetime.timedelta(days=1).total_seconds()
-    storm_2['time(UT-sec-of-day)'] = storm_2['time(UT-sec-of-day)'] + d
+    storm_2['time(UT-sec-of-day)'] +=  d
 
     # Combine both DataFrames into one
     storm = pd.concat([storm_1, storm_2])
@@ -30,6 +30,32 @@ def init():
     # Create a Series that stores the seconds per day in terms of thousands
     # (for plotting purposes)
     storm['time'] = storm['time(UT-sec-of-day)'] * 1e-3
+
+    return storm
+
+
+def init_ods():
+    file_name = '/home/jaime/Documents/ResearchTopics/Publications/LightningEvolution/Storm-08-27-2015/LMA Analysis 08272015.csv'
+
+    # Read in the file
+    storm = pd.read_csv(file_name)
+
+    # Combine the date and time columns into a single datetime column
+    storm.insert(0, 'DateTime',
+                 ['{0} {1}'.format(storm['Date'][i], storm['Time'][i]) for i in
+                  range(len(storm))])
+    storm['DateTime'] = pd.to_datetime(storm['DateTime'],
+                                       format='%m/%d/%y %H:%M:%S.%f')
+
+    # Convert the values in the duration column to timedelta objects
+    storm['Duration(s)'] = pd.to_timedelta(storm['Duration (ms)'], unit='ms')
+
+    # Remove unnecessary colums
+    _ = storm.pop('Date')
+    _ = storm.pop('Time')
+    _ = storm.pop('Flash')
+    _ = storm.pop('Comments')
+    _ = storm.pop('Duration (ms)')
 
     return storm
 
@@ -215,3 +241,61 @@ def plot_interval(storm, interval=5):
 
         start_time = end_time
         end_time += t_increment
+
+
+def get_flash_rate(storm, interval=5, category='all'):
+    original = storm
+
+    # Calculate flash rate every 5 minutes
+    t_interval = datetime.timedelta(minutes=interval)
+    t_start = storm['DateTime'].min()
+    t_end = t_start + t_interval
+
+    if category.lower() == 'ic':
+        storm = storm[storm['Type'] == 'IC']
+
+    elif category.lower() == '-cg' or category.lower() == 'cg':
+        storm1 = storm[storm['Type'] == '-CG']
+        storm2 = storm[storm['Type'] == 'CG']
+
+        storm = pd.concat([storm1, storm2])
+
+    print('\nFlash rate for {0} flashes (interval: {1} minutes):'.format(
+        category.upper(), interval))
+    print('-' * 50)
+
+    while t_start < storm['DateTime'].max():
+        temp = storm[storm['DateTime'] < t_end]
+        temp = temp[temp['DateTime'] >= t_start]
+        start = datetime.datetime.strftime(t_start, '%H:%M:%S.%f')
+        end = datetime.datetime.strftime(t_end, '%H:%M:%S.%f')
+
+        rate = (len(temp) / t_interval.total_seconds()) * 60
+        print('Flash rate between {0} -- {1} is {2:0.2f} per min'.format(start,
+                                                                         end,
+                                                                         rate))
+        t_start = t_end
+        t_end += t_interval
+
+    # Entire storm flash rate
+    rate = len(storm) / (storm['DateTime'].max() -
+                         storm['DateTime'].min()).total_seconds() * 60
+
+
+
+    print('\nNumber of {0}s: {1}/{2} total ({3:0.2f}%)'.format(category.upper(),
+                                                len(storm), len(original),
+                                                len(storm) / len(original) * 100))
+    print('Average {0} rate of entire storm: {1:0.2f} per minute'.format(category.upper(), rate))
+
+if __name__ == '__main__':
+    storm_lma = init_lma()
+    storm_ods = init_ods()
+    # fig, ax, ax2 = plot_all_charge_regions(storm)
+    # p = df.Plot(fig, ax)
+    # p.plot()
+
+    get_flash_rate(storm_ods, category='CG')
+    get_flash_rate(storm_ods, category='IC')
+
+    plt.show()
