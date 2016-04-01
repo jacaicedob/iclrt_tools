@@ -99,6 +99,9 @@ class Storm(object):
         else:
             storm = pds[0]
 
+        _ = storm.pop('#-of-stations-contributed')
+        _ = storm.pop('reduced-chi^2')
+        _ = storm.pop('time(UT-sec-of-day)')
         storm.set_index('DateTime', inplace=True)
         return storm
 
@@ -125,6 +128,9 @@ class Storm(object):
         _ = storm.pop('Flash')
         _ = storm.pop('Comments')
         _ = storm.pop('Duration (ms)')
+
+        storm['Initiation Height (km)'] = pd.to_numeric(
+            storm['Initiation Height (km)'], errors='coerce')
 
         return storm
 
@@ -361,3 +367,33 @@ class Storm(object):
 
         print('Average {0} rate of entire self.storm: {1:0.2f} '
               'per minute'.format(category.upper(), rate))
+
+    def get_storm_summary(self, charge=None, flash_types=None):
+        try:
+
+            if flash_types is None:
+                types = self.storm['Type'].unique()
+            else:
+                types = flash_types
+
+            for t in types:
+                storm = self.storm[self.storm['Type'] == t]
+                s = '\n'
+                s += '{0} : {1}\n'.format(t, len(storm))
+
+                print(s)
+                print(storm.describe())
+
+        except KeyError:
+            print("LMA File: Charge {0}".format(charge.upper()))
+
+            if charge is None:
+                storm = self.storm
+            elif charge == 'positive':
+                storm = self.storm[self.storm['charge'] == 3]
+            elif charge == 'negative':
+                storm = self.storm[self.storm['charge'] == -3]
+            elif charge == 'other':
+                storm = self.storm[self.storm['charge'] == 0]
+
+            print(storm.describe())
