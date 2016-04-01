@@ -15,7 +15,7 @@ Class for creating various types of plots.
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib.widgets import SpanSelector, RectangleSelector
+from matplotlib.widgets import SpanSelector, RectangleSelector, LassoSelector
 from matplotlib import cm, dates
 from matplotlib.gridspec import GridSpec
 from mpl_toolkits.mplot3d import Axes3D
@@ -345,6 +345,83 @@ class RectangleSelect(object):
         self.fig.canvas.draw()
 
         return x_stack, y_stack, x_bounds, y_bounds
+
+class LassoSelect(object):
+    """
+    An object to implement lasso selection using a
+    mpl.widget.LassoSelector.
+
+    Parameters
+    ----------
+    lasso_sel: mpl.widget.LassoSelector
+        Lasso selector.
+
+    Attributes
+    ----------
+    fig: mpl.Figure
+        Figure instance.
+    ax: mpl.Axes
+        Axes instance.
+    lasso_sel: mpl.widget.LassoSelector
+        Lasso selector.
+
+
+    """
+
+    def __init__(self, lasso_sel):
+        """ Initialize the object. """
+
+        self.fig = lasso_sel.ax.figure
+        self.ax = lasso_sel.ax
+
+        self.lasso_sel = lasso_sel
+        self.set_active()
+
+    def set_active(self, active=False):
+        """
+        Set the state of the rectangular selector.
+
+        Parameters
+        ----------
+        active: bool
+            Boolean to represent the state of the selector.
+
+        """
+
+        self.lasso_sel.set_active(active)
+
+    def set_visibility(self, vis=True):
+        """
+        Set the visibility of the rectangular selector.
+
+        Parameters
+        ----------
+        vis: bool
+            Boolean to represent the visibility of the selector.
+
+        """
+
+        self.lasso_sel.visible = vis
+
+    def on_select_lasso(self, verts):
+        """
+        Handle LassoSelector events.
+
+        Parameters
+        ----------
+        verts: list of tuples
+            Vertices of the lines that make up the lasso
+
+        Returns
+        -------
+        verts: list of tuples
+            Vertices of the lines that make up the lasso
+
+        """
+
+        self.verts = verts
+
+        return self.verts
 
 
 class PointAnnotation(object):
@@ -2540,8 +2617,7 @@ class LMAPlotter(object):
                                                button=[1],
                                                drawtype='box',
                                                rectprops=dict(alpha=0.2,
-                                                              facecolor='red',
-                                                              edgecolor='red',
+                                                              edgecolor='black',
                                                               linewidth=2))
 
         self.cid_plan = self.fig_plan.canvas.mpl_connect(
@@ -3042,6 +3118,35 @@ class LMAPlotter(object):
 
         self.ax_all_hist.xaxis.set_major_formatter(mpl.ticker.NullFormatter())
         self.ax_all_hist.set_ylim([0, np.max(self.plot_data['z']*1e-3)])
+
+    def measure_area(self, ax):
+        mpl.rcParams['keymap.zoom'] = 'o'
+        ax = ax
+        self.fig_area = ax.get_figure()
+
+        ax.scatter(self.plot_data['x'],
+                   self.plot_data['y'], marker='.',
+                   c=self.plot_data['seconds_of_day'],
+                   cmap=self.cmap, s=30, lw=0)
+
+        lasso = LassoSelector(ax, self._onselect_measure_area)
+
+        self.lasso = LassoSelect(lasso)
+
+        self.kp_proj = self.fig_area.canvas.mpl_connect('key_press_event',
+                                                        self._onkeypress_area)
+
+    def _onselect_measure_area(self, verts):
+        verts.append(verts[0])
+        lines = np.hstack([verts, np.roll(verts, -1, axis=0)])
+        area = 0.5 * abs(sum(x1*y2-x2*y1 for x1, y1, x2, y2 in lines))
+        self.lasso.area = area
+
+    def _onkeypress_area(self, event):
+        if event.key == ' ' or event.key == 'escape':
+            plt.close(self.fig_area)
+        elif event.key == 'a':
+            self.lasso.set_active(True)
 
 
 def main():
