@@ -270,31 +270,33 @@ class Storm(object):
         # print(subset.storm.index)
         subset.plot_all_charge_regions(show_plot=plot)
 
-    def plot_interval(self, interval=5):
-        # Plot both charge regions and histrogram at a certain interval (in minutes).
-        t_increment = interval*60  # seconds
+    def plot_interval(self, path='./', interval=5):
+        # Plot both charge regions and histrogram at a certain
+        # interval (in minutes).
+        t_increment = datetime.timedelta(seconds=interval*60)
     
         positive_charge, negative_charge, _ = self.get_charge_regions()
     
-        start_time = positive_charge['time(UT-sec-of-day)'].min()
+        start_time = positive_charge.index.min()
         end_time = start_time + t_increment
     
-        while start_time < positive_charge['time(UT-sec-of-day)'].max():
-            subset = self.storm[self.storm['time(UT-sec-of-day)'] < end_time]
-            subset = subset[subset['time(UT-sec-of-day)'] > start_time]
-    
+        while start_time < positive_charge.index.max():
+            ind_start = datetime.datetime.strftime(start_time, '%Y-%m-%d %H:%M:%S.%f')
+            ind_end = datetime.datetime.strftime(end_time,
+                                                   '%Y-%m-%d %H:%M:%S.%f')
+            subset = self.storm[ind_start:ind_end]
             subset_pos_charge = subset[subset['charge'] == 3]
             subset_neg_charge = subset[subset['charge'] == -3]
     
             try:
                 fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12, 6), sharey=True)
     
-                subset_pos_charge.plot('time', 'alt(m)',
-                                       kind='scatter', c='r', lw=0, alpha=0.01,
-                                       ax=ax)
-                subset_neg_charge.plot('time', 'alt(m)',
-                                       kind='scatter', c='b', lw=0, ax=ax,
-                                       alpha=0.01)
+                subset_pos_charge.plot(y='alt(m)',
+                                       style='.', c='r', lw=0, alpha=0.01,
+                                       ax=ax, legend=False)
+                subset_neg_charge.plot(y='alt(m)',
+                                       style='.', c='b', lw=0, ax=ax,
+                                       alpha=0.01, legend=False)
     
                 subset_pos_charge['alt(m)'].hist(ax=ax2, orientation='horizontal',
                                                  color='r', alpha=0.5, bins=1000, lw=0)
@@ -305,16 +307,20 @@ class Storm(object):
                 ax.set_title('Sources')
                 ax2.set_title('Altitude Histrogram')
     
-                ax.set_xlabel(r'Time $\times 10^3$ (sec of day) ')
+                ax.set_xlabel(r'Time')
                 ax2.set_xlabel('Number of sources')
     
                 ax.set_ylabel('Altitude (m)')
     
                 ax.grid(True)
                 ax.set_ylim([0, 16e3])
-    
-                fig.savefig('./self.storm-08-27-2015_%d.png' % start_time,
-                            format='png', dpi=300)
+
+                file_name = path
+                file_name += 'storm_%s.png' % datetime.datetime.strftime(start_time, '%Y%m%d-%H%M%S')
+
+                # print(file_name)
+                # plt.show()
+                fig.savefig(file_name, format='png', dpi=300)
             except TypeError as e:
                 pass
     

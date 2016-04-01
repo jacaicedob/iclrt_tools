@@ -20,7 +20,8 @@ storm_ods = st.Storm.from_ods_file(file_name)
 #
 # storm_lma.plot_all_charge_regions(show_plot=True)
 
-storm_lma.get_storm_summary(charge='positive')
-storm_lma.get_storm_summary(charge='negative')
+# storm_lma.get_storm_summary(charge='positive')
+# storm_lma.get_storm_summary(charge='negative')
 # storm_lma.get_storm_summary(charge='other')
-storm_ods.get_storm_summary(flash_types=['IC'])
+# storm_ods.get_storm_summary(flash_types=['IC'])
+storm_lma.plot_interval(path='/home/jaime/Documents/ResearchTopics/Publications/LightningEvolution/Storm-08-27-2015/Figures/Statistical Analysis/')
