@@ -104,6 +104,9 @@ class LMAFile(object):
                 if flag:
                     words = line.split()
 
+                    if words == '':
+                        continue
+
                     source = LMASource(self.date, words[0], words[1], words[2],
                                        words[3], words[4], words[5], words[6])
 

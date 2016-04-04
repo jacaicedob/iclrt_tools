@@ -6,6 +6,7 @@ import datetime
 import numpy as np
 import seaborn as sns
 import os
+import sys
 
 import iclrt_tools.plotting.dfplots as df
 
@@ -96,13 +97,13 @@ class Storm(object):
 
         # Make the final Pandas DataFrame
         if len(pds) > 1:
-            storm = pd.concat(pds)
+            storm = pd.concat(pds, ignore_index=True)
         else:
             storm = pds[0]
 
-        _ = storm.pop('#-of-stations-contributed')
-        _ = storm.pop('reduced-chi^2')
-        _ = storm.pop('time(UT-sec-of-day)')
+        # _ = storm.pop('#-of-stations-contributed')
+        # _ = storm.pop('reduced-chi^2')
+        # _ = storm.pop('time(UT-sec-of-day)')
         storm.set_index('DateTime', inplace=True)
         return storm
 
@@ -386,10 +387,12 @@ class Storm(object):
 
         # Get all the flash numbers in the data
         numbers = all_charge['flash-number'].unique()
+        # print(numbers)
 
         # Generate the header contents for the temporary .dat file
         # that will contain the LMA sources for one flash.
-        date = 'Data start time: {0}'.format(self.storm['Date'][0])
+        d = datetime.datetime.strftime(self.storm.index[0], '%m/%d/%Y')
+        date = 'Data start time: {0}'.format(d)
         center = 'Coordinate center (lat,lon,alt): 29.9429917 -82.0332305 0.00'
         data_str = '*** data ***'
 
@@ -398,18 +401,21 @@ class Storm(object):
 
         # Open the file and find the last flash number that was saved to
         # resume from there.
-        with open(file) as f:
-            last = None
-            for last in (line for line in f if line.rstrip('\n')):
-                pass
+        last = None
+        try:
+            with open(file, 'r') as f:
+                for last in (line for line in f if line.rstrip('\n')):
+                    pass
+        except FileNotFoundError:
+            pass
 
         if last is None:
             index = 0
         else:
-            index = np.where(numbers == int(last.split(',')[1]))[0] + 1
+            index = np.where(numbers == int(last.split(',')[1]))[0][0] + 1
 
         # Start the iteration over the unique flash numbers and populate the
-        # temporaty LMA .dat file to creeate an LMAPlotter object and use
+        # temporary LMA .dat file to create an LMAPlotter object and use
         # the measure_area() function to graphically measure the flash areas
         # of all flashes.
         for flash_number in numbers[index:]:
@@ -419,6 +425,7 @@ class Storm(object):
                 # Select all the sources (classified and unclassified) for each
                 # flash number.
                 flash = self.storm[self.storm['flash-number'] == flash_number]
+                flash.reset_index(inplace=True)
 
                 # Open the temporary LMA .dat file and write the header.
                 with open(temp_file, 'w') as f:
@@ -441,6 +448,7 @@ class Storm(object):
 
                         f.write(data)
 
+                # sys.exit(1)
                 # Create the LMAPlotter object and run the measure_area() function
                 p = df.LMAPlotter(temp_file)
 
