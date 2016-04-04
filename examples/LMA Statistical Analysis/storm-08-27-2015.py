@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import pandas as pd
-import datetime
 import iclrt_tools.lma.analysis.storm_analysis as st
 
 # File names for first and second part of storm analysis
@@ -15,11 +13,13 @@ file_name = '/home/jaime/Documents/ResearchTopics/Publications/LightningEvolutio
 storm_lma = st.Storm.from_lma_files([file1, file2], dates)
 storm_ods = st.Storm.from_ods_file(file_name)
 
+storm_lma.measure_flash_area('/home/jaime/Documents/ResearchTopics/Publications/LightningEvolution/Storm-08-27-2015/Statistical Analysis/storm-08-27-2015_flash_areas.csv')
+
 # storm_ods.get_flash_rate(category='CG')
 # storm_ods.get_flash_rate(category='IC')
 #
 # storm_lma.plot_all_charge_regions(show_plot=True)
-storm_lma.plot_charge_region(show_plot=True)
+# storm_lma.plot_charge_region(show_plot=True)
 # storm_lma.get_storm_summary(charge='positive')
 # storm_lma.get_storm_summary(charge='negative')
 # storm_lma.get_storm_summary(charge='other')

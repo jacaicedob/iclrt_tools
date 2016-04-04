@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import datetime
 import numpy as np
 import seaborn as sns
+import os
 
 import iclrt_tools.plotting.dfplots as df
 
@@ -452,6 +453,10 @@ class Storm(object):
                                                               '%m/%d/%Y %H:%M:%S.%f'),
                                    str(flash_number), str(p.lasso.area)]))
                 ff.write('\n')
+
+        # Delete the temporary .dat file
+        if os.path.isfile(temp_file):
+            os.remove(temp_file)
 
     def get_storm_summary(self, charge=None, flash_types=None):
         try:
