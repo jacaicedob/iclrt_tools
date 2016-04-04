@@ -374,6 +374,85 @@ class Storm(object):
         print('Average {0} rate of entire self.storm: {1:0.2f} '
               'per minute'.format(category.upper(), rate))
 
+    def measure_flash_area(self, file_name=None):
+        if file_name is None:
+            file = './test.csv'
+        else:
+            file = file_name
+
+        # Get all charge classified sources
+        all_charge = self.storm[self.storm['charge'] != 0]
+
+        # Get all the flash numbers in the data
+        numbers = all_charge['flash-number'].unique()
+
+        # Generate the header contents for the temporary .dat file
+        # that will contain the LMA sources for one flash.
+        date = 'Data start time: {0}'.format(self.storm['Date'][0])
+        center = 'Coordinate center (lat,lon,alt): 29.9429917 -82.0332305 0.00'
+        data_str = '*** data ***'
+
+        # Temporary file to store the LMA sources of a single flash
+        temp_file = './temp.dat'
+
+        # Open the file and find the last flash number that was saved to
+        # resume from there.
+        with open(file) as f:
+            last = None
+            for last in (line for line in f if line.rstrip('\n')):
+                pass
+
+        if last is None:
+            index = 0
+        else:
+            index = np.where(numbers == int(last.split(',')[1]))[0] + 1
+
+        # Start the iteration over the unique flash numbers and populate the
+        # temporaty LMA .dat file to creeate an LMAPlotter object and use
+        # the measure_area() function to graphically measure the flash areas
+        # of all flashes.
+        for flash_number in numbers[index:]:
+            # Open the file that will store the area calculations
+            with open(file, 'a') as ff:
+
+                # Select all the sources (classified and unclassified) for each
+                # flash number.
+                flash = self.storm[self.storm['flash-number'] == flash_number]
+
+                # Open the temporary LMA .dat file and write the header.
+                with open(temp_file, 'w') as f:
+                    f.write(date + '\n')
+                    f.write(center + '\n')
+                    f.write(data_str + '\n')
+
+                    # Go through each source and write the information out to the
+                    # temporary .dat file
+                    for ind in flash.index:
+                        data = ' '.join([str(flash['time(UT-sec-of-day)'][ind]),
+                                         str(flash['lat'][ind]),
+                                         str(flash['lon'][ind]),
+                                         str(flash['alt(m)'][ind]),
+                                         str(flash['reduced-chi^2'][ind]),
+                                         str(flash['P(dBW)'][ind]),
+                                         str(flash['mask'][ind])])
+
+                        data += '\n'
+
+                        f.write(data)
+
+                # Create the LMAPlotter object and run the measure_area() function
+                p = df.LMAPlotter(temp_file)
+
+                fig, ax = plt.subplots(1, 1)
+                p.measure_area(ax)
+                plt.show()
+
+                # Write the results to file and close the file
+                ff.write(','.join([datetime.datetime.strftime(p.plot_data['t'][0],
+                                                              '%m/%d/%Y %H:%M:%S.%f'),
+                                   str(flash_number), str(p.lasso.area)]))
+                ff.write('\n')
+
     def get_storm_summary(self, charge=None, flash_types=None):
         try:
 
