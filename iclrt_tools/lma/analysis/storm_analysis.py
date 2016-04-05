@@ -352,7 +352,8 @@ class Storm(object):
         print('\nFlash rate for {0} flashes (interval: {1} minutes):'.format(
             category.upper(), interval))
         print('-' * 50)
-    
+
+        peak = 0
         while t_start < self.storm['DateTime'].max():
             temp = temp_storm[self.storm['DateTime'] < t_end]
             temp = temp[temp['DateTime'] >= t_start]
@@ -361,6 +362,10 @@ class Storm(object):
             end = datetime.datetime.strftime(t_end, '%H:%M:%S.%f')
     
             rate = (len(temp) / t_interval.total_seconds()) * 60
+
+            if rate > peak:
+                peak = rate
+
             t_start = t_end
             print('Flash rate between {0} -- {1} is {2:0.2f} '
                   'per min ({3} flashes total)'.format(start, end, rate,
@@ -376,8 +381,10 @@ class Storm(object):
                                    len(original),
                                    len(temp_storm) / len(original) * 100))
 
-        print('Average {0} rate of entire self.storm: {1:0.2f} '
+        print('Average {0} rate of entire storm: {1:0.2f} '
               'per minute'.format(category.upper(), rate))
+        print('Peak {0} rate: {1:0.2f} '
+              'per minute'.format(category.upper(), peak))
 
     def measure_flash_area(self, file_name=None):
         if file_name is None:
@@ -486,7 +493,7 @@ class Storm(object):
                 print(storm.describe())
 
         except KeyError:
-            print("LMA File: Charge {0}".format(charge.upper()))
+            print("\nLMA File: Charge {0}".format(charge.upper()))
 
             if charge is None:
                 storm = self.storm
