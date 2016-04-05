@@ -136,6 +136,20 @@ class Storm(object):
 
         return storm
 
+    @staticmethod
+    def calculate_histogram(data_series):
+        # Extract data from DataSeries into a np array
+        data = np.array(data_series['alt(m)'].dropna())
+
+        # Calculate histogram of the data and find the bin centers
+        hist, bin_edges = np.histogram(data, bins=1000)
+        bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+
+        # Return the altitude (bin_center) of the largest value
+        # in the histogram
+        return bin_centers[np.argmax(hist)]
+
+
     def get_charge_regions(self):
         # Generate a DataFrame for all positive charge sources
         self.positive_charge = self.storm[self.storm['charge'] == 3]
@@ -276,7 +290,7 @@ class Storm(object):
         subset.plot_all_charge_regions(show_plot=plot)
 
     def plot_intervals(self, path='./', interval=5):
-        # Plot both charge regions and histrogram at a certain
+        # Plot both charge regions and histogram at a certain
         # interval (in minutes).
         t_increment = datetime.timedelta(seconds=interval*60)
     
@@ -284,33 +298,46 @@ class Storm(object):
     
         start_time = positive_charge.index.min()
         end_time = start_time + t_increment
+
+        # These lists will hold the altitude of the peak of each histogram as
+        # well as the time interval when they occur
+        t_peaks = []
+        pos_peaks = []
+        neg_peaks = []
     
         while start_time < positive_charge.index.max():
-            ind_start = datetime.datetime.strftime(start_time, '%Y-%m-%d %H:%M:%S.%f')
-            ind_end = datetime.datetime.strftime(end_time,
+            ind_start = datetime.datetime.strftime(start_time,
                                                    '%Y-%m-%d %H:%M:%S.%f')
+            ind_end = datetime.datetime.strftime(end_time,
+                                                 '%Y-%m-%d %H:%M:%S.%f')
+
             subset = self.storm[ind_start:ind_end]
             subset_pos_charge = subset[subset['charge'] == 3]
             subset_neg_charge = subset[subset['charge'] == -3]
     
             try:
-                fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12, 6), sharey=True)
+                fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12, 6),
+                                              sharey=True)
     
-                subset_pos_charge.plot(y='alt(m)',
-                                       style='.', c='r', lw=0, alpha=0.01,
-                                       ax=ax, legend=False)
-                subset_neg_charge.plot(y='alt(m)',
-                                       style='.', c='b', lw=0, ax=ax,
-                                       alpha=0.01, legend=False)
+                subset_pos_charge.plot(y='alt(m)', style='.', c='r', lw=0,
+                                       alpha=0.01, ax=ax, legend=False)
+                subset_neg_charge.plot(y='alt(m)', style='.', c='b', lw=0,
+                                       ax=ax, alpha=0.01, legend=False)
     
-                subset_pos_charge['alt(m)'].hist(ax=ax2, orientation='horizontal',
-                                                 color='r', alpha=0.5, bins=1000, lw=0)
-                subset_neg_charge['alt(m)'].hist(ax=ax2, orientation='horizontal',
-                                                 color='b', alpha=0.5, bins=1000, lw=0)
-    
-    
-                ax.set_title('Sources')
-                ax2.set_title('Altitude Histrogram')
+                subset_pos_charge['alt(m)'].hist(ax=ax2, color='r', alpha=0.5,
+                                                 orientation='horizontal',
+                                                 bins=1000, lw=0)
+                subset_neg_charge['alt(m)'].hist(ax=ax2, color='b', alpha=0.5,
+                                                 orientation='horizontal',
+                                                 bins=1000, lw=0)
+
+                s = '{0} - {1}'.format(ind_start[:-4], ind_end[:-4])
+                t_peaks.append(s)
+                pos_peaks.append(self.calculate_histogram(subset_pos_charge))
+                neg_peaks.append(self.calculate_histogram(subset_neg_charge))
+
+                ax.set_title('Sources ({0} UTC)'.format(s))
+                ax2.set_title('Altitude Histogram')
     
                 ax.set_xlabel(r'Time')
                 ax2.set_xlabel('Number of sources')
@@ -321,16 +348,20 @@ class Storm(object):
                 ax.set_ylim([0, 16e3])
 
                 file_name = path
-                file_name += 'storm_%s.png' % datetime.datetime.strftime(start_time, '%Y%m%d-%H%M%S')
+                s = datetime.datetime.strftime(start_time, '%Y%m%d-%H%M%S')
+                file_name += 'storm_%s.png' % s
 
                 # print(file_name)
                 # plt.show()
                 fig.savefig(file_name, format='png', dpi=300)
+
             except TypeError as e:
                 pass
     
             start_time = end_time
             end_time += t_increment
+
+        # Print and plot summary of pos and neg peaks on each interval
 
     def get_flash_rate(self, interval=5, category='all'):
         original = self.storm
@@ -347,7 +378,7 @@ class Storm(object):
             storm1 = self.storm[self.storm['Type'] == '-CG']
             storm2 = self.storm[self.storm['Type'] == 'CG']
 
-            temp_storm = pd.concat([storm1, storm2])
+            temp_storm = pd.concat([storm1, storm2], ignore_index=True)
 
         s = '\nFlash rate for {0} flashes (interval: {1} minutes):'.format(
             category.upper(), interval)
