@@ -289,7 +289,8 @@ class Storm(object):
         # print(subset.storm.index)
         subset.plot_all_charge_regions(show_plot=plot)
 
-    def plot_intervals(self, path='./', interval=5):
+    def plot_intervals(self, interval=5, hist=True,
+                       savefigs=False, path='./',):
         # Plot both charge regions and histogram at a certain
         # interval (in minutes).
         t_increment = datetime.timedelta(seconds=interval*60)
@@ -314,22 +315,30 @@ class Storm(object):
             subset = self.storm[ind_start:ind_end]
             subset_pos_charge = subset[subset['charge'] == 3]
             subset_neg_charge = subset[subset['charge'] == -3]
-    
+
             try:
-                fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12, 6),
-                                              sharey=True)
+                if hist:
+                    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12, 6),
+                                                  sharey=True)
+                else:
+                    fig, ax = plt.subplots(1, 1, figsize=(12, 6))
     
                 subset_pos_charge.plot(y='alt(m)', style='.', c='r', lw=0,
                                        alpha=0.01, ax=ax, legend=False)
                 subset_neg_charge.plot(y='alt(m)', style='.', c='b', lw=0,
                                        ax=ax, alpha=0.01, legend=False)
-    
-                subset_pos_charge['alt(m)'].hist(ax=ax2, color='r', alpha=0.5,
-                                                 orientation='horizontal',
-                                                 bins=1000, lw=0)
-                subset_neg_charge['alt(m)'].hist(ax=ax2, color='b', alpha=0.5,
-                                                 orientation='horizontal',
-                                                 bins=1000, lw=0)
+
+                if hist:
+                    subset_pos_charge['alt(m)'].hist(ax=ax2, color='r',
+                                                     alpha=0.5,
+                                                     orientation='horizontal',
+                                                     bins=1000, lw=0)
+                    subset_neg_charge['alt(m)'].hist(ax=ax2, color='b',
+                                                     alpha=0.5,
+                                                     orientation='horizontal',
+                                                     bins=1000, lw=0)
+                    ax2.set_title('Altitude Histogram')
+                    ax2.set_xlabel('Number of sources')
 
                 s = '{0} - {1}'.format(ind_start[:-4], ind_end[:-4])
                 t_peaks.append(ind_start)
@@ -337,23 +346,20 @@ class Storm(object):
                 neg_peaks.append(self.calculate_histogram(subset_neg_charge))
 
                 ax.set_title('Sources ({0} UTC)'.format(s))
-                ax2.set_title('Altitude Histogram')
-    
                 ax.set_xlabel(r'Time')
-                ax2.set_xlabel('Number of sources')
-    
                 ax.set_ylabel('Altitude (m)')
     
                 ax.grid(True)
                 ax.set_ylim([0, 16e3])
 
-                file_name = path
-                s = datetime.datetime.strftime(start_time, '%Y%m%d-%H%M%S')
-                file_name += 'storm_%s.png' % s
+                if savefigs:
+                    file_name = path
+                    s = datetime.datetime.strftime(start_time, '%Y%m%d-%H%M%S')
+                    file_name += 'storm_%s.png' % s
 
-                # print(file_name)
-                # plt.show()
-                fig.savefig(file_name, format='png', dpi=300)
+                    # print(file_name)
+                    # plt.show()
+                    fig.savefig(file_name, format='png', dpi=300)
 
             except TypeError as e:
                 pass
@@ -367,8 +373,11 @@ class Storm(object):
 
         temp = pd.DataFrame({'positive': pos_series, 'negative': neg_series})
         fig, ax = plt.subplots(1, 1, figsize=(12, 6))
-        temp['positive'].plot(ax=ax)
-        temp['negative'].plot(ax=ax)
+        temp.plot(y='positive', ax=ax, c='r')
+        temp.plot(y='negative', ax=ax, c='b')
+        ax.set_title('Histogram Peak Altitudes for Each Interval')
+        ax.set_ylabel('Altitude (m)')
+        ax.set_xlabel('Time')
         plt.show()
 
     def get_flash_rate(self, interval=5, category='all'):
