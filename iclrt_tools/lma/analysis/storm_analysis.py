@@ -332,7 +332,7 @@ class Storm(object):
                                                  bins=1000, lw=0)
 
                 s = '{0} - {1}'.format(ind_start[:-4], ind_end[:-4])
-                t_peaks.append(s)
+                t_peaks.append(ind_start)
                 pos_peaks.append(self.calculate_histogram(subset_pos_charge))
                 neg_peaks.append(self.calculate_histogram(subset_neg_charge))
 
@@ -362,6 +362,14 @@ class Storm(object):
             end_time += t_increment
 
         # Print and plot summary of pos and neg peaks on each interval
+        pos_series = pd.Series(pos_peaks, index=t_peaks)
+        neg_series = pd.Series(neg_peaks, index=t_peaks)
+
+        temp = pd.DataFrame({'positive': pos_series, 'negative': neg_series})
+        fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+        temp['positive'].plot(ax=ax)
+        temp['negative'].plot(ax=ax)
+        plt.show()
 
     def get_flash_rate(self, interval=5, category='all'):
         original = self.storm
