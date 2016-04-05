@@ -188,10 +188,13 @@ class Storm(object):
     
         if charge['charge'].unique() == 3:
             color = 'r'
+            title = 'Positive Charge Sources'
         elif charge['charge'].unique() == -3:
             color = 'b'
+            title = 'Negative Charge Sources'
         else:
             color = 'g'
+            title = 'Other Sources'
     
         charge.plot(y='alt(m)', style='.', c=color, lw=0, alpha=0.01,
                     ax=ax, legend=False)
@@ -203,7 +206,7 @@ class Storm(object):
             ax2.set_title('Altitude Histrogram')
             ax2.set_xlabel('Number of sources')
     
-        ax.set_title('Positive Charge Sources')
+        ax.set_title(title)
         ax.set_xlabel(r'Time (sec of day) ')
         ax.set_ylabel('Altitude (m)')
     
