@@ -168,9 +168,9 @@ class Storm(object):
         ax.set_xlabel('Flash area (km^2)')
         ax.set_ylabel('Number of flashes')
 
-        temp_storm.describe()
-
         plt.show()
+
+        print(temp_storm['Area (km^2)'].describe())
 
     def analyze_initiation_heights(self, category='all'):
         if category.lower() == 'ic':
@@ -192,9 +192,9 @@ class Storm(object):
         ax.set_xlabel('Initiation Height (km)')
         ax.set_ylabel('Number of flashes')
 
-        temp_storm.describe()
-
         plt.show()
+
+        print(temp_storm['Initiation Height (km)'].describe())
 
     def analyze_pos_neg_charge(self):
         positive_charge, negative_charge, _ = self.get_charge_regions()
@@ -247,7 +247,7 @@ class Storm(object):
         else:
             temp_storm = self.storm
 
-        s = '\nFlash rate for {0} flashes (interval: {1} minutes):'.format(
+        s = '\nFlash rate for {0} flashes (interval = {1} minutes):'.format(
             category.upper(), interval)
         print(s)
         print('-' * len(s))
