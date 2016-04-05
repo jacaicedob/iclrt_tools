@@ -275,7 +275,7 @@ class Storm(object):
         # print(subset.storm.index)
         subset.plot_all_charge_regions(show_plot=plot)
 
-    def plot_interval(self, path='./', interval=5):
+    def plot_intervals(self, path='./', interval=5):
         # Plot both charge regions and histrogram at a certain
         # interval (in minutes).
         t_increment = datetime.timedelta(seconds=interval*60)
@@ -348,43 +348,49 @@ class Storm(object):
             storm2 = self.storm[self.storm['Type'] == 'CG']
 
             temp_storm = pd.concat([storm1, storm2])
-    
-        print('\nFlash rate for {0} flashes (interval: {1} minutes):'.format(
-            category.upper(), interval))
-        print('-' * 50)
 
-        peak = 0
+        s = '\nFlash rate for {0} flashes (interval: {1} minutes):'.format(
+            category.upper(), interval)
+        print(s)
+        print('-' * len(s))
+
+        rates = []
         while t_start < self.storm['DateTime'].max():
             temp = temp_storm[self.storm['DateTime'] < t_end]
             temp = temp[temp['DateTime'] >= t_start]
 
-            start = datetime.datetime.strftime(t_start, '%H:%M:%S.%f')
-            end = datetime.datetime.strftime(t_end, '%H:%M:%S.%f')
+            start = datetime.datetime.strftime(t_start, '%H:%M:%S.%f')[:-4]
+            end = datetime.datetime.strftime(t_end, '%H:%M:%S.%f')[:-4]
     
             rate = (len(temp) / t_interval.total_seconds()) * 60
-
-            if rate > peak:
-                peak = rate
+            rates.append(rate)
 
             t_start = t_end
-            print('Flash rate between {0} -- {1} is {2:0.2f} '
-                  'per min ({3} flashes total)'.format(start, end, rate,
-                                                       len(temp)))
+            print('{0} -- {1} UTC = {2:0.2f} '
+                  '/min ({3} flashes total)'.format(start, end, rate,
+                                                    len(temp)))
             t_end += t_interval
     
         # Entire self.storm flash rate
+        rates = np.array(rates)
         r = self.storm['DateTime'].max() - self.storm['DateTime'].min()
         rate = len(temp_storm) / r.total_seconds() * 60
 
-        print('\nNumber of {0}s: {1}/{2} total '
+        print('\nNumber of {0}s: {1} out of {2} total '
               '({3:0.2f}%)'.format(category.upper(), len(temp_storm),
                                    len(original),
                                    len(temp_storm) / len(original) * 100))
 
         print('Average {0} rate of entire storm: {1:0.2f} '
               'per minute'.format(category.upper(), rate))
-        print('Peak {0} rate: {1:0.2f} '
-              'per minute'.format(category.upper(), peak))
+
+        s = '\nInterval {0} Rate Statistics:'.format(category.upper())
+        print(s)
+        print('-' * len(s))
+        print('Mean: {0:0.2f} per minute'.format(np.mean(rates)))
+        print('Std. dev. {0:0.2f} per minute'.format(np.std(rates)))
+        print('Max {0:0.2f} per minute'.format(np.max(rates)))
+        print('Minimum {0:0.2f} per minute'.format(np.min(rates)))
 
     def measure_flash_area(self, file_name=None):
         if file_name is None:
@@ -493,7 +499,9 @@ class Storm(object):
                 print(storm.describe())
 
         except KeyError:
-            print("\nLMA File: Charge {0}".format(charge.upper()))
+            s = "\nLMA File: Charge {0}".format(charge.upper())
+            print(s)
+            print('-' * len(s))
 
             if charge is None:
                 storm = self.storm
@@ -505,3 +513,4 @@ class Storm(object):
                 storm = self.storm[self.storm['charge'] == 0]
 
             print(storm.describe())
+            print('\n')
