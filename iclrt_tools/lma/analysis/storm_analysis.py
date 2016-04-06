@@ -254,7 +254,7 @@ class Storm(object):
 
         rates = []
         while t_start < self.storm['DateTime'].max():
-            temp = temp_storm[self.storm['DateTime'] < t_end]
+            temp = temp_storm[temp_storm['DateTime'] < t_end]
             temp = temp[temp['DateTime'] >= t_start]
 
             start = datetime.datetime.strftime(t_start, '%H:%M:%S.%f')[:-4]
@@ -289,6 +289,8 @@ class Storm(object):
         print('Std. dev. {0:0.2f} per minute'.format(np.std(rates)))
         print('Max {0:0.2f} per minute'.format(np.max(rates)))
         print('Minimum {0:0.2f} per minute'.format(np.min(rates)))
+
+        return temp_storm
 
     def get_charge_regions(self):
         # Generate a DataFrame for all positive charge sources
