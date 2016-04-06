@@ -150,16 +150,25 @@ class Storm(object):
         return bin_centers[np.argmax(hist)]
 
     def analyze_flash_areas(self, category='all'):
-        if category.lower() == 'ic':
-            temp_storm = self.storm[self.storm['Type'] == 'IC']
-
-        elif category.lower() == '-cg' or category.lower() == 'cg':
-            storm1 = self.storm[self.storm['Type'] == '-CG']
-            storm2 = self.storm[self.storm['Type'] == 'CG']
-
-            temp_storm = pd.concat([storm1, storm2], ignore_index=True)
-        else:
+        if category.lower == 'all':
             temp_storm = self.storm
+        else:
+            temp_storm = self.storm[self.storm['Type'] == category.upper()]
+
+        # if category.lower() == 'ic':
+        #     temp_storm = self.storm[self.storm['Type'] == 'IC']
+        #
+        # elif category.lower() == '-cg':
+        #     temp_storm = self.storm[self.storm['Type'] == '-CG']
+        #
+        # elif category.lower() == 'cg':
+        #     temp_storm = self.storm[self.storm['Type'] == 'CG']
+        #
+        # elif category.lower() == 'cg':
+        #     temp_storm = self.storm[self.storm['Type'] == 'CG']
+        #
+        # else:
+        #     temp_storm = self.storm
 
         fig, ax = plt.subplots(1, 1, figsize=(12, 6))
         temp_storm['Area (km^2)'].hist(ax=ax)
@@ -173,16 +182,21 @@ class Storm(object):
         print(temp_storm['Area (km^2)'].describe())
 
     def analyze_initiation_heights(self, category='all'):
-        if category.lower() == 'ic':
-            temp_storm = self.storm[self.storm['Type'] == 'IC']
-
-        elif category.lower() == '-cg' or category.lower() == 'cg':
-            storm1 = self.storm[self.storm['Type'] == '-CG']
-            storm2 = self.storm[self.storm['Type'] == 'CG']
-
-            temp_storm = pd.concat([storm1, storm2], ignore_index=True)
-        else:
+        if category.lower == 'all':
             temp_storm = self.storm
+        else:
+            temp_storm = self.storm[self.storm['Type'] == category.upper()]
+
+        # if category.lower() == 'ic':
+        #     temp_storm = self.storm[self.storm['Type'] == 'IC']
+        #
+        # elif category.lower() == '-cg' or category.lower() == 'cg':
+        #     storm1 = self.storm[self.storm['Type'] == '-CG']
+        #     storm2 = self.storm[self.storm['Type'] == 'CG']
+        #
+        #     temp_storm = pd.concat([storm1, storm2], ignore_index=True)
+        # else:
+        #     temp_storm = self.storm
 
         fig, ax = plt.subplots(1, 1, figsize=(12, 6))
         temp_storm['Initiation Height (km)'].hist(ax=ax)
@@ -236,16 +250,21 @@ class Storm(object):
         t_start = self.storm['DateTime'].min()
         t_end = t_start + t_interval
 
-        if category.lower() == 'ic':
-            temp_storm = self.storm[self.storm['Type'] == 'IC']
-
-        elif category.lower() == '-cg' or category.lower() == 'cg':
-            storm1 = self.storm[self.storm['Type'] == '-CG']
-            storm2 = self.storm[self.storm['Type'] == 'CG']
-
-            temp_storm = pd.concat([storm1, storm2], ignore_index=True)
-        else:
+        if category.lower == 'all':
             temp_storm = self.storm
+        else:
+            temp_storm = self.storm[self.storm['Type'] == category.upper()]
+
+        # if category.lower() == 'ic':
+        #     temp_storm = self.storm[self.storm['Type'] == 'IC']
+        #
+        # elif category.lower() == '-cg' or category.lower() == 'cg':
+        #     storm1 = self.storm[self.storm['Type'] == '-CG']
+        #     storm2 = self.storm[self.storm['Type'] == 'CG']
+        #
+        #     temp_storm = pd.concat([storm1, storm2], ignore_index=True)
+        # else:
+        #     temp_storm = self.storm
 
         s = '\nFlash rate for {0} flashes (interval = {1} minutes):'.format(
             category.upper(), interval)

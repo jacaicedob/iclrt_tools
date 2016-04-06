@@ -32,27 +32,56 @@ print(datetime.datetime.now() - start)
 
 print("Filtering...")
 
-# p.filter_rc2(1.0)
+p.filter_rc2(1.0)
 # p.filter_xy([-20E3, 20E3], [-20E3, 20E3])
-# p.filter_num_stations(7)
+p.filter_num_stations(7)
 # p.filter_time(['23:24:25.9', '23:24:26.522908'])
 
-p.filter_rc2(5.0)
-p.filter_xy([-20E3, 20E3], [-20E3, 20E3])
-p.filter_num_stations(7)
-p.filter_time(['23:24:26.764446', '23:24:27.0'])
-p.filter_alt(8e3)
-
-fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
-p.plot_plan(fig=fig, ax=ax1)
-p.plot_proj('EW', zlims=[0, 8e3], fig=fig, ax=ax2)
-p.plot_proj('NS', zlims=[0, 8e3], fig=fig, ax=ax3)
-
-ax1.set_title('RS #5 - Plan View')
-ax2.set_title('EW Projection')
-ax3.set_title('NS Projection')
-plt.show()
-sys.exit(1)
+### Moore's request to plot the RTL up to the point of each RS.
+# times = [['23:24:24.900000', '23:24:26.522908'],
+#          ['23:24:24.900000', '23:24:26.579535'],
+#          ['23:24:24.900000', '23:24:26.691097'],
+#          ['23:24:24.900000', '23:24:26.734557'],
+#          ['23:24:24.900000', '23:24:26.764446'],
+#          ['23:24:24.900000', '23:24:27.000000']]
+#
+# times = [['23:24:24.900000', '23:24:26.522908'],
+#          ['23:24:26.522908', '23:24:26.579535'],
+#          ['23:24:26.579535', '23:24:26.691097'],
+#          ['23:24:26.691097', '23:24:26.734557'],
+#          ['23:24:26.734557', '23:24:26.764446'],
+#          ['23:24:26.764446', '23:24:27.000000']]
+#
+# name = ['IS',
+#         'RS #1',
+#         'RS #2',
+#         'RS #3',
+#         'RS #4',
+#         'RS #5']
+#
+# for i in range(len(name)):
+#     p.reset_filters()
+#     p.filter_rc2(5.0)
+#     p.filter_xy([-20E3, 20E3], [-20E3, 20E3])
+#     p.filter_num_stations(7)
+#     p.filter_time(times[i])
+#     p.filter_alt(8e3)
+#
+#     fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
+#     p.plot_plan(fig=fig, ax=ax1)
+#     p.plot_proj('EW', zlims=[0, 8e3], fig=fig, ax=ax2)
+#     p.plot_proj('NS', zlims=[0, 8e3], fig=fig, ax=ax3)
+#
+#     ax1.set_title('{0} - Plan View'.format(name[i]))
+#     ax2.set_title('EW Projection')
+#     ax3.set_title('NS Projection')
+#
+#     s = '{0} -- {1} UTC'.format(times[i][0][:-4], times[i][1][:-4])
+#     ax1.text(-19e3, 14e3, s)
+#
+# plt.show()
+# sys.exit(1)
+###
 
 print("Plotting...")
 
