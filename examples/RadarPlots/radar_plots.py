@@ -8,10 +8,10 @@ import os
 
 # sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 08-27-2015/Figures/')
 # sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 03-04-2016/Figures/')
-# sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 07-17-2012/Figures/')
-sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Possible Storms/Storm 02-24-2016/Figures/')
+sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/LightningEvolution/Storm-07-17-2012/Figures/')
+# sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Possible Storms/Storm 02-24-2016/Figures/')
 
-import radar_entire_storm_ppi as entire
+import radar_entire_storm_ppi_2 as entire
 # import radar_start_to_first_flash as first
 
 
@@ -22,7 +22,7 @@ def entire_storm_ppi(file_ind=-5):
         # radar_plotter = df.RadarPlotter(radar_file, shift=[0, 0])
         radar_plotter = df.RadarPlotter(radar_file)
 
-        radar_plotter.filter_data()
+        # radar_plotter.filter_data()
         radar_plotter.setup_display()
 
         for field in entire.fields:
@@ -35,7 +35,10 @@ def entire_storm_ppi(file_ind=-5):
             ax.set_xlabel('West - East (km)')
             ax.set_ylabel('South - North (km)')
             ax.set_title(radar_file[2:])
-            save_file = entire.save_parent + radar_file[2:file_ind] + '_' + field + '_PPI.png'
+            if file_ind is not None:
+                save_file = entire.save_parent + radar_file[2:file_ind] + '_' + field + '_PPI.png'
+            else:
+                save_file = entire.save_parent + radar_file[2:] + '_' + field + '_PPI.png'
             fig.savefig(save_file, dpi=300, format='png')
             plt.close(fig)
 

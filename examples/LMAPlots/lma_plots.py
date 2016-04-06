@@ -18,6 +18,8 @@ fileName = '/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolutio
 
 fileName = '/home/jaime/Documents/LMA/Data/Triggered/2014/071414/UF14-26/LYLOUT_140714_190754_0008.dat'
 
+fileName = '/home/jaime/Documents/LMA/Data/Triggered/2015/150827/LYLOUT_150827_232422_0008_8stations.dat'
+
 print("Reading File...")
 start = datetime.datetime.now()
 f = lma.LMAFile(fileName, shift=(0, 0))
@@ -30,10 +32,27 @@ print(datetime.datetime.now() - start)
 
 print("Filtering...")
 
-p.filter_rc2(1.0)
+# p.filter_rc2(1.0)
 # p.filter_xy([-20E3, 20E3], [-20E3, 20E3])
+# p.filter_num_stations(7)
+# p.filter_time(['23:24:25.9', '23:24:26.522908'])
+
+p.filter_rc2(5.0)
+p.filter_xy([-20E3, 20E3], [-20E3, 20E3])
 p.filter_num_stations(7)
-# p.filter_time(['22:37:24.0', '22:37:25.0'])
+p.filter_time(['23:24:26.764446', '23:24:27.0'])
+p.filter_alt(8e3)
+
+fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
+p.plot_plan(fig=fig, ax=ax1)
+p.plot_proj('EW', zlims=[0, 8e3], fig=fig, ax=ax2)
+p.plot_proj('NS', zlims=[0, 8e3], fig=fig, ax=ax3)
+
+ax1.set_title('RS #5 - Plan View')
+ax2.set_title('EW Projection')
+ax3.set_title('NS Projection')
+plt.show()
+sys.exit(1)
 
 print("Plotting...")
 

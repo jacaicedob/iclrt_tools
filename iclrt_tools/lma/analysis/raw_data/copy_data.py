@@ -26,6 +26,7 @@ seperator='/'
 final_data_location='/home/jaime/Documents/LMA/Analysis/PythonAnalyzer/data'
 LMA_data_location='/media/jaime/Data/10microsecond_data'
 # LMA_data_location='/media/jaime/ICLRTArray/LMA/10microsecond_data'
+# LMA_data_location='/media/jaime/LarsenArray/LMA/10microsecond'
 
 LMA_file_locations={'blanding_10':'blanding', 'blast_10':'blast', 'dupont_N_10':'dupont_N', 'dupont_S_10':'dupont_S', 'fl_dot_10':'fl_dot', 'golf_10':'golf','warehouse_10':'warehouse', 'wildlife_10':'wildlife' }
 

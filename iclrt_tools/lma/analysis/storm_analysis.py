@@ -597,6 +597,10 @@ class Storm(object):
                 s = '\n'
                 s += '{0} : {1}\n'.format(t, len(storm))
 
+                # Get rid of unwanted columns
+                storm.pop('EW Extent (km)')
+                storm.pop('NS Extent (km)')
+
                 print(s)
                 print(storm.describe())
 
@@ -613,6 +617,15 @@ class Storm(object):
                 storm = self.storm[self.storm['charge'] == -3]
             elif charge == 'other':
                 storm = self.storm[self.storm['charge'] == 0]
+
+            # Get rid of unwanted columns
+            storm.pop('time(UT-sec-of-day)')
+            # storm.pop('lat')
+            # storm.pop('lon')
+            storm.pop('reduced-chi^2')
+            storm.pop('#-of-stations-contributed')
+            storm.pop('flash-number')
+            storm.pop('charge')
 
             print(storm.describe())
             print('\n')
