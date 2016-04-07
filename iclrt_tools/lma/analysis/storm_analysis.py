@@ -825,6 +825,46 @@ class Storm(object):
             p.plot_all()
             plt.show()
 
+    def print_nldn_efficiency(self, nldn_file):
+        # Read in file
+        nldn = pd.read_csv(nldn_file, sep=' ',
+                           names=['Date', 'Time', 'lat', 'lon', 'kA', 'Type',
+                                  'Mult', 'Dummy', 'Dummy2'])
+
+        # Convert dates to datetime and set the index of the DataFrame
+        nldn.insert(0, 'DateTime',
+                    ['{0} {1}'.format(nldn['Date'][i], nldn['Time'][i])
+                     for i in
+                     range(len(nldn))])
+        nldn['DateTime'] = pd.to_datetime(nldn['DateTime'],
+                                          format='%m/%d/%y %H:%M:%S.%f')
+        nldn.set_index('DateTime', inplace=True)
+
+        # Remove unwanted columns
+        _ = nldn.pop('Date')
+        _ = nldn.pop('Time')
+        _ = nldn.pop('Dummy')
+        _ = nldn.pop('Dummy2')
+
+        # Start the computation of detected NLDN flashes
+        detections = []
+
+        temp = self.storm[self.storm['charge'] != 0]
+        numbers = temp['flash-number'].unique()
+
+        for i in nldn.index:
+            for flash_number in numbers:
+                flash = self.storm[self.storm['flash-number'] == flash_number]
+
+                if flash.index.min() <= i <= flash.index.max():
+                    detections.append((flash_number, i))
+
+        print('NLDN detected flashes: {0}'.format(len(nldn)))
+        print('LMA analyzed flashes: {0}'.format(len(numbers)))
+        print('Uncorrelated detection efficiency: {0}'.format(len(nldn)/len(numbers)))
+        print('Correlated NLDN detections with analyzed LMA flashes: {0}'.format(len(detections)))
+        print('Correlated detection efficiency: {0}'.format(len(detections)/len(numbers)))
+
     def print_storm_summary(self, charge=None, flash_types=None):
         """ Print the summary of the storm. """
 
