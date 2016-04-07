@@ -36,6 +36,7 @@ class Storm(object):
 
     def __init__(self, storm):
         """ Initialize the object. """
+
         self.storm = storm
         self.positive_charge = None
         self.negative_charge = None
@@ -44,17 +45,20 @@ class Storm(object):
     @classmethod
     def from_lma_files(cls, files, dates):
         """ Initialize the object from files and dates """
+
         storm = cls._parse_lma_files(files, dates)
         return cls(storm)
 
     @classmethod
     def from_ods_file(cls, file):
         """ Initialize the object from files and dates """
+
         storm = cls._parse_ods_file(file)
         return cls(storm)
 
     @staticmethod
     def _parse_lma_files(files, dates):
+        """ Parse the LMA .dat files to generate the DataFrame. """
 
         pds = []
 
@@ -109,6 +113,7 @@ class Storm(object):
 
     @staticmethod
     def _parse_ods_file(file):
+        """ Parse the .ods files to generate the DataFrame. """
 
         storm = pd.read_csv(file)
 
@@ -138,6 +143,8 @@ class Storm(object):
 
     @staticmethod
     def _calculate_histogram(data_series):
+        """ Compute the histogram of a Series and return the bin centers. """
+
         # Extract data from DataSeries into a np array
         data = np.array(data_series['alt(m)'].dropna())
 
@@ -149,22 +156,24 @@ class Storm(object):
         # in the histogram
         return bin_centers[np.argmax(hist)]
 
-    def analyze_flash_areas(self, category='all'):
-        if category.lower == 'all':
+    def analyze_flash_areas(self, flash_type='all'):
+        """ Analyze the areas of the specified flash type. """
+
+        if flash_type.lower == 'all':
             temp_storm = self.storm
         else:
-            temp_storm = self.storm[self.storm['Type'] == category.upper()]
+            temp_storm = self.storm[self.storm['Type'] == flash_type.upper()]
 
-        # if category.lower() == 'ic':
+        # if flash_type.lower() == 'ic':
         #     temp_storm = self.storm[self.storm['Type'] == 'IC']
         #
-        # elif category.lower() == '-cg':
+        # elif flash_type.lower() == '-cg':
         #     temp_storm = self.storm[self.storm['Type'] == '-CG']
         #
-        # elif category.lower() == 'cg':
+        # elif flash_type.lower() == 'cg':
         #     temp_storm = self.storm[self.storm['Type'] == 'CG']
         #
-        # elif category.lower() == 'cg':
+        # elif flash_type.lower() == 'cg':
         #     temp_storm = self.storm[self.storm['Type'] == 'CG']
         #
         # else:
@@ -173,7 +182,7 @@ class Storm(object):
         fig, ax = plt.subplots(1, 1, figsize=(12, 6))
         temp_storm['Area (km^2)'].hist(ax=ax)
         ax.set_title('Histogram of flash areas for '
-                     '{0}s'.format(category.upper()))
+                     '{0}s'.format(flash_type.upper()))
         ax.set_xlabel('Flash area (km^2)')
         ax.set_ylabel('Number of flashes')
 
@@ -181,16 +190,18 @@ class Storm(object):
 
         print(temp_storm['Area (km^2)'].describe())
 
-    def analyze_initiation_heights(self, category='all'):
-        if category.lower == 'all':
+    def analyze_initiation_heights(self, flash_type='all'):
+        """ Analyze the initiation heights of the specified flash type. """
+
+        if flash_type.lower == 'all':
             temp_storm = self.storm
         else:
-            temp_storm = self.storm[self.storm['Type'] == category.upper()]
+            temp_storm = self.storm[self.storm['Type'] == flash_type.upper()]
 
-        # if category.lower() == 'ic':
+        # if flash_type.lower() == 'ic':
         #     temp_storm = self.storm[self.storm['Type'] == 'IC']
         #
-        # elif category.lower() == '-cg' or category.lower() == 'cg':
+        # elif flash_type.lower() == '-cg' or flash_type.lower() == 'cg':
         #     storm1 = self.storm[self.storm['Type'] == '-CG']
         #     storm2 = self.storm[self.storm['Type'] == 'CG']
         #
@@ -201,7 +212,7 @@ class Storm(object):
         fig, ax = plt.subplots(1, 1, figsize=(12, 6))
         temp_storm['Initiation Height (km)'].hist(ax=ax)
         ax.set_title('Histogram of initiation heights for '
-                     '{0}s'.format(category.upper()))
+                     '{0}s'.format(flash_type.upper()))
 
         ax.set_xlabel('Initiation Height (km)')
         ax.set_ylabel('Number of flashes')
@@ -211,6 +222,8 @@ class Storm(object):
         print(temp_storm['Initiation Height (km)'].describe())
 
     def analyze_pos_neg_charge(self):
+        """ Analyze the positive and negative sources. """
+
         positive_charge, negative_charge, _ = self.get_charge_regions()
 
         # Get quick statistics on the positive charge sources
@@ -236,29 +249,49 @@ class Storm(object):
         return positive_charge, negative_charge
 
     def analyze_subset(self, start, end, plot=True):
+        """ Analyze the data between start and end. """
+
         # Analyze a subset of the entire self.storm
-        subset = self.storm[start:end]
+        subset = self.storm.loc[start:end]
         # print(subset.index)
 
         subset = Storm(subset)
         # print(subset.storm.index)
         subset.plot_all_charge_regions(show_plot=plot)
 
-    def calculate_flash_rates(self, interval=5, category='all'):
+    def calculate_flash_rates(self, interval=5, flash_type='all'):
+        """
+        Calculate and print the flash rates in the specified time interval
+        for the specified flash types.
+
+        Parameters
+        ----------
+        interval: int
+            Time interval in minutes.
+        flash_type: str
+            Flash type to do the calculation.
+
+        Returns
+        -------
+            temp_storm: DataFrame
+                DataFrame containing all the data of all flashes for the
+                specified flash type.
+
+        """
         # Calculate flash rate every 5 minutes
         t_interval = datetime.timedelta(minutes=interval)
         t_start = self.storm['DateTime'].min()
         t_end = t_start + t_interval
 
-        if category.lower == 'all':
+        if flash_type.lower == 'all':
             temp_storm = self.storm
         else:
-            temp_storm = self.storm[self.storm['Type'] == category.upper()]
+            temp_storm = self.storm[self.storm['Type'] == flash_type.upper()]
 
-        # if category.lower() == 'ic':
+        # if flash_type.lower() == 'ic':
         #     temp_storm = self.storm[self.storm['Type'] == 'IC']
         #
-        # elif category.lower() == '-cg' or category.lower() == 'cg':
+        # elif flash_type.lower() == '-cg' or flash_type.lower() == 'cg':
         #     storm1 = self.storm[self.storm['Type'] == '-CG']
         #     storm2 = self.storm[self.storm['Type'] == 'CG']
         #
@@ -267,7 +300,7 @@ class Storm(object):
         #     temp_storm = self.storm
 
         s = '\nFlash rate for {0} flashes (interval = {1} minutes):'.format(
-            category.upper(), interval)
+            flash_type.upper(), interval)
         print(s)
         print('-' * len(s))
 
@@ -294,14 +327,14 @@ class Storm(object):
         rate = len(temp_storm) / r.total_seconds() * 60
 
         print('\nNumber of {0}s: {1} out of {2} total '
-              '({3:0.2f}%)'.format(category.upper(), len(temp_storm),
+              '({3:0.2f}%)'.format(flash_type.upper(), len(temp_storm),
                                    len(self.storm),
                                    len(temp_storm) / len(self.storm) * 100))
 
         print('Average {0} rate of entire storm: {1:0.2f} '
-              'per minute'.format(category.upper(), rate))
+              'per minute'.format(flash_type.upper(), rate))
 
-        s = '\nInterval {0} Rate Statistics:'.format(category.upper())
+        s = '\nInterval {0} Rate Statistics:'.format(flash_type.upper())
         print(s)
         print('-' * len(s))
         print('Mean: {0:0.2f} per minute'.format(np.mean(rates)))
@@ -312,6 +345,8 @@ class Storm(object):
         return temp_storm
 
     def get_charge_regions(self):
+        """ Return DataFrames corresponding to each charge region. """
+
         # Generate a DataFrame for all positive charge sources
         self.positive_charge = self.storm[self.storm['charge'] == 3]
     
@@ -324,6 +359,19 @@ class Storm(object):
         return self.positive_charge, self.negative_charge, self.other
 
     def measure_flash_area(self, file_name=None):
+        """
+        Measures the area (graphically) of all flashes in a storm by
+        generating a temporary .dat file to hold the source data for a
+        particular flash and instantiating a dfplots.LMAPlotter object.
+        It saves the area retults to the specified file_name as comma
+        separated values.
+
+        Parameters
+        ----------
+        file_name: str
+            File used to save the area results.
+
+        """
         if file_name is None:
             file = './test.csv'
         else:
@@ -417,6 +465,29 @@ class Storm(object):
 
     def plot_charge_region(self, charge='positive', hist=True,
                            show_plot=False):
+        """
+        Plot the LMA sources of a charge region. The histogram can be plotted
+        also.
+
+        Parameters
+        ----------
+        charge: str (optional)
+            The charge to be plotter, i.e., positive or negative.
+        hist: bool
+            Boolean flag to include the histogram in the plot.
+        show_plot: bool
+            Boolean flag to show the plot.
+
+        Returns
+        -------
+            fig: matplotlib.Figure
+                Figure instance of plot
+            ax: matplotlib.Axes
+                Axis instance of plot
+            ax2: matplotlib.Axes
+                Axis instance of histogram (only when hist is True)
+        """
+
         positive_charge, negative_charge, other = self.get_charge_regions()
     
         if charge == 'positive':
@@ -468,6 +539,28 @@ class Storm(object):
             return fig, ax
     
     def plot_all_charge_regions(self, hist=True, show_plot=False):
+        """
+        Plot both charge regions together. The source histograms can also
+        be plotted. The default is to not show the plot.
+
+        Parameters
+        ----------
+        hist: bool (optional)
+            Boolean flag to show the histogram in the plot
+        show_plot: bool (optional)
+            Boolean flag to show the plot
+
+        Returns
+        -------
+            fig: matplotlib.Figure
+                Figure instance of plot
+            ax: matplotlib.Axes
+                Axis instance of plot
+            ax2: matplotlib.Axes
+                Axis instance of histogram (only when hist is True)
+
+        """
+
         positive_charge, negative_charge, _ = self.get_charge_regions()
     
         # Plot both charge sources and histogram
@@ -514,6 +607,24 @@ class Storm(object):
 
     def plot_intervals(self, interval=5, hist=True,
                        savefigs=False, path='./',):
+        """
+        Generate plots of the charge regions and their histograms starting
+        at the time of the earliest positive source and every 'interval'
+        minutes. The plots can be saved if the user wants.
+
+        Parameters
+        ----------
+        interval: int (optional)
+            Time interval in minutes.
+        hist: bool (optional)
+            Boolean flag to plot the histogram.
+        savefigs: bool (optional)
+            Boolean flag to save the plots.
+        path: str (optional)
+            Path onto which the plots will be saved.
+
+        """
+
         # Plot both charge regions and histogram at a certain
         # interval (in minutes).
         t_increment = datetime.timedelta(seconds=interval*60)
@@ -604,6 +715,19 @@ class Storm(object):
         plt.show()
 
     def plot_flash_type(self, ods_file, type='IIC'):
+        """
+        Plot the LMA sources of each file type as classified in the .ods
+        file generated during analysis.
+
+        Parameters
+        ----------
+        ods_file: str
+            File name of the .ods file to open
+        type: str (optional)
+            Flash type
+
+        """
+
         if type not in ods_file.storm['Type'].unique():
             print('Flash type not found.')
             return False
@@ -675,6 +799,8 @@ class Storm(object):
             os.remove(temp_file)
 
     def print_storm_summary(self, charge=None, flash_types=None):
+        """ Print the summary of the storm. """
+        
         try:
 
             if flash_types is None:
