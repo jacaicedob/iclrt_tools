@@ -714,6 +714,78 @@ class Storm(object):
         ax.set_xlabel('Time')
         plt.show()
 
+    def get_flash_plotter(self, start=datetime.datetime.now(),
+                          end=datetime.datetime.now()):
+        """
+        Get the LMA sources between start and end.
+
+        Parameters
+        ----------
+        start: datetime
+            Datetime object that specifies the start of the flash.
+        end: datetime
+            Datetime object that specifies the start of the flash.
+
+        Returns
+        -------
+        p : LMAPlotter
+            Plotter object.
+        """
+
+        subset = self.storm.loc[start:end]
+
+        # Count the number of sources corresponding to each flash
+        # number in the subset
+        counts = subset['flash-number'].value_counts()
+
+        # Get the flash number with the most sources in this time period
+        number = counts[counts == counts.max()].index[0]
+
+        # Generate the header contents for the temporary .dat file
+        # that will contain the LMA sources for one flash.
+        d = datetime.datetime.strftime(self.storm.index[0], '%m/%d/%Y')
+        date = 'Data start time: {0}'.format(d)
+        center = 'Coordinate center (lat,lon,alt): 29.9429917 -82.0332305 0.00'
+        data_str = '*** data ***'
+
+        # Temporary file to store the LMA sources of a single flash
+        temp_file = './temp.dat'
+
+        subset = self.storm[self.storm['flash-number'] == number]
+        subset.reset_index(inplace=True)
+
+        # Open the temporary LMA .dat file and write the header.
+        with open(temp_file, 'w') as f:
+            f.write(date + '\n')
+            f.write(center + '\n')
+            f.write(data_str + '\n')
+
+            # Go through each source and write the information out to the
+            # temporary .dat file
+            for ind in subset.index:
+                data = ' '.join(
+                    [str(subset['time(UT-sec-of-day)'][ind]),
+                     str(subset['lat'][ind]),
+                     str(subset['lon'][ind]),
+                     str(subset['alt(m)'][ind]),
+                     str(subset['reduced-chi^2'][ind]),
+                     str(subset['P(dBW)'][ind]),
+                     str(subset['mask'][ind])])
+
+                data += '\n'
+
+                f.write(data)
+
+        # sys.exit(1)
+        # Create the LMAPlotter object and run the measure_area() function
+        p = df.LMAPlotter(temp_file)
+
+        # Delete the temporary .dat file
+        if os.path.isfile(temp_file):
+            os.remove(temp_file)
+
+        return p
+
     def plot_flash_type(self, ods_file, type='IIC'):
         """
         Plot the LMA sources of each file type as classified in the .ods
@@ -737,70 +809,16 @@ class Storm(object):
 
         for i in flashes.index:
             t1 = flashes.loc[i]['DateTime'] - dt
-            t2 = flashes.loc[i]['DateTime'] + dt
+            t2 = flashes.loc[i]['DateTime'] + \
+                 flashes.loc[i]['Duration(s)'] + dt
 
-            # Get the sources in this time period
-            subset = self.storm.loc[t1:t2]
-
-            # Count the number of sources corresponding to each flash
-            # number in the subset
-            counts = subset['flash-number'].value_counts()
-
-            # Get the flash number with the most sources in this time period
-            number = counts[counts == counts.max()].index[0]
-
-
-            # Generate the header contents for the temporary .dat file
-            # that will contain the LMA sources for one flash.
-            d = datetime.datetime.strftime(self.storm.index[0], '%m/%d/%Y')
-            date = 'Data start time: {0}'.format(d)
-            center = 'Coordinate center (lat,lon,alt): 29.9429917 -82.0332305 0.00'
-            data_str = '*** data ***'
-
-            # Temporary file to store the LMA sources of a single flash
-            temp_file = './temp.dat'
-
-            subset = self.storm[self.storm['flash-number'] == number]
-            subset.reset_index(inplace=True)
-
-            # Open the temporary LMA .dat file and write the header.
-            with open(temp_file, 'w') as f:
-                f.write(date + '\n')
-                f.write(center + '\n')
-                f.write(data_str + '\n')
-
-                # Go through each source and write the information out to the
-                # temporary .dat file
-                for ind in subset.index:
-                    data = ' '.join(
-                        [str(subset['time(UT-sec-of-day)'][ind]),
-                         str(subset['lat'][ind]),
-                         str(subset['lon'][ind]),
-                         str(subset['alt(m)'][ind]),
-                         str(subset['reduced-chi^2'][ind]),
-                         str(subset['P(dBW)'][ind]),
-                         str(subset['mask'][ind])])
-
-                    data += '\n'
-
-                    f.write(data)
-
-            # sys.exit(1)
-            # Create the LMAPlotter object and run the measure_area() function
-            p = df.LMAPlotter(temp_file)
-
-            # fig, ax = plt.subplots(1, 1)
-            p.set_coloring('charge')
+            p = self.get_flash_plotter(t1, t2)
             p.plot_all()
             plt.show()
 
-        # Delete the temporary .dat file
-        if os.path.isfile(temp_file):
-            os.remove(temp_file)
-
     def print_storm_summary(self, charge=None, flash_types=None):
         """ Print the summary of the storm. """
-        
+
         try:
 
             if flash_types is None:
