@@ -32,9 +32,8 @@ class Storm(object):
             Contains the data set for the sources classified as negative charge.
         other: Pandas DataFrame
             Contains the data set for the sources without classification.
-        nldn_detections: list
-            List of tuples containing the flash number and time of the NLDN
-            detections coincident with LMA analyzed flashes.
+        nldn_detections: dict
+            Dictionary containing the detection data
 
     """
 
@@ -837,7 +836,7 @@ class Storm(object):
             p.plot_all()
             plt.show()
 
-    def print_nldn_efficiency(self, nldn_file):
+    def calculate_nldn_efficiency(self, nldn_file):
         # Read in file
         nldn = pd.read_csv(nldn_file, sep=' ',
                            names=['Date', 'Time', 'lat', 'lon', 'kA', 'Type',
@@ -858,24 +857,59 @@ class Storm(object):
         _ = nldn.pop('Dummy')
         _ = nldn.pop('Dummy2')
 
-        # Start the computation of detected NLDN flashes
-        self.nldn_detections = []
+        # Limit the NLDN times to the storm times
+        start_ind = self.storm.index.min()
+        end_ind = self.storm.index.max()
+        nldn = nldn.loc[start_ind:end_ind]
+
+        # Setup the container for the results data
+        self.nldn_detections = dict()
+        self.nldn_detections['flash-number'] = []
+        self.nldn_detections['DateTime'] = []
+        self.nldn_detections['lat'] = []
+        self.nldn_detections['lon'] = []
+        self.nldn_detections['Type'] = []
+        self.nldn_detections['Mult'] = []
+        self.nldn_detections['kA'] = []
 
         temp = self.storm[self.storm['charge'] != 0]
         numbers = temp['flash-number'].unique()
 
+        # Start the computation of detected NLDN flashes
+        count = 1
+        total = len(nldn.index) * len(numbers)
+
+        print('Total Iterations: {0}'.format(total))
+        start = datetime.datetime.now()
         for i in nldn.index:
+            # # Ignore the times in the file that are outside the range of
+            # # the analyzed storm.
+            # if not (self.storm.index.min() <= i <= self.storm.index.max()):
+            #     continue
+
             for flash_number in numbers:
+                count += 1
                 flash = self.storm[self.storm['flash-number'] == flash_number]
 
                 if flash.index.min() <= i <= flash.index.max():
-                    self.nldn_detections.append((flash_number, i))
+                    self.nldn_detections['flash-number'].append(flash_number)
+                    self.nldn_detections['DateTime'].append(i)
+                    self.nldn_detections['lat'].append(nldn.loc[i]['lat'])
+                    self.nldn_detections['lon'].append(nldn.loc[i]['lon'])
+                    self.nldn_detections['Type'].append(nldn.loc[i]['Type'])
+                    self.nldn_detections['Mult'].append(nldn.loc[i]['Mult'])
+                    self.nldn_detections['kA'].append(nldn.loc[i]['kA'])
 
+                print('Analyzing... {0:0.2f}%'.format(count / total * 100),
+                      end='\r')
+        # print()
+        end = datetime.datetime.now()
+        print('Analisis time: {0}\n'.format(end - start))
         print('NLDN detected flashes: {0}'.format(len(nldn)))
         print('LMA analyzed flashes: {0}'.format(len(numbers)))
         print('Uncorrelated detection efficiency: {0}'.format(len(nldn)/len(numbers)))
-        print('Correlated NLDN detections with analyzed LMA flashes: {0}'.format(len(detections)))
-        print('Correlated detection efficiency: {0}'.format(len(detections)/len(numbers)))
+        print('Correlated NLDN detections with analyzed LMA flashes: {0}'.format(len(self.nldn_detections['flash-number'])))
+        print('Correlated detection efficiency: {0}'.format(len(self.nldn_detections['flash-number'])/len(numbers)))
 
     def print_storm_summary(self, charge=None, flash_types=None):
         """ Print the summary of the storm. """
