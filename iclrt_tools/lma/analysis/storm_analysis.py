@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import datetime
 import numpy as np
+import pickle
 import seaborn as sns
 import os
 import sys
@@ -18,7 +19,7 @@ class Storm(object):
 
         Parameters:
         -----------
-        storm: Pandas DataFrame
+        storm: Pandas DataFrame (optional)
             Contains the entire data set merged from files.
 
         Attributes:
@@ -31,30 +32,35 @@ class Storm(object):
             Contains the data set for the sources classified as negative charge.
         other: Pandas DataFrame
             Contains the data set for the sources without classification.
+        nldn_detections: list
+            List of tuples containing the flash number and time of the NLDN
+            detections coincident with LMA analyzed flashes.
 
     """
 
-    def __init__(self, storm):
+    def __init__(self, storm=None):
         """ Initialize the object. """
 
         self.storm = storm
         self.positive_charge = None
         self.negative_charge = None
         self.other = None
+        self.nldn_detections = None
 
-    @classmethod
-    def from_lma_files(cls, files, dates):
-        """ Initialize the object from files and dates """
+    @staticmethod
+    def _calculate_histogram(data_series):
+        """ Compute the histogram of a Series and return the bin centers. """
 
-        storm = cls._parse_lma_files(files, dates)
-        return cls(storm)
+        # Extract data from DataSeries into a np array
+        data = np.array(data_series['alt(m)'].dropna())
 
-    @classmethod
-    def from_ods_file(cls, file):
-        """ Initialize the object from files and dates """
+        # Calculate histogram of the data and find the bin centers
+        hist, bin_edges = np.histogram(data, bins=1000)
+        bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
 
-        storm = cls._parse_ods_file(file)
-        return cls(storm)
+        # Return the altitude (bin_center) of the largest value
+        # in the histogram
+        return bin_centers[np.argmax(hist)]
 
     @staticmethod
     def _parse_lma_files(files, dates):
@@ -106,7 +112,7 @@ class Storm(object):
             max_flash_number = pds[i]['flash-number'].max() + 1
 
             # Apply the offset to the next file
-            pds[i+1]['flash-number'] += max_flash_number
+            pds[i + 1]['flash-number'] += max_flash_number
 
         # Make the final Pandas DataFrame
         if len(pds) > 1:
@@ -149,21 +155,6 @@ class Storm(object):
             storm['Initiation Height (km)'], errors='coerce')
 
         return storm
-
-    @staticmethod
-    def _calculate_histogram(data_series):
-        """ Compute the histogram of a Series and return the bin centers. """
-
-        # Extract data from DataSeries into a np array
-        data = np.array(data_series['alt(m)'].dropna())
-
-        # Calculate histogram of the data and find the bin centers
-        hist, bin_edges = np.histogram(data, bins=1000)
-        bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
-
-        # Return the altitude (bin_center) of the largest value
-        # in the histogram
-        return bin_centers[np.argmax(hist)]
 
     def analyze_flash_areas(self, flash_type='all'):
         """ Analyze the areas of the specified flash type. """
@@ -352,6 +343,27 @@ class Storm(object):
         print('Minimum {0:0.2f} per minute'.format(np.min(rates)))
 
         return temp_storm
+
+    @classmethod
+    def from_lma_files(cls, files, dates):
+        """ Initialize the object from files and dates """
+
+        storm = cls._parse_lma_files(files, dates)
+        return cls(storm)
+
+    @classmethod
+    def from_ods_file(cls, file):
+        """ Initialize the object from files and dates """
+
+        storm = cls._parse_ods_file(file)
+        return cls(storm)
+
+    def from_pickle(self, file):
+        """ Initialize the object from a save pickle. """
+
+        tmp_dict = pickle.load(open(file, 'rb'))
+
+        self.__dict__.update(tmp_dict)
 
     def get_charge_regions(self):
         """ Return DataFrames corresponding to each charge region. """
@@ -847,7 +859,7 @@ class Storm(object):
         _ = nldn.pop('Dummy2')
 
         # Start the computation of detected NLDN flashes
-        detections = []
+        self.nldn_detections = []
 
         temp = self.storm[self.storm['charge'] != 0]
         numbers = temp['flash-number'].unique()
@@ -857,7 +869,7 @@ class Storm(object):
                 flash = self.storm[self.storm['flash-number'] == flash_number]
 
                 if flash.index.min() <= i <= flash.index.max():
-                    detections.append((flash_number, i))
+                    self.nldn_detections.append((flash_number, i))
 
         print('NLDN detected flashes: {0}'.format(len(nldn)))
         print('LMA analyzed flashes: {0}'.format(len(numbers)))
@@ -912,3 +924,7 @@ class Storm(object):
 
             print(storm.describe())
             print('\n')
+
+    def save_to_pickle(self, file_name):
+        with open(file_name, 'wb') as f:
+            pickle.dump(self.__dict__, f)
