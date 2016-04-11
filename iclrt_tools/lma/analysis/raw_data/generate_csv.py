@@ -14,7 +14,7 @@ t_diff = t_end - t_start
 
 t = t_start + t_diff/2
 s = datetime.datetime.strftime(t, '%Y-%m-%d %H:%M:%S')
-s += ' 0 {0}'.format((t_diff/2).total_seconds())
+s += ' 0 {0}'.format(int((t_diff/2).total_seconds()))
 
 print(s)
 
