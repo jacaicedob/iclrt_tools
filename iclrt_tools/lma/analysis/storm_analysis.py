@@ -436,13 +436,20 @@ class Storm(object):
         print('Correlated detection efficiency: {0}'.format(
             len(self.nldn_detections['flash-number']) / len(numbers)))
 
-    def convert_latlon_to_km(self):
+    def convert_latlon_to_km(self, x_loc=None, y_loc=None):
         """
         Convert the lat, lon entries into distance from the ICLRT in a
         Cartesian plane, just like the xlma software does. Append two Series
         to the current DataFrame to hold the x and y values just calculated.
 
+        Parameters:
+        -----------
+            x_loc: int
+                Column number (base 0) where to insert the x result
+            y_loc: int
+                Column number (base 0) where to insert the y result
         """
+
         gnd_launcher_latlon = [29.9429917, -82.0332305, 0]  # Gnd Launcher
         center = ll.Location(gnd_launcher_latlon[0],
                              gnd_launcher_latlon[1])
@@ -455,7 +462,15 @@ class Storm(object):
         results['x (m)'] = []
         results['y (m)'] = []
 
+        count = 0
+        total = len(self.storm)
+
+        print('Total Entries: {0}'.format(total))
+        start = datetime.datetime.now()
+
         for i, s in self.storm.iterrows():
+            print('Converting... {0:0.2f}%'.format(count / total * 100),
+                  end='\r')
             # Convert to WGS-84
             location = ll.Location(s['lat'], s['lon'])
             xyz = location.xyz_transform()
@@ -495,12 +510,26 @@ class Storm(object):
             results['x (m)'].append(x)
             results['y (m)'].append(y)
 
-        series = pd.Series(results['x (m)'], index=results['DateTime'])
-        self.storm.loc[:, 'x (m)'] = series
+            count += 1
 
-        series = pd.Series(results['y (m)'], index=results['DateTime'])
-        self.storm.loc[:, 'y (m)'] = series
+        end = datetime.datetime.now()
+        print('Conversion time: {0}\n'.format(end - start))
+        
+        # Insert the x result into the DataFrame
+        x_series = pd.Series(results['x (m)'], index=results['DateTime'])
 
+        if x_loc is None:
+            x_loc = len(self.storm.columns)
+
+        self.storm.insert(x_loc, 'x (m)', x_series)
+
+        # Insert the y result into the DataFrame
+        y_series = pd.Series(results['y (m)'], index=results['DateTime'])
+
+        if y_loc is None:
+            y_loc = len(self.storm.columns)
+
+        self.storm.insert(y_loc, 'y (m)', y_series)
 
     @classmethod
     def from_lma_files(cls, files, dates):
