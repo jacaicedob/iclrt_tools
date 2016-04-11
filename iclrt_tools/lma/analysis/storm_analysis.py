@@ -514,7 +514,7 @@ class Storm(object):
 
         end = datetime.datetime.now()
         print('Conversion time: {0}\n'.format(end - start))
-        
+
         # Insert the x result into the DataFrame
         x_series = pd.Series(results['x (m)'], index=results['DateTime'])
 
@@ -552,6 +552,89 @@ class Storm(object):
 
         self.__dict__.update(tmp_dict)
 
+    def get_analyzed_flash_numbers(self, storm_ods):
+        """
+        Get the LMA flash number that corresponds to the analyzed flashes
+        in the .ods file.
+
+            Parameters:
+            -----------
+            storm_ods: Storm object
+                Storm object representing the data from a .ods file.
+
+            Returns:
+            --------
+            data_frame: DataFrame
+                DataFrame containing a copy of the storm_ods plus the
+                flash-number column.
+
+        """
+
+        # Limit the storm_ods times to the storm times
+        start_ind = self.storm.index.min()
+        end_ind = self.storm.index.max()
+
+        if start_ind < storm_ods.storm.index.min():
+            start_ind = storm_ods.storm.index.min()
+
+        if end_ind > storm_ods.storm.index.max():
+            end_ind = storm_ods.storm.index.max()
+
+        data_frame = storm_ods.storm.loc[start_ind:end_ind]
+
+        # Setup the container for the results data
+        analyzed_flashes = dict()
+        analyzed_flashes['flash-number'] = []
+        analyzed_flashes['DateTime'] = []
+
+        temp = self.storm[self.storm['charge'] != 0]
+        numbers = temp['flash-number'].unique()
+
+        # Start the computation
+        count = 1
+        total = len(data_frame.index) * len(numbers)
+
+        print('Total Iterations: {0}'.format(total))
+        start = datetime.datetime.now()
+        for i in data_frame.index:
+            # # Ignore the times in the file that are outside the range of
+            # # the analyzed storm.
+            # if not (self.storm.index.min() <= i <= self.storm.index.max()):
+            #     continue
+
+            number_list = []
+            for flash_number in numbers:
+                flash = self.storm[self.storm['flash-number'] == flash_number]
+                dt = datetime.timedelta(microseconds=30000)  # 0.03 sec
+
+                if flash.index.min() - dt < i < flash.index.max() + dt:
+                    number_list.append(flash_number)
+
+                count += 1
+                print('Analyzing... {0:0.2f}%'.format(count / total * 100),
+                      end='\r')
+
+            if number_list:
+                if len(number_list) == 1:
+                    number_list = number_list[0]
+                else:
+                    number_list = tuple(number_list)
+
+                analyzed_flashes['flash-number'].append(number_list)
+                analyzed_flashes['DateTime'].append(i)
+        # print()
+        end = datetime.datetime.now()
+        print('Analysis time: {0}\n'.format(end - start))
+
+        series = pd.Series(analyzed_flashes['flash-number'],
+                           index=analyzed_flashes['DateTime'])
+
+        series.drop_duplicates(keep='first', inplace=True)
+
+        data_frame.loc[:, 'flash-number'] = series
+
+        return data_frame
+
     def get_charge_regions(self):
         """ Return DataFrames corresponding to each charge region. """
 
@@ -566,8 +649,76 @@ class Storm(object):
     
         return self.positive_charge, self.negative_charge, self.other
 
-    def get_flash_plotter(self, start=datetime.datetime.now(),
-                          end=datetime.datetime.now()):
+    def get_flash_plotter_from_number(self, flash_number=None):
+        """
+        Get the LMA sources for flash_number.
+
+        Parameters
+        ----------
+        flash_number: int
+            Flash number to get.
+
+        Returns
+        -------
+        p : LMAPlotter
+            Plotter object.
+        """
+
+        # Generate the header contents for the temporary .dat file
+        # that will contain the LMA sources for one flash.
+        d = datetime.datetime.strftime(self.storm.index[0], '%m/%d/%Y')
+        date = 'Data start time: {0}'.format(d)
+        center = 'Coordinate center (lat,lon,alt): 29.9429917 -82.0332305 0.00'
+        data_str = '*** data ***'
+
+        # Temporary file to store the LMA sources of a single flash
+        temp_file = './temp.dat'
+
+        if type(flash_number) == np.int64:
+            subset = self.storm[self.storm['flash-number'] == flash_number]
+        else:
+            temp = []
+            for n in flash_number:
+                temp.append(self.storm[self.storm['flash-number'] == n])
+
+            subset = pd.concat(temp)
+
+        subset.reset_index(inplace=True)
+
+        # Open the temporary LMA .dat file and write the header.
+        with open(temp_file, 'w') as f:
+            f.write(date + '\n')
+            f.write(center + '\n')
+            f.write(data_str + '\n')
+
+            # Go through each source and write the information out to the
+            # temporary .dat file
+            for ind in subset.index:
+                data = ' '.join(
+                    [str(subset['time(UT-sec-of-day)'][ind]),
+                     str(subset['lat'][ind]),
+                     str(subset['lon'][ind]),
+                     str(subset['alt(m)'][ind]),
+                     str(subset['reduced-chi^2'][ind]),
+                     str(subset['P(dBW)'][ind]),
+                     str(subset['mask'][ind])])
+
+                data += '\n'
+
+                f.write(data)
+
+        # sys.exit(1)
+        # Create the LMAPlotter object and run the measure_area() function
+        p = df.LMAPlotter(temp_file)
+
+        # Delete the temporary .dat file
+        # if os.path.isfile(temp_file):
+        #     os.remove(temp_file)
+
+        return p
+
+    def get_flash_plotter_from_time(self, start=datetime.datetime.now(),
+                                    end=datetime.datetime.now()):
         """
         Get the LMA sources between start and end.
 
@@ -637,81 +788,6 @@ class Storm(object):
             os.remove(temp_file)
 
         return p
-
-    def get_analyzed_flash_numbers(self, storm_ods):
-        """
-        Get the LMA flash number that corresponds to the analyzed flashes
-        in the .ods file.
-
-        Parameters
-        ----------
-        storm_ods: Storm object
-            Storm object representing the data from a .ods file.
-
-        Returns
-        -------
-
-        """
-
-        # Limit the storm_ods times to the storm times
-        start_ind = self.storm.index.min()
-        end_ind = self.storm.index.max()
-        data_frame = storm_ods.storm.loc[start_ind:end_ind]
-
-        # Setup the container for the results data
-        analyzed_flashes = dict()
-        analyzed_flashes['flash-number'] = []
-        analyzed_flashes['DateTime'] = []
-
-        temp = self.storm[self.storm['charge'] != 0]
-        numbers = temp['flash-number'].unique()
-
-        # Start the computation of detected NLDN flashes
-        count = 1
-        total = len(data_frame.index) * len(numbers)
-
-        # print('Total Iterations: {0}'.format(total))
-        start = datetime.datetime.now()
-        for i in data_frame.index:
-            # # Ignore the times in the file that are outside the range of
-            # # the analyzed storm.
-            # if not (self.storm.index.min() <= i <= self.storm.index.max()):
-            #     continue
-
-            number_list = []
-            for flash_number in numbers:
-                count += 1
-                flash = self.storm[self.storm['flash-number'] == flash_number]
-                dt = datetime.timedelta(microseconds=30000)  # 0.03 sec
-
-                if flash.index.min() - dt <= i <= flash.index.max() + dt:
-                    number_list.append(flash_number)
-
-                print('Analyzing... {0:0.2f}%'.format(count / total * 100),
-                      end='\r')
-
-            if number_list:
-                if len(number_list) == 1:
-                    number_list = number_list[0]
-                else:
-                    number_list = tuple(number_list)
-
-                analyzed_flashes['flash-number'].append(number_list)
-                analyzed_flashes['DateTime'].append(i)
-        # print()
-        end = datetime.datetime.now()
-        print('Analysis time: {0}\n'.format(end - start))
-
-        series = pd.Series(analyzed_flashes['flash-number'],
-                           index=analyzed_flashes['DateTime'])
-
-        series.drop_duplicates(keep='first', inplace=True)
-
-        data_frame.loc[:, 'flash-number'] = series
-
-        return data_frame
-        #
-        # return analyzed_flashes
 
     def measure_flash_area(self, file_name=None):
         """
