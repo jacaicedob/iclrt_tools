@@ -13,6 +13,10 @@ file_name = '/home/jaime/Documents/ResearchTopics/Publications/LightningEvolutio
 storm_lma = st.Storm.from_lma_files([file1, file2], dates)
 storm_ods = st.Storm.from_ods_file(file_name)
 
+# Get flash numbers for all ODS flashes
+results = storm_lma.get_analyzed_flash_numbers(storm_ods)
+
+
 # storm_lma.plot_charge_region(charge='positive', show_plot=True)
 # storm_lma.plot_charge_region(charge='negative', show_plot=True)
 # storm_lma.plot_all_charge_regions(show_plot=True)
