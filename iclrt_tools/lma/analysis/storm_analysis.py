@@ -10,6 +10,7 @@ import os
 import sys
 
 import iclrt_tools.plotting.dfplots as df
+import iclrt_tools.lat_lon.lat_lon as ll
 
 
 class Storm(object):
@@ -138,6 +139,7 @@ class Storm(object):
                       range(len(storm))])
         storm['DateTime'] = pd.to_datetime(storm['DateTime'],
                                            format='%m/%d/%y %H:%M:%S.%f')
+        storm.set_index('DateTime', inplace=True)
 
         # Convert the values in the duration column to timedelta objects
         storm['Duration(s)'] = pd.to_timedelta(storm['Duration (ms)'],
@@ -434,6 +436,72 @@ class Storm(object):
         print('Correlated detection efficiency: {0}'.format(
             len(self.nldn_detections['flash-number']) / len(numbers)))
 
+    def convert_latlon_to_km(self):
+        """
+        Convert the lat, lon entries into distance from the ICLRT in a
+        Cartesian plane, just like the xlma software does. Append two Series
+        to the current DataFrame to hold the x and y values just calculated.
+
+        """
+        gnd_launcher_latlon = [29.9429917, -82.0332305, 0]  # Gnd Launcher
+        center = ll.Location(gnd_launcher_latlon[0],
+                             gnd_launcher_latlon[1])
+
+        # Convert to WGS-84
+        center_xyz = center.xyz_transform()
+
+        results = dict()
+        results['DateTime'] = []
+        results['x (m)'] = []
+        results['y (m)'] = []
+
+        for i, s in self.storm.iterrows():
+            # Convert to WGS-84
+            location = ll.Location(s['lat'], s['lon'])
+            xyz = location.xyz_transform()
+
+            # Center around "center"
+            x = xyz[0] - center_xyz[0]
+            y = xyz[1] - center_xyz[1]
+            z = xyz[2] - center_xyz[2]
+
+            # Apply rotations to correct orientations
+            # This was ported from the xlma IDL code from file lonlat_to_xy.pro
+
+            lonr = -center.lonr
+            colat = -(np.pi / 2 - center.latr)
+
+            rot_lon = np.array(([np.cos(lonr), -np.sin(lonr), 0],
+                                [np.sin(lonr), np.cos(lonr), 0],
+                                [0, 0, 1]))
+
+            rot_lat = np.array(([1, 0, 0],
+                                [0, np.cos(colat), -np.sin(colat)],
+                                [0, np.sin(colat), np.cos(colat)]))
+
+            rot_z90 = np.array(([0, 1, 0],
+                                [-1, 0, 0],
+                                [0, 0, 1]))
+
+            temp = np.array((x, y, z))  # np.array(([x], [y], [z]))
+
+            ssl = np.dot(temp.T, rot_lon.T).T
+            ssl = np.dot(ssl.T, rot_z90.T).T
+            ssl = np.dot(ssl.T, rot_lat.T).T
+
+            x, y, z = ssl[0], ssl[1], ssl[2]
+
+            results['DateTime'].append(i)
+            results['x (m)'].append(x)
+            results['y (m)'].append(y)
+
+        series = pd.Series(results['x (m)'], index=results['DateTime'])
+        self.storm.loc[:, 'x (m)'] = series
+
+        series = pd.Series(results['y (m)'], index=results['DateTime'])
+        self.storm.loc[:, 'y (m)'] = series
+
+
     @classmethod
     def from_lma_files(cls, files, dates):
         """ Initialize the object from files and dates """
@@ -543,7 +611,8 @@ class Storm(object):
 
     def get_analyzed_flash_numbers(self, storm_ods):
         """
-        Get the flas
+        Get the LMA flash number that corresponds to the analyzed flashes
+        in the .ods file.
 
         Parameters
         ----------
@@ -558,7 +627,7 @@ class Storm(object):
         # Limit the storm_ods times to the storm times
         start_ind = self.storm.index.min()
         end_ind = self.storm.index.max()
-        storm_ods = storm_ods.loc[start_ind:end_ind]
+        data_frame = storm_ods.storm.loc[start_ind:end_ind]
 
         # Setup the container for the results data
         analyzed_flashes = dict()
@@ -570,26 +639,36 @@ class Storm(object):
 
         # Start the computation of detected NLDN flashes
         count = 1
-        total = len(storm_ods.index) * len(numbers)
+        total = len(data_frame.index) * len(numbers)
 
-        print('Total Iterations: {0}'.format(total))
+        # print('Total Iterations: {0}'.format(total))
         start = datetime.datetime.now()
-        for i in storm_ods.index:
+        for i in data_frame.index:
             # # Ignore the times in the file that are outside the range of
             # # the analyzed storm.
             # if not (self.storm.index.min() <= i <= self.storm.index.max()):
             #     continue
 
+            number_list = []
             for flash_number in numbers:
                 count += 1
                 flash = self.storm[self.storm['flash-number'] == flash_number]
+                dt = datetime.timedelta(microseconds=30000)  # 0.03 sec
 
-                if flash.index.min() <= i <= flash.index.max():
-                    analyzed_flashes['flash-number'].append(flash_number)
-                    analyzed_flashes['DateTime'].append(i)
+                if flash.index.min() - dt <= i <= flash.index.max() + dt:
+                    number_list.append(flash_number)
 
                 print('Analyzing... {0:0.2f}%'.format(count / total * 100),
                       end='\r')
+
+            if number_list:
+                if len(number_list) == 1:
+                    number_list = number_list[0]
+                else:
+                    number_list = tuple(number_list)
+
+                analyzed_flashes['flash-number'].append(number_list)
+                analyzed_flashes['DateTime'].append(i)
         # print()
         end = datetime.datetime.now()
         print('Analysis time: {0}\n'.format(end - start))
@@ -597,9 +676,13 @@ class Storm(object):
         series = pd.Series(analyzed_flashes['flash-number'],
                            index=analyzed_flashes['DateTime'])
 
-        storm_ods.loc[:, 'flash-number'] = series
+        series.drop_duplicates(keep='first', inplace=True)
 
-        return storm_ods
+        data_frame.loc[:, 'flash-number'] = series
+
+        return data_frame
+        #
+        # return analyzed_flashes
 
     def measure_flash_area(self, file_name=None):
         """
