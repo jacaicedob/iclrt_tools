@@ -1333,14 +1333,47 @@ class StormODS(Storm):
         if 'flash-number' not in self.storm.columns:
             self.storm = storm_lma.get_analyzed_flash_numbers(self.storm)
 
-        # Remove all the entries that are Nan
-        temp = self.storm.dropna(subset=['flash-number'])
+        # Remove all the entries that are Nan and sort the indices
+        storm = self.storm.dropna(subset=['flash-number'])
+        storm.sort_index(inplace=True)
 
         # Convert the times list into datetime
-        s = '{0}/{1}/{2}'.format(temp.index[0].month, temp.index[0].day,
-                                 temp.index[0].year)
+        s = '{0}/{1}/{2}'.format(storm.index[0].month, storm.index[0].day,
+                                 storm.index[0].year)
         for i in range(len(times)):
             times[i] = datetime.datetime.strptime(s + ' ' + times[i],
                                                   '%m/%d/%Y %H%M')
 
-        pass
+        # Start loop
+        for i in range(len(times) - 1):
+            t_start = times[i]
+            t_end = times[i+1]
+
+            if t_start < storm.index.min():
+                t_start = storm.index.min()
+            if t_end > storm.index.max():
+                t_end = storm.index.max()
+
+            temp = storm.loc[t_start:t_end]
+
+            results = dict()
+            results['DateTime'] = []
+            results['Cell'] = []
+
+            for index, row in temp.iterrow():
+                sources = storm_lma.get_sources_from_flash_number(
+                                                           row['flash-number'])
+                flash = self.StormLMA(sources)
+                flash.convert_latlon_to_km(3, 4)
+
+                flash = flash.storm[flash.storm['x (m)'] > xlims[i][0]]
+                flash = flash.storm[flash.storm['x (m)'] < xlims[i][1]]
+                flash = flash.storm[flash.storm['y (m)'] > ylims[i][0]]
+                flash = flash.storm[flash.storm['y (m)'] < ylims[i][1]]
+
+                if len(flash) > 0:
+                    results['DateTime'].append(index)
+                    results['Cell'].append(cell_names[i])
+
+                ### Finish it
+
