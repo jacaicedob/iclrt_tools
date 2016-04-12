@@ -15,426 +15,22 @@ import iclrt_tools.lat_lon.lat_lon as ll
 
 class Storm(object):
     """
-    An object for analyzing data exported from the xlma software using the
-    Pandas module.
+    A class structure to instantiate analyzed LMA data from an Excel or
+    LibreOffice generated .csv file and from xlma exported .dat files.
 
         Parameters:
         -----------
-        storm: Pandas DataFrame (optional)
-            Contains the entire data set merged from files.
+            storm: Pandas DataFrame (optional)
+                Contains the entire data set.
 
         Attributes:
         -----------
-        storm: Pandas DataFrame
-            Contains the entire data set merged from files.
-        positive_charge: Pandas DataFrame
-            Contains the data set for the sources classified as positive charge.
-        negative_charge: Pandas DataFrame
-            Contains the data set for the sources classified as negative charge.
-        other: Pandas DataFrame
-            Contains the data set for the sources without classification.
-        nldn_detections: dict
-            Dictionary containing the detection data
-
+            storm: Pandas DataFrame
+                Contains the entire data set.
     """
 
     def __init__(self, storm=None):
-        """ Initialize the object. """
-
         self.storm = storm
-        self.positive_charge = None
-        self.negative_charge = None
-        self.other = None
-        self.nldn_detections = None
-
-    @staticmethod
-    def _calculate_histogram(data_series):
-        """ Compute the histogram of a Series and return the bin centers. """
-
-        # Extract data from DataSeries into a np array
-        data = np.array(data_series['alt(m)'].dropna())
-
-        # Calculate histogram of the data and find the bin centers
-        hist, bin_edges = np.histogram(data, bins=1000)
-        bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
-
-        # Return the altitude (bin_center) of the largest value
-        # in the histogram
-        return bin_centers[np.argmax(hist)]
-
-    @staticmethod
-    def _parse_lma_files(files, dates):
-        """ Parse the LMA .dat files to generate the DataFrame. """
-
-        pds = []
-
-        # Read in the files
-        for i, f in enumerate(files):
-            pds.append(pd.read_csv(f))
-
-        # Add a Series to each DataFrame containing the time of each source
-        # in datetime form
-        for i, p in enumerate(pds):
-            if len(dates) > 1:
-                try:
-                    date = datetime.datetime.strptime(dates[i], '%m/%d/%y')
-                except ValueError:
-                    date = datetime.datetime.strptime(dates[i], '%m/%d/%Y')
-
-                series = [date + datetime.timedelta(seconds=entry) for entry
-                          in p['time(UT-sec-of-day)']]
-
-                p.insert(0, 'DateTime', series)
-                p['DateTime'] = pd.to_datetime(p['DateTime'])
-
-            else:
-                try:
-                    date = datetime.datetime.strptime(dates[0], '%m/%d/%y')
-                except ValueError:
-                    date = datetime.datetime.strptime(dates[0], '%m/%d/%Y')
-
-                series = [date + datetime.timedelta(seconds=entry) for entry
-                          in p['time(UT-sec-of-day)']]
-
-                p.insert(0, 'DateTime', series)
-                p['DateTime'] = pd.to_datetime(p['DateTime'])
-
-        # Remove all flash-numbers that are == -1
-        for i in range(len(pds)):
-            row_index = pds[i][pds[i]['flash-number'] != -1].index
-            pds[i] = pds[i].loc[row_index]
-
-            # print(-1 in pds[i]['flash-number'])
-
-        # Correct the flash numbers so that there are no duplicates
-        for i in range(len(pds) - 1):
-            # Get the largest flash number of the current file
-            max_flash_number = pds[i]['flash-number'].max() + 1
-
-            # Apply the offset to the next file
-            pds[i + 1]['flash-number'] += max_flash_number
-
-        # Make the final Pandas DataFrame
-        if len(pds) > 1:
-            storm = pd.concat(pds, ignore_index=True)
-        else:
-            storm = pds[0]
-
-        # _ = storm.pop('#-of-stations-contributed')
-        # _ = storm.pop('reduced-chi^2')
-        # _ = storm.pop('time(UT-sec-of-day)')
-        storm.set_index('DateTime', inplace=True)
-        return storm
-
-    @staticmethod
-    def _parse_ods_file(file):
-        """ Parse the .ods files to generate the DataFrame. """
-
-        storm = pd.read_csv(file)
-
-        # Combine the date and time columns into a single datetime column
-        storm.insert(0, 'DateTime',
-                     ['{0} {1}'.format(storm['Date'][i], storm['Time'][i])
-                      for i in
-                      range(len(storm))])
-        storm['DateTime'] = pd.to_datetime(storm['DateTime'],
-                                           format='%m/%d/%y %H:%M:%S.%f')
-        storm.set_index('DateTime', inplace=True)
-
-        # Convert the values in the duration column to timedelta objects
-        storm['Duration(s)'] = pd.to_timedelta(storm['Duration (ms)'],
-                                               unit='ms')
-
-        # Remove unnecessary colums
-        _ = storm.pop('Date')
-        _ = storm.pop('Time')
-        _ = storm.pop('Flash')
-        _ = storm.pop('Comments')
-        _ = storm.pop('Duration (ms)')
-
-        storm['Initiation Height (km)'] = pd.to_numeric(
-            storm['Initiation Height (km)'], errors='coerce')
-
-        return storm
-
-    def analyze_flash_areas(self, flash_type='all'):
-        """ Analyze the areas of the specified flash type. """
-
-        if flash_type.lower == 'all':
-            temp_storm = self.storm
-        else:
-            temp_storm = self.storm[self.storm['Type'] == flash_type.upper()]
-
-        # if flash_type.lower() == 'ic':
-        #     temp_storm = self.storm[self.storm['Type'] == 'IC']
-        #
-        # elif flash_type.lower() == '-cg':
-        #     temp_storm = self.storm[self.storm['Type'] == '-CG']
-        #
-        # elif flash_type.lower() == 'cg':
-        #     temp_storm = self.storm[self.storm['Type'] == 'CG']
-        #
-        # elif flash_type.lower() == 'cg':
-        #     temp_storm = self.storm[self.storm['Type'] == 'CG']
-        #
-        # else:
-        #     temp_storm = self.storm
-
-        fig, ax = plt.subplots(1, 1, figsize=(12, 6))
-        temp_storm['Area (km^2)'].hist(ax=ax)
-        ax.set_title('Histogram of flash areas for '
-                     '{0}s'.format(flash_type.upper()))
-        ax.set_xlabel('Flash area (km^2)')
-        ax.set_ylabel('Number of flashes')
-
-        plt.show()
-
-        print(temp_storm['Area (km^2)'].describe())
-
-    def analyze_initiation_heights(self, flash_type='all'):
-        """ Analyze the initiation heights of the specified flash type. """
-
-        if flash_type.lower == 'all':
-            temp_storm = self.storm
-        else:
-            temp_storm = self.storm[self.storm['Type'] == flash_type.upper()]
-
-        # if flash_type.lower() == 'ic':
-        #     temp_storm = self.storm[self.storm['Type'] == 'IC']
-        #
-        # elif flash_type.lower() == '-cg' or flash_type.lower() == 'cg':
-        #     storm1 = self.storm[self.storm['Type'] == '-CG']
-        #     storm2 = self.storm[self.storm['Type'] == 'CG']
-        #
-        #     temp_storm = pd.concat([storm1, storm2], ignore_index=True)
-        # else:
-        #     temp_storm = self.storm
-
-        fig, ax = plt.subplots(1, 1, figsize=(12, 6))
-        temp_storm['Initiation Height (km)'].hist(ax=ax)
-        ax.set_title('Histogram of initiation heights for '
-                     '{0}s'.format(flash_type.upper()))
-
-        ax.set_xlabel('Initiation Height (km)')
-        ax.set_ylabel('Number of flashes')
-
-        plt.show()
-
-        print(temp_storm['Initiation Height (km)'].describe())
-
-    def analyze_pos_neg_charge(self):
-        """ Analyze the positive and negative sources. """
-
-        positive_charge, negative_charge, _ = self.get_charge_regions()
-
-        # Get quick statistics on the positive charge sources
-        mean = positive_charge['alt(m)'].mean()
-        stdev = positive_charge['alt(m)'].std()
-        minn = positive_charge['alt(m)'].min()
-        maxx = positive_charge['alt(m)'].max()
-
-        print(
-            'Positive charge alt (m) statistics:\nMean: {0:0.2f}\nStd. dev.: {1:0.2f}\nMinimum: {2:0.2f}\nMaximum: {3:0.2f}\n'.format(
-                mean, stdev, minn, maxx))
-
-        # Get quick statistics on the negative charge sources
-        mean = negative_charge['alt(m)'].mean()
-        stdev = negative_charge['alt(m)'].std()
-        minn = negative_charge['alt(m)'].min()
-        maxx = negative_charge['alt(m)'].max()
-
-        print(
-            'Negative charge alt (m) statistics:\nMean: {0:0.2f}\nStd. dev.: {1:0.2f}\nMinimum: {2:0.2f}\nMaximum: {3:0.2f}\n'.format(
-                mean, stdev, minn, maxx))
-
-        return positive_charge, negative_charge
-
-    def analyze_subset(self, start, end, plot=True):
-        """ Analyze the data between start and end. """
-
-        # Analyze a subset of the entire self.storm
-        subset = self.storm.loc[start:end]
-        # print(subset.index)
-
-        subset = Storm(subset)
-        # print(subset.storm.index)
-        subset.plot_all_charge_regions(show_plot=plot)
-
-    def calculate_flash_rates(self, interval=5, flash_type='all'):
-        """
-        Calculate and print the flash rates in the specified time interval
-        for the specified flash types.
-
-        Parameters
-        ----------
-        interval: int
-            Time interval in minutes.
-        flash_type: str
-            Flash type to do the calculation.
-
-        Returns
-        -------
-            temp_storm: DataFrame
-                DataFrame containing all the data of all flashes for the
-                specified flash type.
-
-        """
-        # Calculate flash rate every 5 minutes
-        t_interval = datetime.timedelta(minutes=interval)
-        t_start = self.storm['DateTime'].min()
-        t_end = t_start + t_interval
-
-        if flash_type.lower == 'all':
-            temp_storm = self.storm
-        else:
-            temp_storm = self.storm[self.storm['Type'] == flash_type.upper()]
-
-        # if flash_type.lower() == 'ic':
-        #     temp_storm = self.storm[self.storm['Type'] == 'IC']
-        #
-        # elif flash_type.lower() == '-cg' or flash_type.lower() == 'cg':
-        #     storm1 = self.storm[self.storm['Type'] == '-CG']
-        #     storm2 = self.storm[self.storm['Type'] == 'CG']
-        #
-        #     temp_storm = pd.concat([storm1, storm2], ignore_index=True)
-        # else:
-        #     temp_storm = self.storm
-
-        s = '\nFlash rate for {0} flashes (interval = {1} minutes):'.format(
-            flash_type.upper(), interval)
-        print(s)
-        print('-' * len(s))
-
-        rates = []
-        while t_start < self.storm['DateTime'].max():
-            temp = temp_storm[temp_storm['DateTime'] < t_end]
-            temp = temp[temp['DateTime'] >= t_start]
-
-            start = datetime.datetime.strftime(t_start, '%H:%M:%S.%f')[:-4]
-            end = datetime.datetime.strftime(t_end, '%H:%M:%S.%f')[:-4]
-
-            rate = (len(temp) / t_interval.total_seconds()) * 60
-            rates.append(rate)
-
-            t_start = t_end
-            print('{0} -- {1} UTC = {2:0.2f} '
-                  '/min ({3} flashes total)'.format(start, end, rate,
-                                                    len(temp)))
-            t_end += t_interval
-
-        # Entire self.storm flash rate
-        rates = np.array(rates)
-        r = self.storm['DateTime'].max() - self.storm['DateTime'].min()
-        rate = len(temp_storm) / r.total_seconds() * 60
-
-        print('\nNumber of {0}s: {1} out of {2} total '
-              '({3:0.2f}%)'.format(flash_type.upper(), len(temp_storm),
-                                   len(self.storm),
-                                   len(temp_storm) / len(self.storm) * 100))
-
-        print('Average {0} rate of entire storm: {1:0.2f} '
-              'per minute'.format(flash_type.upper(), rate))
-
-        s = '\nInterval {0} Rate Statistics:'.format(flash_type.upper())
-        print(s)
-        print('-' * len(s))
-        print('Mean: {0:0.2f} per minute'.format(np.mean(rates)))
-        print('Std. dev. {0:0.2f} per minute'.format(np.std(rates)))
-        print('Max {0:0.2f} per minute'.format(np.max(rates)))
-        print('Minimum {0:0.2f} per minute'.format(np.min(rates)))
-
-        return temp_storm
-
-    def calculate_nldn_efficiency(self, nldn_file):
-        """
-        Calculate the efficiency of NLDN by correlating the NLDN detected
-        flashes with the LMA detected flashes. Save the result as a
-        class attribute self.nldn_detections.
-
-        Parameters:
-        -----------
-        nldn_file: str
-            File path to the NLDN file.
-
-        """
-
-        # Read in file
-        nldn = pd.read_csv(nldn_file, sep=' ',
-                           names=['Date', 'Time', 'lat', 'lon', 'kA', 'Type',
-                                  'Mult', 'Dummy', 'Dummy2'])
-
-        # Convert dates to datetime and set the index of the DataFrame
-        nldn.insert(0, 'DateTime',
-                    ['{0} {1}'.format(nldn['Date'][i], nldn['Time'][i])
-                     for i in
-                     range(len(nldn))])
-        nldn['DateTime'] = pd.to_datetime(nldn['DateTime'],
-                                          format='%m/%d/%y %H:%M:%S.%f')
-        nldn.set_index('DateTime', inplace=True)
-
-        # Remove unwanted columns
-        _ = nldn.pop('Date')
-        _ = nldn.pop('Time')
-        _ = nldn.pop('Dummy')
-        _ = nldn.pop('Dummy2')
-
-        # Limit the NLDN times to the storm times
-        start_ind = self.storm.index.min()
-        end_ind = self.storm.index.max()
-        nldn = nldn.loc[start_ind:end_ind]
-
-        # Setup the container for the results data
-        self.nldn_detections = dict()
-        self.nldn_detections['flash-number'] = []
-        self.nldn_detections['DateTime'] = []
-        self.nldn_detections['lat'] = []
-        self.nldn_detections['lon'] = []
-        self.nldn_detections['Type'] = []
-        self.nldn_detections['Mult'] = []
-        self.nldn_detections['kA'] = []
-
-        temp = self.storm[self.storm['charge'] != 0]
-        numbers = temp['flash-number'].unique()
-
-        # Start the computation of detected NLDN flashes
-        count = 1
-        total = len(nldn.index) * len(numbers)
-
-        print('Total Iterations: {0}'.format(total))
-        start = datetime.datetime.now()
-        for i in nldn.index:
-            # # Ignore the times in the file that are outside the range of
-            # # the analyzed storm.
-            # if not (self.storm.index.min() <= i <= self.storm.index.max()):
-            #     continue
-
-            for flash_number in numbers:
-                count += 1
-                flash = self.storm[self.storm['flash-number'] == flash_number]
-
-                if flash.index.min() <= i <= flash.index.max():
-                    self.nldn_detections['flash-number'].append(flash_number)
-                    self.nldn_detections['DateTime'].append(i)
-                    self.nldn_detections['lat'].append(nldn.loc[i]['lat'])
-                    self.nldn_detections['lon'].append(nldn.loc[i]['lon'])
-                    self.nldn_detections['Type'].append(nldn.loc[i]['Type'])
-                    self.nldn_detections['Mult'].append(nldn.loc[i]['Mult'])
-                    self.nldn_detections['kA'].append(nldn.loc[i]['kA'])
-
-                print('Analyzing... {0:0.2f}%'.format(count / total * 100),
-                      end='\r')
-        # print()
-        end = datetime.datetime.now()
-        print('Analisis time: {0}\n'.format(end - start))
-        print('NLDN detected flashes: {0}'.format(len(nldn)))
-        print('LMA analyzed flashes: {0}'.format(len(numbers)))
-        print('Uncorrelated detection efficiency: {0}'.format(
-            len(nldn) / len(numbers)))
-        print(
-            'Correlated NLDN detections with analyzed LMA flashes: {0}'.format(
-                len(self.nldn_detections['flash-number'])))
-        print('Correlated detection efficiency: {0}'.format(
-            len(self.nldn_detections['flash-number']) / len(numbers)))
 
     def convert_latlon_to_km(self, x_loc=None, y_loc=None):
         """
@@ -531,20 +127,6 @@ class Storm(object):
 
         self.storm.insert(y_loc, 'y (m)', y_series)
 
-    @classmethod
-    def from_lma_files(cls, files, dates):
-        """ Initialize the object from files and dates """
-
-        storm = cls._parse_lma_files(files, dates)
-        return cls(storm)
-
-    @classmethod
-    def from_ods_file(cls, file):
-        """ Initialize the object from files and dates """
-
-        storm = cls._parse_ods_file(file)
-        return cls(storm)
-
     def from_pickle(self, file):
         """ Initialize the object from a save pickle. """
 
@@ -552,88 +134,255 @@ class Storm(object):
 
         self.__dict__.update(tmp_dict)
 
-    def get_analyzed_flash_numbers(self, storm_ods):
-        """
-        Get the LMA flash number that corresponds to the analyzed flashes
-        in the .ods file.
+
+class StormLMA(Storm):
+    """
+    An object for analyzing data exported from the xlma software using the
+    Pandas module.
 
         Parameters:
         -----------
-            storm_ods: Storm object
-                Storm object representing the data from a .ods file.
+        storm: Pandas DataFrame (optional)
+            Contains the entire data set merged from files.
 
-        Returns:
-        --------
-            data_frame: DataFrame
-                DataFrame containing a copy of the storm_ods plus the
-                flash-number column.
+        Attributes:
+        -----------
+        storm: Pandas DataFrame
+            Contains the entire data set merged from files.
+        positive_charge: Pandas DataFrame
+            Contains the data set for the sources classified as positive charge.
+        negative_charge: Pandas DataFrame
+            Contains the data set for the sources classified as negative charge.
+        other: Pandas DataFrame
+            Contains the data set for the sources without classification.
+        nldn_detections: dict
+            Dictionary containing the detection data
+
+    """
+
+    def __init__(self, storm=None):
+        """ Initialize the object. """
+
+        super(StormLMA, self).__init__(storm)
+        self.positive_charge = None
+        self.negative_charge = None
+        self.other = None
+        self.nldn_detections = None
+
+    @staticmethod
+    def _calculate_histogram(data_series):
+        """ Compute the histogram of a Series and return the bin centers. """
+
+        # Extract data from DataSeries into a np array
+        data = np.array(data_series['alt(m)'].dropna())
+
+        # Calculate histogram of the data and find the bin centers
+        hist, bin_edges = np.histogram(data, bins=1000)
+        bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+
+        # Return the altitude (bin_center) of the largest value
+        # in the histogram
+        return bin_centers[np.argmax(hist)]
+
+    @staticmethod
+    def _parse_lma_files(files, dates):
+        """ Parse the LMA .dat files to generate the DataFrame. """
+
+        pds = []
+
+        # Read in the files
+        for i, f in enumerate(files):
+            pds.append(pd.read_csv(f))
+
+        # Add a Series to each DataFrame containing the time of each source
+        # in datetime form
+        for i, p in enumerate(pds):
+            if len(dates) > 1:
+                try:
+                    date = datetime.datetime.strptime(dates[i], '%m/%d/%y')
+                except ValueError:
+                    date = datetime.datetime.strptime(dates[i], '%m/%d/%Y')
+
+                series = [date + datetime.timedelta(seconds=entry) for entry
+                          in p['time(UT-sec-of-day)']]
+
+                p.insert(0, 'DateTime', series)
+                p['DateTime'] = pd.to_datetime(p['DateTime'])
+
+            else:
+                try:
+                    date = datetime.datetime.strptime(dates[0], '%m/%d/%y')
+                except ValueError:
+                    date = datetime.datetime.strptime(dates[0], '%m/%d/%Y')
+
+                series = [date + datetime.timedelta(seconds=entry) for entry
+                          in p['time(UT-sec-of-day)']]
+
+                p.insert(0, 'DateTime', series)
+                p['DateTime'] = pd.to_datetime(p['DateTime'])
+
+        # Remove all flash-numbers that are == -1
+        for i in range(len(pds)):
+            row_index = pds[i][pds[i]['flash-number'] != -1].index
+            pds[i] = pds[i].loc[row_index]
+
+            # print(-1 in pds[i]['flash-number'])
+
+        # Correct the flash numbers so that there are no duplicates
+        for i in range(len(pds) - 1):
+            # Get the largest flash number of the current file
+            max_flash_number = pds[i]['flash-number'].max() + 1
+
+            # Apply the offset to the next file
+            pds[i + 1]['flash-number'] += max_flash_number
+
+        # Make the final Pandas DataFrame
+        if len(pds) > 1:
+            storm = pd.concat(pds, ignore_index=True)
+        else:
+            storm = pds[0]
+
+        # _ = storm.pop('#-of-stations-contributed')
+        # _ = storm.pop('reduced-chi^2')
+        # _ = storm.pop('time(UT-sec-of-day)')
+        storm.set_index('DateTime', inplace=True)
+        return storm
+
+    def analyze_pos_neg_charge(self):
+        """ Analyze the positive and negative sources. """
+
+        positive_charge, negative_charge, _ = self.get_charge_regions()
+
+        # Get quick statistics on the positive charge sources
+        mean = positive_charge['alt(m)'].mean()
+        stdev = positive_charge['alt(m)'].std()
+        minn = positive_charge['alt(m)'].min()
+        maxx = positive_charge['alt(m)'].max()
+
+        print(
+            'Positive charge alt (m) statistics:\nMean: {0:0.2f}\nStd. dev.: {1:0.2f}\nMinimum: {2:0.2f}\nMaximum: {3:0.2f}\n'.format(
+                mean, stdev, minn, maxx))
+
+        # Get quick statistics on the negative charge sources
+        mean = negative_charge['alt(m)'].mean()
+        stdev = negative_charge['alt(m)'].std()
+        minn = negative_charge['alt(m)'].min()
+        maxx = negative_charge['alt(m)'].max()
+
+        print(
+            'Negative charge alt (m) statistics:\nMean: {0:0.2f}\nStd. dev.: {1:0.2f}\nMinimum: {2:0.2f}\nMaximum: {3:0.2f}\n'.format(
+                mean, stdev, minn, maxx))
+
+        return positive_charge, negative_charge
+
+    def analyze_subset(self, start, end, plot=True):
+        """ Analyze the data between start and end. """
+
+        # Analyze a subset of the entire self.storm
+        subset = self.storm.loc[start:end]
+        # print(subset.index)
+
+        subset = Storm(subset)
+        # print(subset.storm.index)
+        subset.plot_all_charge_regions(show_plot=plot)
+
+    def calculate_nldn_efficiency(self, nldn_file):
+        """
+        Calculate the efficiency of NLDN by correlating the NLDN detected
+        flashes with the LMA detected flashes. Save the result as a
+        class attribute self.nldn_detections.
+
+        Parameters:
+        -----------
+        nldn_file: str
+            File path to the NLDN file.
 
         """
 
-        # Limit the storm_ods times to the storm times
+        # Read in file
+        nldn = pd.read_csv(nldn_file, sep=' ',
+                           names=['Date', 'Time', 'lat', 'lon', 'kA', 'Type',
+                                  'Mult', 'Dummy', 'Dummy2'])
+
+        # Convert dates to datetime and set the index of the DataFrame
+        nldn.insert(0, 'DateTime',
+                    ['{0} {1}'.format(nldn['Date'][i], nldn['Time'][i])
+                     for i in
+                     range(len(nldn))])
+        nldn['DateTime'] = pd.to_datetime(nldn['DateTime'],
+                                          format='%m/%d/%y %H:%M:%S.%f')
+        nldn.set_index('DateTime', inplace=True)
+
+        # Remove unwanted columns
+        _ = nldn.pop('Date')
+        _ = nldn.pop('Time')
+        _ = nldn.pop('Dummy')
+        _ = nldn.pop('Dummy2')
+
+        # Limit the NLDN times to the storm times
         start_ind = self.storm.index.min()
         end_ind = self.storm.index.max()
-
-        if start_ind < storm_ods.storm.index.min():
-            start_ind = storm_ods.storm.index.min()
-
-        if end_ind > storm_ods.storm.index.max():
-            end_ind = storm_ods.storm.index.max()
-
-        data_frame = storm_ods.storm.loc[start_ind:end_ind]
+        nldn = nldn.loc[start_ind:end_ind]
 
         # Setup the container for the results data
-        analyzed_flashes = dict()
-        analyzed_flashes['flash-number'] = []
-        analyzed_flashes['DateTime'] = []
+        self.nldn_detections = dict()
+        self.nldn_detections['flash-number'] = []
+        self.nldn_detections['DateTime'] = []
+        self.nldn_detections['lat'] = []
+        self.nldn_detections['lon'] = []
+        self.nldn_detections['Type'] = []
+        self.nldn_detections['Mult'] = []
+        self.nldn_detections['kA'] = []
 
         temp = self.storm[self.storm['charge'] != 0]
         numbers = temp['flash-number'].unique()
 
-        # Start the computation
+        # Start the computation of detected NLDN flashes
         count = 1
-        total = len(data_frame.index) * len(numbers)
+        total = len(nldn.index) * len(numbers)
 
         print('Total Iterations: {0}'.format(total))
         start = datetime.datetime.now()
-        for i in data_frame.index:
+        for i in nldn.index:
             # # Ignore the times in the file that are outside the range of
             # # the analyzed storm.
             # if not (self.storm.index.min() <= i <= self.storm.index.max()):
             #     continue
 
-            number_list = []
             for flash_number in numbers:
-                flash = self.storm[self.storm['flash-number'] == flash_number]
-                dt = datetime.timedelta(microseconds=30000)  # 0.03 sec
-
-                if flash.index.min() - dt < i < flash.index.max() + dt:
-                    number_list.append(flash_number)
-
                 count += 1
+                flash = self.storm[self.storm['flash-number'] == flash_number]
+
+                if flash.index.min() <= i <= flash.index.max():
+                    self.nldn_detections['flash-number'].append(flash_number)
+                    self.nldn_detections['DateTime'].append(i)
+                    self.nldn_detections['lat'].append(nldn.loc[i]['lat'])
+                    self.nldn_detections['lon'].append(nldn.loc[i]['lon'])
+                    self.nldn_detections['Type'].append(nldn.loc[i]['Type'])
+                    self.nldn_detections['Mult'].append(nldn.loc[i]['Mult'])
+                    self.nldn_detections['kA'].append(nldn.loc[i]['kA'])
+
                 print('Analyzing... {0:0.2f}%'.format(count / total * 100),
                       end='\r')
-
-            if number_list:
-                if len(number_list) == 1:
-                    number_list = number_list[0]
-                else:
-                    number_list = tuple(number_list)
-
-                analyzed_flashes['flash-number'].append(number_list)
-                analyzed_flashes['DateTime'].append(i)
         # print()
         end = datetime.datetime.now()
-        print('Analysis time: {0}\n'.format(end - start))
+        print('Analisis time: {0}\n'.format(end - start))
+        print('NLDN detected flashes: {0}'.format(len(nldn)))
+        print('LMA analyzed flashes: {0}'.format(len(numbers)))
+        print('Uncorrelated detection efficiency: {0}'.format(
+            len(nldn) / len(numbers)))
+        print(
+            'Correlated NLDN detections with analyzed LMA flashes: {0}'.format(
+                len(self.nldn_detections['flash-number'])))
+        print('Correlated detection efficiency: {0}'.format(
+            len(self.nldn_detections['flash-number']) / len(numbers)))
 
-        series = pd.Series(analyzed_flashes['flash-number'],
-                           index=analyzed_flashes['DateTime'])
+    @classmethod
+    def from_lma_files(cls, files, dates):
+        """ Initialize the object from files and dates """
 
-        series.drop_duplicates(keep='first', inplace=True)
-
-        data_frame.loc[:, 'flash-number'] = series
-
-        return data_frame
+        storm = cls._parse_lma_files(files, dates)
+        return cls(storm)
 
     def get_charge_regions(self):
         """ Return DataFrames corresponding to each charge region. """
@@ -1173,25 +922,351 @@ class Storm(object):
         ax.set_xlabel('Time')
         plt.show()
 
-    def plot_flash_type(self, ods_file, type='IIC'):
+    def print_storm_summary(self, charge=None, flash_types=None):
+        """ Print the summary of the storm. """
+
+        s = "\nLMA File: Charge {0}".format(charge.upper())
+        print(s)
+        print('-' * len(s))
+
+        if charge is None:
+            storm = self.storm
+        elif charge == 'positive':
+            storm = self.storm[self.storm['charge'] == 3]
+        elif charge == 'negative':
+            storm = self.storm[self.storm['charge'] == -3]
+        elif charge == 'other':
+            storm = self.storm[self.storm['charge'] == 0]
+
+        # Get rid of unwanted columns
+        storm.pop('time(UT-sec-of-day)')
+        # storm.pop('lat')
+        # storm.pop('lon')
+        storm.pop('reduced-chi^2')
+        storm.pop('#-of-stations-contributed')
+        storm.pop('flash-number')
+        storm.pop('charge')
+
+        print(storm.describe())
+        print('\n')
+
+    def save_to_pickle(self, file_name):
+        with open(file_name, 'wb') as f:
+            pickle.dump(self.__dict__, f)
+
+
+class StormODS(Storm):
+    """
+    An object for analyzing data exported from Excel or LibreOffice using the
+    Pandas module.
+
+        Parameters:
+        -----------
+        storm: Pandas DataFrame (optional)
+            Contains the entire data set merged from files.
+
+        Attributes:
+        -----------
+        storm: Pandas DataFrame
+            Contains the entire data set..
+
+    """
+
+    def __init__(self, storm=None):
+        """ Initialize the object. """
+        super(StormODS, self).__init__(storm)
+
+    @staticmethod
+    def _parse_ods_file(file):
+        """ Parse the .ods files to generate the DataFrame. """
+
+        storm = pd.read_csv(file)
+
+        # Combine the date and time columns into a single datetime column
+        storm.insert(0, 'DateTime',
+                     ['{0} {1}'.format(storm['Date'][i], storm['Time'][i])
+                      for i in
+                      range(len(storm))])
+        storm['DateTime'] = pd.to_datetime(storm['DateTime'],
+                                           format='%m/%d/%y %H:%M:%S.%f')
+        storm.set_index('DateTime', inplace=True)
+
+        # Convert the values in the duration column to timedelta objects
+        storm['Duration(s)'] = pd.to_timedelta(storm['Duration (ms)'],
+                                               unit='ms')
+
+        # Remove unnecessary colums
+        _ = storm.pop('Date')
+        _ = storm.pop('Time')
+        _ = storm.pop('Flash')
+        _ = storm.pop('Comments')
+        _ = storm.pop('Duration (ms)')
+
+        storm['Initiation Height (km)'] = pd.to_numeric(
+            storm['Initiation Height (km)'], errors='coerce')
+
+        return storm
+
+    def analyze_flash_areas(self, flash_type='all'):
+        """ Analyze the areas of the specified flash type. """
+
+        if flash_type.lower == 'all':
+            temp_storm = self.storm
+        else:
+            temp_storm = self.storm[self.storm['Type'] == flash_type.upper()]
+
+        # if flash_type.lower() == 'ic':
+        #     temp_storm = self.storm[self.storm['Type'] == 'IC']
+        #
+        # elif flash_type.lower() == '-cg':
+        #     temp_storm = self.storm[self.storm['Type'] == '-CG']
+        #
+        # elif flash_type.lower() == 'cg':
+        #     temp_storm = self.storm[self.storm['Type'] == 'CG']
+        #
+        # elif flash_type.lower() == 'cg':
+        #     temp_storm = self.storm[self.storm['Type'] == 'CG']
+        #
+        # else:
+        #     temp_storm = self.storm
+
+        fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+        temp_storm['Area (km^2)'].hist(ax=ax)
+        ax.set_title('Histogram of flash areas for '
+                     '{0}s'.format(flash_type.upper()))
+        ax.set_xlabel('Flash area (km^2)')
+        ax.set_ylabel('Number of flashes')
+
+        plt.show()
+
+        print(temp_storm['Area (km^2)'].describe())
+
+    def analyze_initiation_heights(self, flash_type='all'):
+        """ Analyze the initiation heights of the specified flash type. """
+
+        if flash_type.lower == 'all':
+            temp_storm = self.storm
+        else:
+            temp_storm = self.storm[self.storm['Type'] == flash_type.upper()]
+
+        # if flash_type.lower() == 'ic':
+        #     temp_storm = self.storm[self.storm['Type'] == 'IC']
+        #
+        # elif flash_type.lower() == '-cg' or flash_type.lower() == 'cg':
+        #     storm1 = self.storm[self.storm['Type'] == '-CG']
+        #     storm2 = self.storm[self.storm['Type'] == 'CG']
+        #
+        #     temp_storm = pd.concat([storm1, storm2], ignore_index=True)
+        # else:
+        #     temp_storm = self.storm
+
+        fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+        temp_storm['Initiation Height (km)'].hist(ax=ax)
+        ax.set_title('Histogram of initiation heights for '
+                     '{0}s'.format(flash_type.upper()))
+
+        ax.set_xlabel('Initiation Height (km)')
+        ax.set_ylabel('Number of flashes')
+
+        plt.show()
+
+        print(temp_storm['Initiation Height (km)'].describe())
+
+    def calculate_flash_rates(self, interval=5, flash_type='all'):
+        """
+        Calculate and print the flash rates in the specified time interval
+        for the specified flash types.
+
+        Parameters
+        ----------
+        interval: int
+            Time interval in minutes.
+        flash_type: str
+            Flash type to do the calculation.
+
+        Returns
+        -------
+            temp_storm: DataFrame
+                DataFrame containing all the data of all flashes for the
+                specified flash type.
+
+        """
+        # Calculate flash rate every 5 minutes
+        t_interval = datetime.timedelta(minutes=interval)
+        t_start = self.storm.index.min()
+        t_end = t_start + t_interval
+
+        if flash_type.lower == 'all':
+            temp_storm = self.storm
+        else:
+            temp_storm = self.storm[self.storm['Type'] == flash_type.upper()]
+
+        # if flash_type.lower() == 'ic':
+        #     temp_storm = self.storm[self.storm['Type'] == 'IC']
+        #
+        # elif flash_type.lower() == '-cg' or flash_type.lower() == 'cg':
+        #     storm1 = self.storm[self.storm['Type'] == '-CG']
+        #     storm2 = self.storm[self.storm['Type'] == 'CG']
+        #
+        #     temp_storm = pd.concat([storm1, storm2], ignore_index=True)
+        # else:
+        #     temp_storm = self.storm
+
+        s = '\nFlash rate for {0} flashes (interval = {1} minutes):'.format(
+            flash_type.upper(), interval)
+        print(s)
+        print('-' * len(s))
+
+        rates = []
+        while t_start < self.storm.index.max():
+            temp = temp_storm[temp_storm.index < t_end]
+            temp = temp[temp.index >= t_start]
+
+            start = datetime.datetime.strftime(t_start, '%H:%M:%S.%f')[:-4]
+            end = datetime.datetime.strftime(t_end, '%H:%M:%S.%f')[:-4]
+
+            rate = (len(temp) / t_interval.total_seconds()) * 60
+            rates.append(rate)
+
+            t_start = t_end
+            print('{0} -- {1} UTC = {2:0.2f} '
+                  '/min ({3} flashes total)'.format(start, end, rate,
+                                                    len(temp)))
+            t_end += t_interval
+
+        # Entire self.storm flash rate
+        rates = np.array(rates)
+        r = self.storm.index.max() - self.storm.index.min()
+        rate = len(temp_storm) / r.total_seconds() * 60
+
+        print('\nNumber of {0}s: {1} out of {2} total '
+              '({3:0.2f}%)'.format(flash_type.upper(), len(temp_storm),
+                                   len(self.storm),
+                                   len(temp_storm) / len(self.storm) * 100))
+
+        print('Average {0} rate of entire storm: {1:0.2f} '
+              'per minute'.format(flash_type.upper(), rate))
+
+        s = '\nInterval {0} Rate Statistics:'.format(flash_type.upper())
+        print(s)
+        print('-' * len(s))
+        print('Mean: {0:0.2f} per minute'.format(np.mean(rates)))
+        print('Std. dev. {0:0.2f} per minute'.format(np.std(rates)))
+        print('Max {0:0.2f} per minute'.format(np.max(rates)))
+        print('Minimum {0:0.2f} per minute'.format(np.min(rates)))
+
+        return temp_storm
+
+    @classmethod
+    def from_ods_file(cls, file):
+        """ Initialize the object from files and dates """
+
+        storm = cls._parse_ods_file(file)
+        return cls(storm)
+
+    def get_analyzed_flash_numbers(self, storm_lma):
+        """
+        Get the LMA flash number that corresponds to the analyzed flashes
+        in the .ods file.
+
+        Parameters:
+        -----------
+            storm_lma: Storm object
+                Storm object representing the data from a .dat file.
+
+        Returns:
+        --------
+            data_frame: DataFrame
+                DataFrame containing a copy of self.storm plus the
+                flash-number column.
+
+        """
+
+        # Limit the storm_ods times to the storm times
+        start_ind = storm_lma.storm.index.min()
+        end_ind = storm_lma.storm.index.max()
+
+        if start_ind < self.storm.index.min():
+            start_ind = self.storm.index.min()
+
+        if end_ind > self.storm.index.max():
+            end_ind = self.storm.index.max()
+
+        data_frame = self.storm.loc[start_ind:end_ind]
+
+        # Setup the container for the results data
+        analyzed_flashes = dict()
+        analyzed_flashes['flash-number'] = []
+        analyzed_flashes['DateTime'] = []
+
+        temp = storm_lma.storm[storm_lma.storm['charge'] != 0]
+        numbers = temp['flash-number'].unique()
+
+        # Start the computation
+        count = 1
+        total = len(data_frame.index) * len(numbers)
+
+        print('Total Iterations: {0}'.format(total))
+        start = datetime.datetime.now()
+        for i in data_frame.index:
+            # # Ignore the times in the file that are outside the range of
+            # # the analyzed storm.
+            # if not (self.storm.index.min() <= i <= self.storm.index.max()):
+            #     continue
+
+            number_list = []
+            for flash_number in numbers:
+                flash = storm_lma.storm[storm_lma.storm['flash-number'] ==
+                                        flash_number]
+                dt = datetime.timedelta(microseconds=30000)  # 0.03 sec
+
+                if flash.index.min() - dt < i < flash.index.max() + dt:
+                    number_list.append(flash_number)
+
+                count += 1
+                print('Analyzing... {0:0.2f}%'.format(count / total * 100),
+                      end='\r')
+
+            if number_list:
+                if len(number_list) == 1:
+                    number_list = number_list[0]
+                else:
+                    number_list = tuple(number_list)
+
+                analyzed_flashes['flash-number'].append(number_list)
+                analyzed_flashes['DateTime'].append(i)
+
+        end = datetime.datetime.now()
+        print('Analysis time: {0}\n'.format(end - start))
+
+        series = pd.Series(analyzed_flashes['flash-number'],
+                           index=analyzed_flashes['DateTime'])
+
+        series.drop_duplicates(keep='first', inplace=True)
+
+        data_frame.loc[:, 'flash-number'] = series
+
+        return data_frame
+
+    def plot_flash_type(self, storm_lma, type='IIC'):
         """
         Plot the LMA sources of each file type as classified in the .ods
         file generated during analysis.
 
         Parameters
         ----------
-        ods_file: str
-            File name of the .ods file to open
+        storm_lma: Storm
+            Storm object containing the LMA data.
         type: str (optional)
             Flash type
 
         """
 
-        if type not in ods_file.storm['Type'].unique():
+        if type not in self.storm['Type'].unique():
             print('Flash type not found.')
             return False
 
-        flashes = ods_file.storm[ods_file.storm['Type'] == type]
+        flashes = self.storm[self.storm['Type'] == type]
         dt = datetime.timedelta(microseconds=200000)  # 200 ms
 
         for i in flashes.index:
@@ -1199,64 +1274,37 @@ class Storm(object):
             t2 = flashes.loc[i]['DateTime'] + \
                  flashes.loc[i]['Duration(s)'] + dt
 
-            p = self.get_flash_plotter(t1, t2)
+            p = storm_lma.get_flash_plotter(t1, t2)
             p.plot_all()
             plt.show()
 
     def print_storm_summary(self, charge=None, flash_types=None):
         """ Print the summary of the storm. """
 
-        try:
+        if flash_types is None:
+            types = self.storm['Type'].unique()
+        else:
+            types = flash_types
 
-            if flash_types is None:
-                types = self.storm['Type'].unique()
-            else:
-                types = flash_types
-
-            for t in types:
-                storm = self.storm[self.storm['Type'] == t]
-                s = '\n'
-                s += '{0} : {1}\n'.format(t, len(storm))
-
-                # Get rid of unwanted columns
-                storm.pop('EW Extent (km)')
-                storm.pop('NS Extent (km)')
-
-                print(s)
-                print(storm.describe())
-
-        except KeyError:
-            s = "\nLMA File: Charge {0}".format(charge.upper())
-            print(s)
-            print('-' * len(s))
-
-            if charge is None:
-                storm = self.storm
-            elif charge == 'positive':
-                storm = self.storm[self.storm['charge'] == 3]
-            elif charge == 'negative':
-                storm = self.storm[self.storm['charge'] == -3]
-            elif charge == 'other':
-                storm = self.storm[self.storm['charge'] == 0]
+        for t in types:
+            storm = self.storm[self.storm['Type'] == t]
+            s = '\n'
+            s += '{0} : {1}\n'.format(t, len(storm))
 
             # Get rid of unwanted columns
-            storm.pop('time(UT-sec-of-day)')
-            # storm.pop('lat')
-            # storm.pop('lon')
-            storm.pop('reduced-chi^2')
-            storm.pop('#-of-stations-contributed')
-            storm.pop('flash-number')
-            storm.pop('charge')
+            storm.pop('EW Extent (km)')
+            storm.pop('NS Extent (km)')
 
+            print(s)
             print(storm.describe())
-            print('\n')
 
     def save_to_pickle(self, file_name):
         with open(file_name, 'wb') as f:
             pickle.dump(self.__dict__, f)
 
     def sort_flashes_into_cells(self, storm_lma, times, xlims,
-                                ylims, cell_names):
+                                        ylims, cell_names):
+
         """
         Sort the analyzed flashes in the ODS files by cells using the LMA
         sources from the LMA exported file into defined cells. This method
@@ -1296,4 +1344,3 @@ class Storm(object):
                                                   '%m/%d/%Y %H%M')
 
         pass
-
