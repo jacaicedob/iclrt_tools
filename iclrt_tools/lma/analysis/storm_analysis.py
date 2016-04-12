@@ -12,6 +12,8 @@ import sys
 import iclrt_tools.plotting.dfplots as df
 import iclrt_tools.lat_lon.lat_lon as ll
 
+sns.set_context('talk', font_scale=2.0)
+
 
 class Storm(object):
     """
@@ -1010,57 +1012,27 @@ class StormODS(Storm):
     def analyze_flash_areas(self, flash_type='all'):
         """ Analyze the areas of the specified flash type. """
 
-        if flash_type.lower == 'all':
-            temp_storm = self.storm
-        else:
-            temp_storm = self.storm[self.storm['Type'] == flash_type.upper()]
-
-        # if flash_type.lower() == 'ic':
-        #     temp_storm = self.storm[self.storm['Type'] == 'IC']
-        #
-        # elif flash_type.lower() == '-cg':
-        #     temp_storm = self.storm[self.storm['Type'] == '-CG']
-        #
-        # elif flash_type.lower() == 'cg':
-        #     temp_storm = self.storm[self.storm['Type'] == 'CG']
-        #
-        # elif flash_type.lower() == 'cg':
-        #     temp_storm = self.storm[self.storm['Type'] == 'CG']
-        #
-        # else:
-        #     temp_storm = self.storm
+        temp_storm = self.get_flash_type(flash_type=flash_type)
 
         fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+
         temp_storm['Area (km^2)'].hist(ax=ax)
         ax.set_title('Histogram of flash areas for '
                      '{0}s'.format(flash_type.upper()))
         ax.set_xlabel('Flash area (km^2)')
         ax.set_ylabel('Number of flashes')
 
-        plt.show()
-
         print(temp_storm['Area (km^2)'].describe())
+
+        plt.show()
 
     def analyze_initiation_heights(self, flash_type='all'):
         """ Analyze the initiation heights of the specified flash type. """
 
-        if flash_type.lower == 'all':
-            temp_storm = self.storm
-        else:
-            temp_storm = self.storm[self.storm['Type'] == flash_type.upper()]
-
-        # if flash_type.lower() == 'ic':
-        #     temp_storm = self.storm[self.storm['Type'] == 'IC']
-        #
-        # elif flash_type.lower() == '-cg' or flash_type.lower() == 'cg':
-        #     storm1 = self.storm[self.storm['Type'] == '-CG']
-        #     storm2 = self.storm[self.storm['Type'] == 'CG']
-        #
-        #     temp_storm = pd.concat([storm1, storm2], ignore_index=True)
-        # else:
-        #     temp_storm = self.storm
+        temp_storm = self.get_flash_type(flash_type=flash_type)
 
         fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+
         temp_storm['Initiation Height (km)'].hist(ax=ax)
         ax.set_title('Histogram of initiation heights for '
                      '{0}s'.format(flash_type.upper()))
@@ -1068,9 +1040,9 @@ class StormODS(Storm):
         ax.set_xlabel('Initiation Height (km)')
         ax.set_ylabel('Number of flashes')
 
-        plt.show()
-
         print(temp_storm['Initiation Height (km)'].describe())
+
+        plt.show()
 
     def calculate_flash_rates(self, interval=5, flash_type='all'):
         """
@@ -1247,6 +1219,16 @@ class StormODS(Storm):
         data_frame.loc[:, 'flash-number'] = series
 
         return data_frame
+
+    def get_flash_type(self, flash_type='all'):
+        """ Returns a DataFrame with all the flashes of a certain type. """
+
+        if flash_type.lower == 'all':
+            temp_storm = self.storm
+        else:
+            temp_storm = self.storm[self.storm['Type'] == flash_type.upper()]
+
+        return temp_storm
 
     def plot_flash_type(self, storm_lma, type='IIC'):
         """
