@@ -1255,5 +1255,45 @@ class Storm(object):
         with open(file_name, 'wb') as f:
             pickle.dump(self.__dict__, f)
 
-    def sort_flashes_into_cells(self, times, xlims, ylims, cell_name):
+    def sort_flashes_into_cells(self, storm_lma, times, xlims,
+                                ylims, cell_names):
+        """
+        Sort the analyzed flashes in the ODS files by cells using the LMA
+        sources from the LMA exported file into defined cells. This method
+        can only be called on an ODS storm.
+
+            Parameters:
+            -----------
+                storm_lma: Storm
+                    Storm object containing the LMA data
+                times: list
+                    List of times for which the limits and name of each cell
+                    is defined.
+                xlims: list
+                    List of tuples containing the limits in the x-direction of
+                    each cell at each time.
+                ylims: list
+                    List of tuples containing the limits in the y-direction of
+                    each cell at each time.
+                cell_names: list
+                    List of names for each cell.
+
+        """
+
+        # Make sure the current ODS storm has the LMA flash numbers for each
+        # flash
+        if 'flash-number' not in self.storm.columns:
+            self.storm = storm_lma.get_analyzed_flash_numbers(self.storm)
+
+        # Remove all the entries that are Nan
+        temp = self.storm.dropna(subset=['flash-number'])
+
+        # Convert the times list into datetime
+        s = '{0}/{1}/{2}'.format(temp.index[0].month, temp.index[0].day,
+                                 temp.index[0].year)
+        for i in range(len(times)):
+            times[i] = datetime.datetime.strptime(s + ' ' + times[i],
+                                                  '%m/%d/%Y %H%M')
+
         pass
+
