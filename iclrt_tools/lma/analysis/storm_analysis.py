@@ -557,13 +557,13 @@ class Storm(object):
         Get the LMA flash number that corresponds to the analyzed flashes
         in the .ods file.
 
-            Parameters:
-            -----------
+        Parameters:
+        -----------
             storm_ods: Storm object
                 Storm object representing the data from a .ods file.
 
-            Returns:
-            --------
+        Returns:
+        --------
             data_frame: DataFrame
                 DataFrame containing a copy of the storm_ods plus the
                 flash-number column.
@@ -649,19 +649,47 @@ class Storm(object):
     
         return self.positive_charge, self.negative_charge, self.other
 
+    def get_sources_from_flash_number(self, flash_number=None):
+        """
+            Get the LMA sources for flash_number.
+
+            Parameters
+            ----------
+                flash_number: int
+                    Flash number to get.
+
+            Returns
+            -------
+                subset : DataFrame
+                    DataFrame with sources.
+            """
+
+        if type(flash_number) == np.int64 or type(flash_number) == int:
+            subset = self.storm[self.storm['flash-number'] == flash_number]
+        else:
+            temp = []
+            for n in flash_number:
+                temp.append(self.storm[self.storm['flash-number'] == n])
+
+            subset = pd.concat(temp)
+
+        subset.sort_index(inplace=True)
+
+        return subset
+
     def get_flash_plotter_from_number(self, flash_number=None):
         """
         Get the LMA sources for flash_number.
 
         Parameters
         ----------
-        flash_number: int
-            Flash number to get.
+            flash_number: int
+                Flash number to get.
 
         Returns
         -------
-        p : LMAPlotter
-            Plotter object.
+            p : LMAPlotter
+                Plotter object.
         """
 
         # Generate the header contents for the temporary .dat file
@@ -674,7 +702,7 @@ class Storm(object):
         # Temporary file to store the LMA sources of a single flash
         temp_file = './temp.dat'
 
-        if type(flash_number) == np.int64:
+        if type(flash_number) == np.int64 or type(flash_number) == int:
             subset = self.storm[self.storm['flash-number'] == flash_number]
         else:
             temp = []
@@ -712,8 +740,8 @@ class Storm(object):
         p = df.LMAPlotter(temp_file)
 
         # Delete the temporary .dat file
-        # if os.path.isfile(temp_file):
-        #     os.remove(temp_file)
+        if os.path.isfile(temp_file):
+            os.remove(temp_file)
 
         return p
 
@@ -724,15 +752,15 @@ class Storm(object):
 
         Parameters
         ----------
-        start: datetime
-            Datetime object that specifies the start of the flash.
-        end: datetime
-            Datetime object that specifies the start of the flash.
+            start: datetime
+                Datetime object that specifies the start of the flash.
+            end: datetime
+                Datetime object that specifies the start of the flash.
 
         Returns
         -------
-        p : LMAPlotter
-            Plotter object.
+            p : LMAPlotter
+                Plotter object.
         """
 
         subset = self.storm.loc[start:end]
@@ -799,8 +827,8 @@ class Storm(object):
 
         Parameters
         ----------
-        file_name: str
-            File used to save the area results.
+            file_name: str
+                File used to save the area results.
 
         """
         if file_name is None:
@@ -902,12 +930,12 @@ class Storm(object):
 
         Parameters
         ----------
-        charge: str (optional)
-            The charge to be plotter, i.e., positive or negative.
-        hist: bool
-            Boolean flag to include the histogram in the plot.
-        show_plot: bool
-            Boolean flag to show the plot.
+            charge: str (optional)
+                The charge to be plotter, i.e., positive or negative.
+            hist: bool
+                Boolean flag to include the histogram in the plot.
+            show_plot: bool
+                Boolean flag to show the plot.
 
         Returns
         -------
@@ -976,10 +1004,10 @@ class Storm(object):
 
         Parameters
         ----------
-        hist: bool (optional)
-            Boolean flag to show the histogram in the plot
-        show_plot: bool (optional)
-            Boolean flag to show the plot
+            hist: bool (optional)
+                Boolean flag to show the histogram in the plot
+            show_plot: bool (optional)
+                Boolean flag to show the plot
 
         Returns
         -------
@@ -1043,16 +1071,16 @@ class Storm(object):
         at the time of the earliest positive source and every 'interval'
         minutes. The plots can be saved if the user wants.
 
-        Parameters
-        ----------
-        interval: int (optional)
-            Time interval in minutes.
-        hist: bool (optional)
-            Boolean flag to plot the histogram.
-        savefigs: bool (optional)
-            Boolean flag to save the plots.
-        path: str (optional)
-            Path onto which the plots will be saved.
+            Parameters:
+            -----------
+            interval: int (optional)
+                Time interval in minutes.
+            hist: bool (optional)
+                Boolean flag to plot the histogram.
+            savefigs: bool (optional)
+                Boolean flag to save the plots.
+            path: str (optional)
+                Path onto which the plots will be saved.
 
         """
 
