@@ -1255,5 +1255,5 @@ class Storm(object):
         with open(file_name, 'wb') as f:
             pickle.dump(self.__dict__, f)
 
-    def sort_flashes_into_cells(self, times, xlims, ylims):
+    def sort_flashes_into_cells(self, times, xlims, ylims, cell_name):
         pass
