@@ -34,7 +34,7 @@ class Storm(object):
     def __init__(self, storm=None):
         self.storm = storm
 
-    def convert_latlon_to_km(self, x_loc=None, y_loc=None):
+    def convert_latlon_to_m(self, x_loc=None, y_loc=None):
         """
         Convert the lat, lon entries into distance from the ICLRT in a
         Cartesian plane, just like the xlma software does. Append two Series
@@ -437,7 +437,7 @@ class StormLMA(Storm):
 
         Parameters
         ----------
-            flash_number: int
+            flash_number: int, float, or list (optional)
                 Flash number to get.
 
         Returns
@@ -1384,7 +1384,7 @@ class StormODS(Storm):
                 sources = storm_lma.get_sources_from_flash_number(
                                                            row['flash-number'])
                 flash = StormLMA(sources)
-                flash.convert_latlon_to_km(3, 4)
+                flash.convert_latlon_to_m(3, 4)
 
                 flash = flash.storm[flash.storm['x (m)'] > xlims[i][0]]
                 flash = flash[flash['x (m)'] < xlims[i][1]]
