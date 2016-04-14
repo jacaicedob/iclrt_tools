@@ -1011,6 +1011,7 @@ class StormODS(Storm):
             storm['Initiation Height (km)'], errors='coerce')
 
         storm.sort(inplace=True)
+
         return storm
 
     def analyze_flash_areas(self, flash_type='all'):
