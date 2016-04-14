@@ -12,7 +12,7 @@ import sys
 import iclrt_tools.plotting.dfplots as df
 import iclrt_tools.lat_lon.lat_lon as ll
 
-sns.set_context('talk', font_scale=2.0)
+# sns.set_context('talk', font_scale=2.0)
 
 
 class Storm(object):
