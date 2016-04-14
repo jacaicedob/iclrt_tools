@@ -1285,7 +1285,7 @@ class StormODS(Storm):
             pickle.dump(self.__dict__, f)
 
     def sort_flashes_into_cells(self, storm_lma, times, xlims,
-                                        ylims, cell_names):
+                                ylims, cell_names):
 
         """
         Sort the analyzed flashes in the ODS files by cells using the LMA
@@ -1320,11 +1320,31 @@ class StormODS(Storm):
         storm.sort_index(inplace=True)
 
         # Convert the times list into datetime
+        # This assumes only one date per .ods file
         s = '{0}/{1}/{2}'.format(storm.index[0].month, storm.index[0].day,
                                  storm.index[0].year)
         for i in range(len(times)):
             times[i] = datetime.datetime.strptime(s + ' ' + times[i],
                                                   '%m/%d/%Y %H%M')
+
+        # If xlims or ylims is a constant, duplicate that value so that the
+        # length of the lists are the same, using the times list as the base.
+
+        if len(xlims[0]) == 1:
+            temp_x1 = xlims[0]
+            temp_x2 = xlims[1]
+            xlims = []
+
+            for i in range(len(times)):
+                xlims.append((temp_x1, temp_x2))
+
+        if len(ylims[0]) == 1:
+            temp_y1 = ylims[0]
+            temp_y2 = ylims[1]
+            ylims = []
+
+            for i in range(len(times)):
+                ylims.append((temp_y1, temp_y2))
 
         # Start loop
         for i in range(len(times) - 1):
@@ -1342,7 +1362,7 @@ class StormODS(Storm):
             results['DateTime'] = []
             results['Cell'] = []
 
-            for index, row in temp.iterrow():
+            for index, row in temp.iterrows():
                 sources = storm_lma.get_sources_from_flash_number(
                                                            row['flash-number'])
                 flash = self.StormLMA(sources)
@@ -1357,5 +1377,6 @@ class StormODS(Storm):
                     results['DateTime'].append(index)
                     results['Cell'].append(cell_names[i])
 
-                ### Finish it
-
+                else:
+                    results['DateTime'].append(index)
+                    results['Cell'].append(None)
