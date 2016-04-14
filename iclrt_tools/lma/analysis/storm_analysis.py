@@ -136,6 +136,9 @@ class Storm(object):
 
         self.__dict__.update(tmp_dict)
 
+    def __len__(self):
+        return len(self.storm)
+
 
 class StormLMA(Storm):
     """
@@ -1007,6 +1010,7 @@ class StormODS(Storm):
         storm['Initiation Height (km)'] = pd.to_numeric(
             storm['Initiation Height (km)'], errors='coerce')
 
+        storm.sort(inplace=True)
         return storm
 
     def analyze_flash_areas(self, flash_type='all'):
@@ -1285,7 +1289,7 @@ class StormODS(Storm):
             pickle.dump(self.__dict__, f)
 
     def sort_flashes_into_cells(self, storm_lma, times, xlims,
-                                ylims, cell_names):
+                                ylims, cell_names, inplace=True):
 
         """
         Sort the analyzed flashes in the ODS files by cells using the LMA
@@ -1313,7 +1317,8 @@ class StormODS(Storm):
         # Make sure the current ODS storm has the LMA flash numbers for each
         # flash
         if 'flash-number' not in self.storm.columns:
-            self.storm = storm_lma.get_analyzed_flash_numbers(self.storm)
+            print('Getting analyzed flash numbers:')
+            self.storm = self.get_analyzed_flash_numbers(storm_lma)
 
         # Remove all the entries that are Nan and sort the indices
         storm = self.storm.dropna(subset=['flash-number'])
@@ -1327,27 +1332,43 @@ class StormODS(Storm):
             times[i] = datetime.datetime.strptime(s + ' ' + times[i],
                                                   '%m/%d/%Y %H%M')
 
-        # If xlims or ylims is a constant, duplicate that value so that the
-        # length of the lists are the same, using the times list as the base.
+        # If xlimss, ylims, or cell_names is a constant, duplicate that value
+        # so that the length of the lists are the same, using the times list
+        # as the base.
 
-        if len(xlims[0]) == 1:
-            temp_x1 = xlims[0]
-            temp_x2 = xlims[1]
-            xlims = []
+        if type(xlims[0]) != tuple:
+            if type(xlims[0]) != list:
+                temp_x1 = xlims[0]
+                temp_x2 = xlims[1]
+                xlims = []
+
+                for i in range(len(times)):
+                    xlims.append((temp_x1, temp_x2))
+
+        if type(ylims[0]) != tuple:
+            if type(ylims[0]) != list:
+                temp_y1 = ylims[0]
+                temp_y2 = ylims[1]
+                ylims = []
+
+                for i in range(len(times)):
+                    ylims.append((temp_y1, temp_y2))
+
+        if type(cell_names[0]) == str:
+            temp_name = cell_names[0]
+            cell_names = []
 
             for i in range(len(times)):
-                xlims.append((temp_x1, temp_x2))
-
-        if len(ylims[0]) == 1:
-            temp_y1 = ylims[0]
-            temp_y2 = ylims[1]
-            ylims = []
-
-            for i in range(len(times)):
-                ylims.append((temp_y1, temp_y2))
+                cell_names.append(temp_name)
 
         # Start loop
+
+        results = dict()
+        results['DateTime'] = []
+        results['Cell'] = []
+
         for i in range(len(times) - 1):
+            print(times[i])
             t_start = times[i]
             t_end = times[i+1]
 
@@ -1358,25 +1379,37 @@ class StormODS(Storm):
 
             temp = storm.loc[t_start:t_end]
 
-            results = dict()
-            results['DateTime'] = []
-            results['Cell'] = []
-
             for index, row in temp.iterrows():
                 sources = storm_lma.get_sources_from_flash_number(
                                                            row['flash-number'])
-                flash = self.StormLMA(sources)
+                flash = StormLMA(sources)
                 flash.convert_latlon_to_km(3, 4)
 
                 flash = flash.storm[flash.storm['x (m)'] > xlims[i][0]]
-                flash = flash.storm[flash.storm['x (m)'] < xlims[i][1]]
-                flash = flash.storm[flash.storm['y (m)'] > ylims[i][0]]
-                flash = flash.storm[flash.storm['y (m)'] < ylims[i][1]]
+                flash = flash[flash['x (m)'] < xlims[i][1]]
+                flash = flash[flash['y (m)'] > ylims[i][0]]
+                flash = flash[flash['y (m)'] < ylims[i][1]]
 
-                if len(flash) > 0:
+                if len(flash) > 10:
                     results['DateTime'].append(index)
                     results['Cell'].append(cell_names[i])
 
                 else:
                     results['DateTime'].append(index)
-                    results['Cell'].append(None)
+                    results['Cell'].append(pd.np.nan)
+
+            print("Items found: {0}".format(len(results['DateTime'])))
+
+        results = pd.Series(results['Cell'], index=results['DateTime'],
+                            name='Cell')
+
+        # Remove duplicate indices
+        results = results.reset_index()
+        results.drop_duplicates(subset='index', inplace=True)
+        results.set_index('index', inplace=True)
+        results.sort(inplace=True)
+
+        if inplace:
+            self.storm.loc[:, 'Cell'] = results
+        else:
+            return results
