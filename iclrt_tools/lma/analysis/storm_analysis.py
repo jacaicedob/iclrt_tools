@@ -187,7 +187,7 @@ class StormLMA(Storm):
         return bin_centers[np.argmax(hist)]
 
     @staticmethod
-    def _parse_lma_files(files, dates, num_stations, chi_sq):
+    def _parse_lma_files(files, dates):
         """ Parse the LMA .dat files to generate the DataFrame. """
 
         pds = []
@@ -243,12 +243,6 @@ class StormLMA(Storm):
             storm = pd.concat(pds, ignore_index=True)
         else:
             storm = pds[0]
-
-        # Filter data by number of stations and chi^2 value
-        # The default filtering is 6 or more stations and
-        # a chi^2 <= 5.
-        storm = storm[storm['#-of-stations-contributed'] >= num_stations]
-        storm = storm[storm['reduced-chi^2'] <= chi_sq]
 
         # _ = storm.pop('#-of-stations-contributed')
         # _ = storm.pop('reduced-chi^2')
@@ -385,12 +379,40 @@ class StormLMA(Storm):
         print('Correlated detection efficiency: {0}'.format(
             len(self.nldn_detections['flash-number']) / len(numbers)))
 
+    def filter_stations(self, num_stations=6, inplace=True):
+        # Filter data by number of stations.
+        # The default filtering is 6 or more stations.
+
+        storm = self.storm
+        storm = storm[storm['#-of-stations-contributed'] >= num_stations]
+
+        if inplace:
+            self.storm = storm
+        else:
+            return storm
+
+    def filter_chi_squared(self, chi_sq=5, inplace=True):
+        # Filter data by chi^2 value.
+        # The default filtering is a chi^2 <= 5.
+
+        storm = self.storm
+        storm = storm[storm['reduced-chi^2'] <= chi_sq]
+
+        if inplace:
+            self.storm = storm
+        else:
+            return storm
+
     @classmethod
     def from_lma_files(cls, files, dates, num_stations=6, chi_sq=5):
         """ Initialize the object from files and dates """
 
-        storm = cls._parse_lma_files(files, dates, num_stations, chi_sq)
-        return cls(storm)
+        storm = cls._parse_lma_files(files, dates)
+        storm = cls(storm)
+        storm.filter_stations(num_stations)
+        storm.filter_chi_squared(chi_sq)
+
+        return storm
 
     def from_pickle(self, file):
         """ Initialize the object from a save pickle. """
@@ -1099,7 +1121,7 @@ class StormODS(Storm):
 
         return storm
 
-    def analyze_flash_areas(self, flash_type='all'):
+    def analyze_flash_areas(self, flash_type='all', show_plot=True):
         """ Analyze the areas of the specified flash type. """
 
         temp_storm = self.get_flash_type(flash_type=flash_type)
@@ -1114,9 +1136,10 @@ class StormODS(Storm):
 
         print(temp_storm['Area (km^2)'].describe())
 
-        plt.show()
+        if show_plot:
+            plt.show()
 
-    def analyze_initiation_heights(self, flash_type='all'):
+    def analyze_initiation_heights(self, flash_type='all', show_plot=True):
         """ Analyze the initiation heights of the specified flash type. """
 
         temp_storm = self.get_flash_type(flash_type=flash_type)
@@ -1132,7 +1155,8 @@ class StormODS(Storm):
 
         print(temp_storm['Initiation Height (km)'].describe())
 
-        plt.show()
+        if show_plot:
+            plt.show()
 
     def calculate_flash_rates(self, interval=5, flash_type='all'):
         """
@@ -1272,9 +1296,10 @@ class StormODS(Storm):
         numbers = temp['flash-number'].unique()
 
         # Start the computation
+        count = 1
+        total = len(data_frame.index) * len(numbers)
+
         if verbose:
-            count = 1
-            total = len(data_frame.index) * len(numbers)
             print('Total Iterations: {0}'.format(total))
             start = datetime.datetime.now()
 
@@ -1416,6 +1441,7 @@ class StormODS(Storm):
             print('Getting analyzed flash numbers:')
             self.storm = self.get_analyzed_flash_numbers(storm_lma,
                                                          verbose=True)
+            self.storm.save_to_pickle('./flash_numbers.p')
 
         # Remove all the entries that are Nan and sort the indices
         storm = self.storm.dropna(subset=['flash-number'])

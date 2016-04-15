@@ -2588,7 +2588,7 @@ class LMAPlotter(object):
         #     label.set_rotation(30)
 
     def plot_plan(self, fig=None, ax=None, xlims=[-20E3, 20E3],
-                  ylims=[-20E3, 20E3]):
+                  ylims=[-20E3, 20E3], c=None):
         self.plot_x_stack = []
         self.plot_y_stack = []
 
@@ -2600,11 +2600,18 @@ class LMAPlotter(object):
             self.fig_plan = fig
             self.ax_plan = ax
 
-        self.scat_plan = self.ax_plan.scatter(self.plot_data['x'],
-                                              self.plot_data['y'], marker='.',
-                                              c=self.plot_data[
-                                                 'seconds_of_day'],
-                                              cmap=self.cmap, s=30, lw=0)
+        if c is None:
+            self.scat_plan = self.ax_plan.scatter(self.plot_data['x'],
+                                                  self.plot_data['y'],
+                                                  marker='.',
+                                                  c=self.plot_data[
+                                                     'seconds_of_day'],
+                                                  cmap=self.cmap, s=30, lw=0)
+        else:
+            self.scat_plan = self.ax_plan.scatter(self.plot_data['x'],
+                                                  self.plot_data['y'],
+                                                  marker='.',
+                                                  c=c, s=30, lw=0)
 
         self.ax_plan.set_xlim(xlims)
         self.ax_plan.set_ylim(ylims)
