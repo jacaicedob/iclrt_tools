@@ -34,7 +34,7 @@ class Storm(object):
     def __init__(self, storm=None):
         self.storm = storm
 
-    def convert_latlon_to_m(self, x_loc=None, y_loc=None):
+    def convert_latlon_to_m(self, x_loc=None, y_loc=None, verbose=False):
         """
         Convert the lat, lon entries into distance from the ICLRT in a
         Cartesian plane, just like the xlma software does. Append two Series
@@ -63,12 +63,15 @@ class Storm(object):
         count = 0
         total = len(self.storm)
 
-        print('Total Entries: {0}'.format(total))
-        start = datetime.datetime.now()
+        if verbose:
+            print('Total Entries: {0}'.format(total))
+            start = datetime.datetime.now()
 
         for i, s in self.storm.iterrows():
-            print('Converting... {0:0.2f}%'.format(count / total * 100),
-                  end='\r')
+            if verbose:
+                print('Converting... {0:0.2f}%'.format(count / total * 100),
+                      end='\r')
+
             # Convert to WGS-84
             location = ll.Location(s['lat'], s['lon'])
             xyz = location.xyz_transform()
@@ -110,8 +113,9 @@ class Storm(object):
 
             count += 1
 
-        end = datetime.datetime.now()
-        print('Conversion time: {0}\n'.format(end - start))
+        if verbose:
+            end = datetime.datetime.now()
+            print('Conversion time: {0}\n'.format(end - start))
 
         # Insert the x result into the DataFrame
         x_series = pd.Series(results['x (m)'], index=results['DateTime'])
@@ -128,13 +132,6 @@ class Storm(object):
             y_loc = len(self.storm.columns)
 
         self.storm.insert(y_loc, 'y (m)', y_series)
-
-    def from_pickle(self, file):
-        """ Initialize the object from a save pickle. """
-
-        tmp_dict = pickle.load(open(file, 'rb'))
-
-        self.__dict__.update(tmp_dict)
 
     def __len__(self):
         return len(self.storm)
@@ -388,6 +385,13 @@ class StormLMA(Storm):
 
         storm = cls._parse_lma_files(files, dates)
         return cls(storm)
+
+    def from_pickle(self, file):
+        """ Initialize the object from a save pickle. """
+
+        tmp_dict = pickle.load(open(file, 'rb'))
+
+        self.__dict__.update(tmp_dict)
 
     def get_charge_regions(self):
         """ Return DataFrames corresponding to each charge region. """
@@ -1141,7 +1145,14 @@ class StormODS(Storm):
         storm = cls._parse_ods_file(file)
         return cls(storm)
 
-    def get_analyzed_flash_numbers(self, storm_lma):
+    def from_pickle(self, file):
+        """ Initialize the object from a save pickle. """
+
+        tmp_dict = pickle.load(open(file, 'rb'))
+
+        self.__dict__.update(tmp_dict)
+
+    def get_analyzed_flash_numbers(self, storm_lma, verbose=False):
         """
         Get the LMA flash number that corresponds to the analyzed flashes
         in the .ods file.
@@ -1180,11 +1191,12 @@ class StormODS(Storm):
         numbers = temp['flash-number'].unique()
 
         # Start the computation
-        count = 1
-        total = len(data_frame.index) * len(numbers)
+        if verbose:
+            count = 1
+            total = len(data_frame.index) * len(numbers)
+            print('Total Iterations: {0}'.format(total))
+            start = datetime.datetime.now()
 
-        print('Total Iterations: {0}'.format(total))
-        start = datetime.datetime.now()
         for i in data_frame.index:
             # # Ignore the times in the file that are outside the range of
             # # the analyzed storm.
@@ -1200,9 +1212,10 @@ class StormODS(Storm):
                 if flash.index.min() - dt < i < flash.index.max() + dt:
                     number_list.append(flash_number)
 
-                count += 1
-                print('Analyzing... {0:0.2f}%'.format(count / total * 100),
-                      end='\r')
+                if verbose:
+                    count += 1
+                    print('Analyzing... {0:0.2f}%'.format(count / total * 100),
+                          end='\r')
 
             if number_list:
                 if len(number_list) == 1:
@@ -1213,8 +1226,9 @@ class StormODS(Storm):
                 analyzed_flashes['flash-number'].append(number_list)
                 analyzed_flashes['DateTime'].append(i)
 
-        end = datetime.datetime.now()
-        print('Analysis time: {0}\n'.format(end - start))
+        if verbose:
+            end = datetime.datetime.now()
+            print('Analysis time: {0}\n'.format(end - start))
 
         series = pd.Series(analyzed_flashes['flash-number'],
                            index=analyzed_flashes['DateTime'])
@@ -1319,7 +1333,8 @@ class StormODS(Storm):
         # flash
         if 'flash-number' not in self.storm.columns:
             print('Getting analyzed flash numbers:')
-            self.storm = self.get_analyzed_flash_numbers(storm_lma)
+            self.storm = self.get_analyzed_flash_numbers(storm_lma,
+                                                         verbose=True)
 
         # Remove all the entries that are Nan and sort the indices
         storm = self.storm.dropna(subset=['flash-number'])
@@ -1363,13 +1378,13 @@ class StormODS(Storm):
                 cell_names.append(temp_name)
 
         # Start loop
-
         results = dict()
         results['DateTime'] = []
         results['Cell'] = []
+        flash_count = 0
 
         for i in range(len(times) - 1):
-            print(times[i])
+            print('Processing: {0} -- {1} UTC.'.format(times[i], times[i+1]))
             t_start = times[i]
             t_end = times[i+1]
 
@@ -1392,6 +1407,7 @@ class StormODS(Storm):
                 flash = flash[flash['y (m)'] < ylims[i][1]]
 
                 if len(flash) > 10:
+                    flash_count += 1
                     results['DateTime'].append(index)
                     results['Cell'].append(cell_names[i])
 
@@ -1399,8 +1415,9 @@ class StormODS(Storm):
                     results['DateTime'].append(index)
                     results['Cell'].append(pd.np.nan)
 
-            print("Items found: {0}".format(len(results['DateTime'])))
+            print('  Flashes found: {0}'.format(flash_count))
 
+        print('\nDone!')
         results = pd.Series(results['Cell'], index=results['DateTime'],
                             name='Cell')
 
@@ -1413,4 +1430,6 @@ class StormODS(Storm):
         if inplace:
             self.storm.loc[:, 'Cell'] = results
         else:
-            return results
+            temp = self.storm.copy()
+            temp.loc[:, 'Cell'] = results
+            return temp
