@@ -187,7 +187,7 @@ class StormLMA(Storm):
         return bin_centers[np.argmax(hist)]
 
     @staticmethod
-    def _parse_lma_files(files, dates):
+    def _parse_lma_files(files, dates, num_stations, chi_sq):
         """ Parse the LMA .dat files to generate the DataFrame. """
 
         pds = []
@@ -243,6 +243,12 @@ class StormLMA(Storm):
             storm = pd.concat(pds, ignore_index=True)
         else:
             storm = pds[0]
+
+        # Filter data by number of stations and chi^2 value
+        # The default filtering is 6 or more stations and
+        # a chi^2 <= 5.
+        storm = storm[storm['#-of-stations-contributed'] >= num_stations]
+        storm = storm[storm['reduced-chi^2'] <= chi_sq]
 
         # _ = storm.pop('#-of-stations-contributed')
         # _ = storm.pop('reduced-chi^2')
@@ -380,10 +386,10 @@ class StormLMA(Storm):
             len(self.nldn_detections['flash-number']) / len(numbers)))
 
     @classmethod
-    def from_lma_files(cls, files, dates):
+    def from_lma_files(cls, files, dates, num_stations=6, chi_sq=5):
         """ Initialize the object from files and dates """
 
-        storm = cls._parse_lma_files(files, dates)
+        storm = cls._parse_lma_files(files, dates, num_stations, chi_sq)
         return cls(storm)
 
     def from_pickle(self, file):
@@ -541,6 +547,81 @@ class StormLMA(Storm):
         temp_file = './temp.dat'
 
         subset = self.storm[self.storm['flash-number'] == number]
+        subset.reset_index(inplace=True)
+
+        # Open the temporary LMA .dat file and write the header.
+        with open(temp_file, 'w') as f:
+            f.write(date + '\n')
+            f.write(center + '\n')
+            f.write(data_str + '\n')
+
+            # Go through each source and write the information out to the
+            # temporary .dat file
+            for ind in subset.index:
+                data = ' '.join(
+                    [str(subset['time(UT-sec-of-day)'][ind]),
+                     str(subset['lat'][ind]),
+                     str(subset['lon'][ind]),
+                     str(subset['alt(m)'][ind]),
+                     str(subset['reduced-chi^2'][ind]),
+                     str(subset['P(dBW)'][ind]),
+                     str(subset['mask'][ind])])
+
+                data += '\n'
+
+                f.write(data)
+
+        # sys.exit(1)
+        # Create the LMAPlotter object and run the measure_area() function
+        p = df.LMAPlotter(temp_file)
+
+        # Delete the temporary .dat file
+        if os.path.isfile(temp_file):
+            os.remove(temp_file)
+
+        return p
+
+    def get_initial_plotter_from_number(self, flash_number=None):
+        """
+        Get the initial 20 LMA sources for flash_number.
+
+        Parameters
+        ----------
+            flash_number: int, float, or list (optional)
+                Flash number to get.
+
+        Returns
+        -------
+            p : LMAPlotter
+                Plotter object.
+        """
+
+        # Generate the header contents for the temporary .dat file
+        # that will contain the LMA sources for one flash.
+        d = datetime.datetime.strftime(self.storm.index[0], '%m/%d/%Y')
+        date = 'Data start time: {0}'.format(d)
+        center = 'Coordinate center (lat,lon,alt): 29.9429917 -82.0332305 0.00'
+        data_str = '*** data ***'
+
+        # Temporary file to store the LMA sources of a single flash
+        temp_file = './temp.dat'
+
+        if type(flash_number) == np.int64 or type(flash_number) == int:
+            subset = self.storm[self.storm['flash-number'] == flash_number]
+            subset.sort_index(inplace=True)
+            subset = subset.iloc[0:20]
+
+        else:
+            temp = []
+            for n in flash_number:
+                f = self.storm[self.storm['flash-number'] == n]
+                f.sort_index(inplace=True)
+                f = f.iloc[0:20]
+
+                temp.append(f)
+
+            subset = pd.concat(temp)
+
         subset.reset_index(inplace=True)
 
         # Open the temporary LMA .dat file and write the header.
@@ -1014,7 +1095,7 @@ class StormODS(Storm):
         storm['Initiation Height (km)'] = pd.to_numeric(
             storm['Initiation Height (km)'], errors='coerce')
 
-        storm.sort(inplace=True)
+        storm.sort_index(inplace=True)
 
         return storm
 
@@ -1340,13 +1421,13 @@ class StormODS(Storm):
         storm = self.storm.dropna(subset=['flash-number'])
         storm.sort_index(inplace=True)
 
-        # Convert the times list into datetime
-        # This assumes only one date per .ods file
-        s = '{0}/{1}/{2}'.format(storm.index[0].month, storm.index[0].day,
-                                 storm.index[0].year)
-        for i in range(len(times)):
-            times[i] = datetime.datetime.strptime(s + ' ' + times[i],
-                                                  '%m/%d/%Y %H%M')
+        # # Convert the times list into datetime
+        # # This assumes only one date per .ods file
+        # s = '{0}/{1}/{2}'.format(storm.index[0].month, storm.index[0].day,
+        #                          storm.index[0].year)
+        # for i in range(len(times)):
+        #     times[i] = datetime.datetime.strptime(s + ' ' + times[i],
+        #                                           '%m/%d/%Y %H%M')
 
         # If xlimss, ylims, or cell_names is a constant, duplicate that value
         # so that the length of the lists are the same, using the times list
@@ -1398,20 +1479,33 @@ class StormODS(Storm):
             for index, row in temp.iterrows():
                 sources = storm_lma.get_sources_from_flash_number(
                                                            row['flash-number'])
-                flash = StormLMA(sources)
-                flash.convert_latlon_to_m(3, 4)
 
-                flash = flash.storm[flash.storm['x (m)'] > xlims[i][0]]
-                flash = flash[flash['x (m)'] < xlims[i][1]]
-                flash = flash[flash['y (m)'] > ylims[i][0]]
-                flash = flash[flash['y (m)'] < ylims[i][1]]
+                sources.sort_index(inplace=True)
 
-                if len(flash) > 10:
-                    flash_count += 1
-                    results['DateTime'].append(index)
-                    results['Cell'].append(cell_names[i])
+                # Grab the first 20 sources. By looking at the initial sources
+                # we can determine if the flash initiated in the cell of
+                # interest and thus minimizing duplicates for large flashes
+                # that span multiple cells. If the flash has less than 20
+                # sources, then add a Nan to the result for that time.
+                try:
+                    flash = StormLMA(sources.iloc[0:20])
+                    flash.convert_latlon_to_m(3, 4)
 
-                else:
+                    flash = flash.storm[flash.storm['x (m)'] > xlims[i][0]]
+                    flash = flash[flash['x (m)'] < xlims[i][1]]
+                    flash = flash[flash['y (m)'] > ylims[i][0]]
+                    flash = flash[flash['y (m)'] < ylims[i][1]]
+
+                    if len(flash) > 15:
+                        flash_count += 1
+                        results['DateTime'].append(index)
+                        results['Cell'].append(cell_names[i])
+
+                    else:
+                        results['DateTime'].append(index)
+                        results['Cell'].append(pd.np.nan)
+
+                except IndexError:
                     results['DateTime'].append(index)
                     results['Cell'].append(pd.np.nan)
 
@@ -1425,7 +1519,7 @@ class StormODS(Storm):
         results = results.reset_index()
         results.drop_duplicates(subset='index', inplace=True)
         results.set_index('index', inplace=True)
-        results.sort(inplace=True)
+        results.sort_index(inplace=True)
 
         if inplace:
             self.storm.loc[:, 'Cell'] = results
