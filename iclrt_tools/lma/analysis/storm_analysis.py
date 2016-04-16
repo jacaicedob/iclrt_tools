@@ -1441,7 +1441,7 @@ class StormODS(Storm):
             print('Getting analyzed flash numbers:')
             self.storm = self.get_analyzed_flash_numbers(storm_lma,
                                                          verbose=True)
-            self.storm.save_to_pickle('./flash_numbers.p')
+            self.save_to_pickle('./flash_numbers.p')
 
         # Remove all the entries that are Nan and sort the indices
         storm = self.storm.dropna(subset=['flash-number'])

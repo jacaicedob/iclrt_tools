@@ -439,7 +439,7 @@ def plot_ics_vs_cgs_init_height(cell_name):
 
 def main():
     init()
-    sort_into_cells()
+    # sort_into_cells()
 
     cell_1_ods = get_cell_ods('Cell 1')
     cell_1_lma = get_lma_from_ods(cell_1_ods)
