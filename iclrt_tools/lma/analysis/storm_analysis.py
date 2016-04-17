@@ -34,7 +34,7 @@ class Storm(object):
     def __init__(self, storm=None):
         self.storm = storm
 
-    def convert_latlon_to_m(self, x_loc=None, y_loc=None, verbose=False):
+    def convert_latlon_to_m(self, x_col=None, y_col=None, verbose=False):
         """
         Convert the lat, lon entries into distance from the ICLRT in a
         Cartesian plane, just like the xlma software does. Append two Series
@@ -120,18 +120,18 @@ class Storm(object):
         # Insert the x result into the DataFrame
         x_series = pd.Series(results['x (m)'], index=results['DateTime'])
 
-        if x_loc is None:
-            x_loc = len(self.storm.columns)
+        if x_col is None:
+            x_col = len(self.storm.columns)
 
-        self.storm.insert(x_loc, 'x (m)', x_series)
+        self.storm.insert(x_col, 'x (m)', x_series)
 
         # Insert the y result into the DataFrame
         y_series = pd.Series(results['y (m)'], index=results['DateTime'])
 
-        if y_loc is None:
-            y_loc = len(self.storm.columns)
+        if y_col is None:
+            y_col = len(self.storm.columns)
 
-        self.storm.insert(y_loc, 'y (m)', y_series)
+        self.storm.insert(y_col, 'y (m)', y_series)
 
     def __len__(self):
         return len(self.storm)
@@ -1522,7 +1522,7 @@ class StormODS(Storm):
                     flash = flash[flash['y (m)'] > ylims[i][0]]
                     flash = flash[flash['y (m)'] < ylims[i][1]]
 
-                    if len(flash) > 15:
+                    if len(flash) > 10:
                         flash_count += 1
                         results['DateTime'].append(index)
                         results['Cell'].append(cell_names[i])

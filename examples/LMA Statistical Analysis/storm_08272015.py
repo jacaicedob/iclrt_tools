@@ -31,7 +31,7 @@ def init():
 
     pickle_file = path + '/Statistical Analysis/08272015-Sorted_into_cells.p'
 
-    if not os.path.isfile(pickle_file):
+    if not(os.path.isfile(pickle_file)):
         pickle_file = path + \
                       '/Statistical Analysis/08272015_ods_flash-numbers.p'
 
@@ -70,6 +70,7 @@ def sort_into_cells():
                     datetime.datetime(2015, 8, 27, 23, 38, 0),
                     datetime.datetime(2015, 8, 27, 23, 43, 0),
                     datetime.datetime(2015, 8, 27, 23, 47, 0),
+                    datetime.datetime(2015, 8, 27, 23, 51, 0),
                     datetime.datetime(2015, 8, 27, 23, 51, 0)]
 
 
@@ -91,7 +92,8 @@ def sort_into_cells():
                     (-20e3, 20e3),
                     (-20e3, 20e3),
                     (-20e3, 20e3),
-                    (-20e3, 20e3)]
+                    (-20e3, 20e3),
+                    (-20e3, -10.1e3)]
 
     cell_1_ylims = [(-5e3, 5e3),
                     (-5e3, 8e3),
@@ -103,15 +105,16 @@ def sort_into_cells():
                     (-5e3, 10e3),
                     (-10e3, 15e3),
                     (-11e3, 18e3),
-                    (-11e3, 18e3),
-                    (-11e3, 18e3),
+                    (-13e3, 18e3),
+                    (-13e3, 18e3),
                     (-11e3, 20e3),
                     (-11e3, 20e3),
-                    (-10.1e3, 20e3),
-                    (-9e3, 5e3),
-                    (-9e3, 5e3),
-                    (-9e3, 7e3),
-                    (-18e3, 7.9e3)]
+                    (-9.9e3, 20e3),
+                    (-9.9e3, 5e3),
+                    (-9.9e3, 5e3),
+                    (-7.9e3, 7e3),
+                    (-8.9e3, 8e3),
+                    (-20e3, -8.9e3)]
 
     cell_1_names = ['Cell 1']
 
@@ -181,25 +184,28 @@ def sort_into_cells():
                     datetime.datetime(2015, 8, 27, 23, 34, 0),
                     datetime.datetime(2015, 8, 27, 23, 38, 0),
                     datetime.datetime(2015, 8, 27, 23, 43, 0),
-                    datetime.datetime(2015, 8, 27, 23, 47, 0)]
+                    datetime.datetime(2015, 8, 27, 23, 47, 0),
+                    datetime.datetime(2015, 8, 27, 23, 51, 0)]
 
     cell_2_xlims = [(-5e3, 20e3),
                     (-5e3, 20e3),
                     (-5e3, 20e3),
+                    (-10e3, 20e3),
+                    (-10e3, 20e3),
                     (-10e3, 10e3),
-                    (-10e3, 10e3),
-                    (-10e3, 8e3),
                     (-20e3, 10e3),
-                    (-20e3, 8e3)]
+                    (-20e3, 10e3),
+                    (-10e3, 10e3)]
 
     cell_2_ylims = [(-20e3, -15e3),
                     (-20e3, -13e3),
                     (-20e3, -13e3),
                     (-20e3, -13e3),
-                    (-20e3, -10.1e3),
                     (-20e3, -10e3),
                     (-20e3, -10e3),
-                    (-20e3, -10e3)]
+                    (-20e3, -10e3),
+                    (-20e3, -8e3),
+                    (-18e3, -9e3)]
 
     cell_2_names = ['Cell 2']
 
@@ -233,7 +239,7 @@ def sort_into_cells():
                     (-20e3, -10.1e3),
                     (-10.1e3, -7.1),
                     (-20e3, -10.1e3),
-                    (-10.1e3, -5.1e3),
+                    (-10e3, -5.1e3),
                     (-20e3, -7.1e3),
                     (-20e3, -5.1e3),
                     (-20e3, -5e3),
@@ -242,9 +248,9 @@ def sort_into_cells():
     cell_3_ylims = [(5.1e3, 20e3),
                     (5.1e3, 20e3),
                     (7.1e3, 20e3),
+                    (8.1e3, 20e3),
                     (8e3, 20e3),
-                    (8e3, 20e3),
-                    (7.1e3, 20e3),
+                    (8.0e3, 20e3),
                     (2.1e3, 20e3),
                     (7.1e3, 20e3),
                     (3.1e3, 20e3),
@@ -439,13 +445,13 @@ def plot_ics_vs_cgs_init_height(cell_name):
 
 def main():
     init()
-    # sort_into_cells()
+    sort_into_cells()
 
-    cell_1_ods = get_cell_ods('Cell 1')
-    cell_1_lma = get_lma_from_ods(cell_1_ods)
-
+    # cell_1_ods = get_cell_ods('Cell 1')
+    # cell_1_lma = get_lma_from_ods(cell_1_ods)
+    #
     # cell_1_lma.plot_all_charge_regions()
-    p1 = get_cell_initial_plotter('Cell 1')
+    # p1 = get_cell_initial_plotter('Cell 1')
 
     # plot_flash_areas('Cell 1')
     # plot_initiation_heights('Cell 1')
@@ -460,19 +466,19 @@ def main():
     # cell_2_ods = get_cell_ods('Cell 2')
     # len(cell_2_ods.storm.index)
 
-    cell_3_ods = get_cell_ods('Cell 3')
-    cell_3_lma = get_lma_from_ods(cell_3_ods)
-
-    p3 = get_cell_initial_plotter('Cell 3')
+    # cell_3_ods = get_cell_ods('Cell 3')
+    # cell_3_lma = get_lma_from_ods(cell_3_ods)
+    #
+    # p3 = get_cell_initial_plotter('Cell 3')
 
     # cell_3_lma.plot_all_charge_regions(show_plot=True)
     # print(len(cell_3_ods.storm.index))
 
-    nice_plots()
-    fig, ax = plt.subplots(1, 1, figsize=(12,6))
-    p1.plot_plan(fig=fig, ax=ax, c='blue')
-    p3.plot_plan(fig=fig, ax=ax, c='green')
-    plt.show()
+    # nice_plots()
+    # fig, ax = plt.subplots(1, 1, figsize=(12,6))
+    # p1.plot_plan(fig=fig, ax=ax, c='blue')
+    # p3.plot_plan(fig=fig, ax=ax, c='green')
+    # plt.show()
 
 if __name__ == '__main__':
     main()
