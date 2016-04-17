@@ -603,7 +603,8 @@ class StormLMA(Storm):
 
         return p
 
-    def get_initial_plotter_from_number(self, flash_number=None):
+    def get_initial_plotter_from_number(self, flash_number=None,
+                                        number_of_sources=20):
         """
         Get the initial 20 LMA sources for flash_number.
 
@@ -611,6 +612,8 @@ class StormLMA(Storm):
         ----------
             flash_number: int, float, or list (optional)
                 Flash number to get.
+            number_of_sources: int
+                Number of sources to get from the beginning of the flash.
 
         Returns
         -------
@@ -631,20 +634,25 @@ class StormLMA(Storm):
         if type(flash_number) == np.int64 or type(flash_number) == int:
             subset = self.storm[self.storm['flash-number'] == flash_number]
             subset.sort_index(inplace=True)
-            subset = subset.iloc[0:20]
+            subset = subset.iloc[0:number_of_sources]
 
         else:
             temp = []
             for n in flash_number:
-                f = self.storm[self.storm['flash-number'] == n]
-                f.sort_index(inplace=True)
-                f = f.iloc[0:20]
+                if type(n) is tuple or type(n) is list:
+                    for m in n:
+                        f = self.storm[self.storm['flash-number'] == m]
+                        f.sort_index(inplace=True)
+                        f = f.iloc[0:number_of_sources]
+                else:
+                    f = self.storm[self.storm['flash-number'] == n]
+                    f.sort_index(inplace=True)
+                    f = f.iloc[0:number_of_sources]
 
                 temp.append(f)
 
             subset = pd.concat(temp)
-
-        subset.reset_index(inplace=True)
+            subset.reset_index(inplace=True)
 
         # Open the temporary LMA .dat file and write the header.
         with open(temp_file, 'w') as f:
@@ -1522,7 +1530,7 @@ class StormODS(Storm):
                     flash = flash[flash['y (m)'] > ylims[i][0]]
                     flash = flash[flash['y (m)'] < ylims[i][1]]
 
-                    if len(flash) > 10:
+                    if len(flash) > 1:
                         flash_count += 1
                         results['DateTime'].append(index)
                         results['Cell'].append(cell_names[i])
