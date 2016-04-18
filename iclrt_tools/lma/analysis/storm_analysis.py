@@ -69,7 +69,7 @@ class Storm(object):
 
         for i, s in self.storm.iterrows():
             if verbose:
-                print('Converting... {0:0.2f}%'.format(count / total * 100),
+                print('Converting... {:0.2%}'.format(count / total),
                       end='\r')
 
             # Convert to WGS-84
@@ -364,7 +364,7 @@ class StormLMA(Storm):
                     self.nldn_detections['Mult'].append(nldn.loc[i]['Mult'])
                     self.nldn_detections['kA'].append(nldn.loc[i]['kA'])
 
-                print('Analyzing... {0:0.2f}%'.format(count / total * 100),
+                print('Analyzing... {:0.2%}'.format(count / total),
                       end='\r')
         # print()
         end = datetime.datetime.now()
@@ -1226,9 +1226,9 @@ class StormODS(Storm):
         rate = len(temp_storm) / r.total_seconds() * 60
 
         print('\nNumber of {0}s: {1} out of {2} total '
-              '({3:0.2f}%)'.format(flash_type.upper(), len(temp_storm),
+              '({3:0.2%})'.format(flash_type.upper(), len(temp_storm),
                                    len(self.storm),
-                                   len(temp_storm) / len(self.storm) * 100))
+                                   len(temp_storm) / len(self.storm)))
 
         print('Average {0} rate of entire storm: {1:0.2f} '
               'per minute'.format(flash_type.upper(), rate))
@@ -1320,7 +1320,7 @@ class StormODS(Storm):
 
                 if verbose:
                     count += 1
-                    print('Analyzing... {0:0.2f}%'.format(count / total * 100),
+                    print('Analyzing... {0:0.2%}'.format(count / total),
                           end='\r')
 
             if number_list:
