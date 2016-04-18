@@ -933,8 +933,9 @@ class StormLMA(Storm):
         else:
             return fig, ax
 
-    def plot_intervals(self, interval=5, hist=True,
-                       savefigs=False, path='./',):
+    def plot_interval_sources(self, interval=5, hist=True,
+                              savefigs=False, path='./',):
+
         """
         Generate plots of the charge regions and their histograms starting
         at the time of the earliest positive source and every 'interval'
@@ -962,12 +963,6 @@ class StormLMA(Storm):
         start_time = positive_charge.index.min()
         end_time = start_time + t_increment
 
-        # These lists will hold the altitude of the peak of each histogram as
-        # well as the time interval when they occur
-        t_peaks = []
-        pos_peaks = []
-        neg_peaks = []
-    
         while start_time < positive_charge.index.max():
             ind_start = datetime.datetime.strftime(start_time,
                                                    '%Y-%m-%d %H:%M:%S.%f')
@@ -979,44 +974,45 @@ class StormLMA(Storm):
             subset_neg_charge = subset[subset['charge'] == -3]
 
             try:
+
                 if hist:
                     fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12, 6),
                                                   sharey=True)
                 else:
                     fig, ax = plt.subplots(1, 1, figsize=(12, 6))
-    
+
                 subset_pos_charge.plot(y='alt(m)', style='.', c='r', lw=0,
                                        alpha=0.01, ax=ax, legend=False)
                 subset_neg_charge.plot(y='alt(m)', style='.', c='b', lw=0,
                                        ax=ax, alpha=0.01, legend=False)
 
                 if hist:
-                    subset_pos_charge['alt(m)'].hist(ax=ax2, color='r',
-                                                     alpha=0.5,
-                                                     orientation='horizontal',
-                                                     bins=1000, lw=0)
-                    subset_neg_charge['alt(m)'].hist(ax=ax2, color='b',
-                                                     alpha=0.5,
-                                                     orientation='horizontal',
-                                                     bins=1000, lw=0)
+                    pos_alt = subset_pos_charge['alt(m)']
+                    pos_alt.hist(ax=ax2, color='r',
+                                 alpha=0.5,
+                                 orientation='horizontal',
+                                 bins=1000, lw=0)
+
+                    neg_alt = subset_neg_charge['alt(m)']
+                    neg_alt.hist(ax=ax2, color='b',
+                                 alpha=0.5,
+                                 orientation='horizontal',
+                                 bins=1000, lw=0)
                     ax2.set_title('Altitude Histogram')
                     ax2.set_xlabel('Number of sources')
 
                 s = '{0} - {1}'.format(ind_start[:-4], ind_end[:-4])
-                t_peaks.append(ind_start)
-                pos_peaks.append(self._calculate_histogram(subset_pos_charge))
-                neg_peaks.append(self._calculate_histogram(subset_neg_charge))
-
                 ax.set_title('Sources ({0} UTC)'.format(s))
                 ax.set_xlabel(r'Time')
                 ax.set_ylabel('Altitude (m)')
-    
+
                 ax.grid(True)
                 ax.set_ylim([0, 16e3])
 
                 if savefigs:
                     file_name = path
-                    s = datetime.datetime.strftime(start_time, '%Y%m%d-%H%M%S')
+                    s = datetime.datetime.strftime(start_time,
+                                                   '%Y%m%d-%H%M%S')
                     file_name += 'storm_%s.png' % s
 
                     # print(file_name)
@@ -1029,18 +1025,97 @@ class StormLMA(Storm):
             start_time = end_time
             end_time += t_increment
 
+        plt.show()
+
+    def plot_interval_trends(self, interval=5, ax=None,
+                             savefig=False, path='./', ):
+
+        """
+        Generate a plot of the trends of the charge regions, more specifically,
+        the altitudes of most sources in each time period, starting
+        at the time of the earliest positive source and every 'interval'
+        minutes. The plot can be saved if the user wants.
+
+            Parameters:
+            -----------
+            interval: int (optional)
+                Time interval in minutes.
+            ax: mpl Axes (optional)
+                Matplotlib Axes instance to place the plot.
+            savefig: bool (optional)
+                Boolean flag to save the plot.
+            path: str (optional)
+                Path onto which the plot will be saved.
+
+            Returns:
+            --------
+            fig: mpl Figure
+                Figure instance.
+            ax: mpl Axes
+                Axes instance
+
+        """
+
+        # Plot both charge regions and histogram at a certain
+        # interval (in minutes).
+        t_increment = datetime.timedelta(seconds=interval * 60)
+
+        positive_charge, negative_charge, _ = self.get_charge_regions()
+
+        start_time = positive_charge.index.min()
+        if negative_charge.index.min() < start_time:
+            start_time = negative_charge.index.min()
+
+        end_time = start_time + t_increment
+
+        # These lists will hold the altitude of the peak of each histogram as
+        # well as the time interval when they occur
+        t_peaks = []
+        pos_peaks = []
+        neg_peaks = []
+
+        max_time = positive_charge.index.max()
+
+        if negative_charge.index.max() > max_time:
+            max_time = negative_charge.index.max()
+
+        while start_time < max_time:
+            ind_start = datetime.datetime.strftime(start_time,
+                                                   '%Y-%m-%d %H:%M:%S.%f')
+            ind_end = datetime.datetime.strftime(end_time,
+                                                 '%Y-%m-%d %H:%M:%S.%f')
+
+            subset = self.storm.loc[start_time:end_time]
+            subset_pos_charge = subset[subset['charge'] == 3]
+            subset_neg_charge = subset[subset['charge'] == -3]
+
+            if not subset.empty:
+                t_peaks.append(ind_start)
+                pos_peaks.append(self._calculate_histogram(subset_pos_charge))
+                neg_peaks.append(self._calculate_histogram(subset_neg_charge))
+
+            start_time = end_time
+            end_time += t_increment
+
         # Print and plot summary of pos and neg peaks on each interval
         pos_series = pd.Series(pos_peaks, index=t_peaks)
         neg_series = pd.Series(neg_peaks, index=t_peaks)
 
         temp = pd.DataFrame({'positive': pos_series, 'negative': neg_series})
-        fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+
+        if ax is None:
+            fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+        else:
+            fig = ax.get_figure()
+
         temp.plot(y='positive', ax=ax, c='r')
         temp.plot(y='negative', ax=ax, c='b')
+
         ax.set_title('Histogram Peak Altitudes for Each Interval')
         ax.set_ylabel('Altitude (m)')
         ax.set_xlabel('Time')
-        plt.show()
+
+        return fig, ax
 
     def print_storm_summary(self, charge=None, flash_types=None):
         """ Print the summary of the storm. """

@@ -445,7 +445,7 @@ def plot_ics_vs_cgs_init_height(cell_name):
 
 def main():
     init()
-    sort_into_cells()
+    # sort_into_cells()
 
     print("Done!")
 
