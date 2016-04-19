@@ -20,6 +20,8 @@ fileName = '/home/jaime/Documents/LMA/Data/Triggered/2014/071414/UF14-26/LYLOUT_
 
 fileName = '/home/jaime/Documents/LMA/Data/Triggered/2015/150827/LYLOUT_150827_232422_0008_8stations.dat'
 
+fileName = '/home/jaime/Documents/LMA/Data/Triggered/2015/150827/LYLOUT_150827_234353_0008_8stations.dat'
+
 print("Reading File...")
 start = datetime.datetime.now()
 f = lma.LMAFile(fileName, shift=(0, 0))
@@ -32,7 +34,7 @@ print(datetime.datetime.now() - start)
 
 print("Filtering...")
 
-p.filter_rc2(1.0)
+p.filter_rc2(5.0)
 # p.filter_xy([-20E3, 20E3], [-20E3, 20E3])
 p.filter_num_stations(7)
 # p.filter_time(['23:24:25.9', '23:24:26.522908'])
@@ -95,8 +97,9 @@ plt.show()
 # Get time and altitude limits and filter by them
 t_lims = p.ax_alt_t.get_xlim()
 t_lims = [datetime.datetime.strftime(mpl.dates.num2date(t_lims[0]), '%H:%M:%S.%f'), datetime.datetime.strftime(mpl.dates.num2date(t_lims[-1]), '%H:%M:%S.%f')]
+print(t_lims)
 z_lims = p.ax_alt_t.get_ylim()
-z_lims = [0, 4e3]  #z_lims[-1]*1E3]
+z_lims = [0, z_lims[-1]*1E3]  #4e3]
 
 p.filter_time(t_lims)
 p.filter_alt(z_lims[-1])
@@ -111,9 +114,13 @@ y_lims = p.ax_plan.get_ylim()
 
 p.filter_xy(x_lims, y_lims)
 
+p.plot_proj('EW', lims=[-11e3, 6e3], zlims=[0, 8e3])
+p.plot_proj('NS', lims=[-6e3, 8e3], zlims=[0, 8e3])
+plt.show()
+
 # p.plot_all()
 # plt.show()
 
 # Plot 3D
-p.plot_3D(x_lims, y_lims, z_lims, projections=True)
-plt.show()
+# p.plot_3D(x_lims, y_lims, z_lims, projections=True)
+# plt.show()
