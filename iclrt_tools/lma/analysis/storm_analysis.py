@@ -430,8 +430,14 @@ class StormLMA(Storm):
         # Generate a DataFrame for all negative charge sources
         self.negative_charge = self.storm[self.storm['charge'] == -3]
     
-        # Generate a DataFrame for all non-determined sources
-        self.other = self.storm[self.storm['charge'] == 0]
+        # Generate a DataFrame for all non-determined sources from the
+        # classified flash numbers from above
+        numbers = self.negative_charge['flash-number'].unique()
+        numbers = np.append(numbers,
+                            self.positive_charge['flash-number'].unique())
+        numbers = np.unique(numbers)
+
+        self.other = self.storm[self.storm['flash-number'].isin(numbers)]
     
         return self.positive_charge, self.negative_charge, self.other
 
@@ -982,9 +988,16 @@ class StormLMA(Storm):
             ind_end = datetime.datetime.strftime(end_time,
                                                  '%Y-%m-%d %H:%M:%S.%f')
 
-            subset = self.storm.loc[start_time:end_time]  #[ind_start, ind_end]
-            subset_pos_charge = subset[subset['charge'] == 3]
-            subset_neg_charge = subset[subset['charge'] == -3]
+            # subset = self.storm.loc[start_time:end_time]  #[ind_start, ind_end]
+            # subset_pos_charge = subset[subset['charge'] == 3]
+            # subset_neg_charge = subset[subset['charge'] == -3]
+            # subset_other = subset[subset['charge'] == 0]
+
+            subset_pos_charge = positive_charge.loc[start_time:end_time]
+            subset_neg_charge = negative_charge.loc[start_time:end_time]
+
+            if include_all:
+                subset_other = other[start_time:end_time]
 
             try:
 
@@ -995,8 +1008,8 @@ class StormLMA(Storm):
                     fig, ax = plt.subplots(1, 1, figsize=(12, 6))
 
                 if include_all:
-                    other.plot(y='alt(m)', style='.', c='g', lw=0,
-                               alpha=0.01, ax=ax, legend=False)
+                    subset_other.plot(y='alt(m)', style='.', c='g', lw=0,
+                                      alpha=0.01, ax=ax, legend=False)
 
                 subset_pos_charge.plot(y='alt(m)', style='.', c='r', lw=0,
                                        alpha=0.01, ax=ax, legend=False)
