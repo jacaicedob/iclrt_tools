@@ -318,13 +318,16 @@ def sort_into_cells():
     temp = pd.merge(temp, df12, how='outer')
 
     # Sort the entries by the cell names
-    temp.sort_values(by='Cell', inplace=True)
+    # temp.sort_values(by='Cell', inplace=True)
 
     # Remove the duplicate times, set the index, and sort the data
-    temp.drop_duplicates(subset='DateTime', inplace=True)
-    temp.set_index('DateTime', inplace=True)
-    temp.sort_index(inplace=True)
+    # temp.drop_duplicates(subset='DateTime', inplace=True)
+    # temp = temp[pd.notnull(temp['Cell'])]
 
+    # temp.set_index('DateTime', inplace=True)
+    # temp.sort_index(inplace=True)
+
+    storm_ods.storm.reset_index(inplace=True)
     storm_ods.storm.loc[:, 'Cell'] = temp
     file_csv = path + '/Statistical Analysis/08272015-Sorted_into_cells.csv'
     storm_ods.storm.to_csv(file_csv)
