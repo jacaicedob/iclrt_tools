@@ -41,7 +41,8 @@ def init():
     else:
         storm_ods = st.StormODS.from_ods_file(file_name)
 
-    storm_lma = st.StormLMA.from_lma_files([file1, file2], dates)
+    storm_lma = st.StormLMA.from_lma_files([file1, file2], dates, 7, 5)
+    storm_lma = st.StormLMA.from_lma_files([file1, file2], dates, 7, 5)
 
 
 def nice_plots():
@@ -318,16 +319,16 @@ def sort_into_cells():
     temp = pd.merge(temp, df12, how='outer')
 
     # Sort the entries by the cell names
-    # temp.sort_values(by='Cell', inplace=True)
+    temp.sort_values(by='Cell', inplace=True)
 
     # Remove the duplicate times, set the index, and sort the data
-    # temp.drop_duplicates(subset='DateTime', inplace=True)
+    temp.drop_duplicates(subset='DateTime', inplace=True)
     # temp = temp[pd.notnull(temp['Cell'])]
 
-    # temp.set_index('DateTime', inplace=True)
-    # temp.sort_index(inplace=True)
+    temp.set_index('DateTime', inplace=True)
+    temp.sort_index(inplace=True)
 
-    storm_ods.storm.reset_index(inplace=True)
+    # storm_ods.storm.reset_index(inplace=True)
     storm_ods.storm.loc[:, 'Cell'] = temp
     file_csv = path + '/Statistical Analysis/08272015-Sorted_into_cells.csv'
     storm_ods.storm.to_csv(file_csv)

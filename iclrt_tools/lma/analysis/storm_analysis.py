@@ -866,7 +866,8 @@ class StormLMA(Storm):
         else:
             return fig, ax
     
-    def plot_all_charge_regions(self, hist=True, show_plot=False):
+    def plot_all_charge_regions(self, hist=True, show_plot=False,
+                                include_all=False, alpha=0.01):
         """
         Plot both charge regions together. The source histograms can also
         be plotted. The default is to not show the plot.
@@ -877,6 +878,8 @@ class StormLMA(Storm):
                 Boolean flag to show the histogram in the plot
             show_plot: bool (optional)
                 Boolean flag to show the plot
+            include_all: bool (optional)
+                Boolean flag to include unclassified sources.
 
         Returns
         -------
@@ -889,18 +892,25 @@ class StormLMA(Storm):
 
         """
 
-        positive_charge, negative_charge, _ = self.get_charge_regions()
+        if include_all:
+            positive_charge, negative_charge, other = self.get_charge_regions()
+        else:
+            positive_charge, negative_charge, _ = self.get_charge_regions()
     
         # Plot both charge sources and histogram
         if hist:
             fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12, 6), sharey=True)
         else:
             fig, ax = plt.subplots(1, 1, figsize=(12, 6))
-    
+
+        if include_all:
+            other.plot(y='alt(m)', style='.', c='g', lw=0,
+                       alpha=alpha, ax=ax, legend=False)
+
         positive_charge.plot(y='alt(m)', style='.', c='r', lw=0,
-                             alpha=0.01, ax=ax, legend=False)
+                             alpha=alpha, ax=ax, legend=False)
         negative_charge.plot(y='alt(m)', style='.', c='b', lw=0,
-                             alpha=0.01, ax=ax, legend=False)
+                             alpha=alpha, ax=ax, legend=False)
     
         # xlims = ax.get_xlim()
         # ax.plot([xlims[0], xlims[1]],
@@ -934,7 +944,7 @@ class StormLMA(Storm):
             return fig, ax
 
     def plot_interval_sources(self, interval=5, hist=True,
-                              savefigs=False, path='./',):
+                              savefigs=False, path='./', include_all=True):
 
         """
         Generate plots of the charge regions and their histograms starting
@@ -957,8 +967,11 @@ class StormLMA(Storm):
         # Plot both charge regions and histogram at a certain
         # interval (in minutes).
         t_increment = datetime.timedelta(seconds=interval*60)
-    
-        positive_charge, negative_charge, _ = self.get_charge_regions()
+
+        if include_all:
+            positive_charge, negative_charge, other = self.get_charge_regions()
+        else:
+            positive_charge, negative_charge, _ = self.get_charge_regions()
     
         start_time = positive_charge.index.min()
         end_time = start_time + t_increment
@@ -980,6 +993,10 @@ class StormLMA(Storm):
                                                   sharey=True)
                 else:
                     fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+
+                if include_all:
+                    other.plot(y='alt(m)', style='.', c='g', lw=0,
+                               alpha=0.01, ax=ax, legend=False)
 
                 subset_pos_charge.plot(y='alt(m)', style='.', c='r', lw=0,
                                        alpha=0.01, ax=ax, legend=False)
@@ -1025,7 +1042,7 @@ class StormLMA(Storm):
             start_time = end_time
             end_time += t_increment
 
-        plt.show()
+        return fig, ax
 
     def plot_interval_trends(self, interval=5, ax=None,
                              savefig=False, path='./', ):
@@ -1605,7 +1622,7 @@ class StormODS(Storm):
                     flash = flash[flash['y (m)'] > ylims[i][0]]
                     flash = flash[flash['y (m)'] < ylims[i][1]]
 
-                    if len(flash) > 1:
+                    if len(flash) > 5:
                         flash_count += 1
                         results['DateTime'].append(index)
                         results['Cell'].append(cell_names[i])
