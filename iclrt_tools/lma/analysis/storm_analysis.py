@@ -1879,6 +1879,62 @@ class Analysis(object):
         cell = self.cells[cell_name]
         return cell.plot_initiation_height_comparison(flash_types)
 
+    def sort_into_cells(self, file_name):
+        """
+        Sort all the flashes of the storm into the cells specified
+        by self.cells
+
+        Parameters:
+        -----------
+            file_name: str
+                File name (without the file extension) to save the sorted
+                data. The data will be saves in comma-separated values (.csv)
+                and as a pickle (.p).
+
+        """
+
+        # Split the flashes into each cell
+        results = []
+
+        for cell in self.cells:
+            temp = self.ods.sort_flashes_into_cells(self.lma,
+                                                    self.cells[cell].times,
+                                                    self.cells[cell].xlims,
+                                                    self.cells[cell].ylims,
+                                                    self.cells[cell].name,
+                                                    inplace=False)
+            results.append(temp)
+
+        # Get the Series for each cell and reset their indices to aid in the
+        # merge function
+        dfs = []
+
+        for result in results:
+            dfs.append(pd.DataFrame(result['Cell']).reset_index(inplace=True))
+
+        # Merge teh cells together.
+        temp = dfs[0]
+        for i in range(len(dfs) - 1):
+            temp = pd.merge(temp, df[i+1], how='outer')
+
+        # Sort the entries by the cell names
+        temp.sort_values(by='Cell', inplace=True)
+
+        # Remove the duplicate times, set the index, and sort the data
+        temp.drop_duplicates(subset='DateTime', inplace=True)
+        temp.set_index('DateTime', inplace=True)
+        temp.sort_index(inplace=True)
+
+        # Merge all the Cell classifications into the self.ods DataFrame
+        self.ods.storm.loc[:, 'Cell'] = temp
+
+        # Save the data to make it easier to load next time
+        file_csv = file_name + '.csv'
+        self.ods.storm.to_csv(file_csv)
+
+        file_p = file_name + '.p'
+        self.ods.save_to_pickle(file_p)
+
 
 class Cell(object):
     """
@@ -2059,3 +2115,9 @@ class Cell(object):
         ax.legend()
 
         return ax
+
+    def set_lma(self, lma):
+        self.lma = lma
+
+    def set_ods(self, ods):
+        self.ods = ods
