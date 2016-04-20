@@ -370,6 +370,7 @@ def get_type_sources(cell_ods, cell_lma):
         storm.print_storm_summary(charge='positive')
         storm.print_storm_summary(charge='negative')
 
+
 def plot_flash_areas(cell_name):
     cell = storm_ods.get_cell_ods(cell_name)
 

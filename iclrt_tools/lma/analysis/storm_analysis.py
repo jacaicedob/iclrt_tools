@@ -1299,6 +1299,8 @@ class StormODS(Storm):
 
         print(temp_storm['Area (km^2)'].describe())
 
+        return ax
+
     def analyze_initiation_heights(self, flash_type='all', show_plot=True):
         """ Analyze the initiation heights of the specified flash type. """
 
@@ -1317,6 +1319,8 @@ class StormODS(Storm):
             plt.show()
 
         print(temp_storm['Initiation Height (km)'].describe())
+
+        return ax
 
     def calculate_flash_rates(self, interval=5, flash_type='all'):
         """
@@ -1732,3 +1736,326 @@ class StormODS(Storm):
             temp = self.storm.copy()
             temp.loc[:, 'Cell'] = results
             return temp
+
+
+class Analysis(object):
+    """
+    A class structure to carry out the analysis of a storm system using
+    LMA and .ods analyzed data.
+
+        Parameters:
+        ----------
+        storm_lma: StormLMA
+            StormLMA object of the storm of interest.
+        storm_ods: StormODS
+            StormODS object of the storm of interest.
+        cells: dict (optional)
+            Dictionary of Cell objects containing the information of
+            each cell of the storm (if it has more than one or the user wishes
+            to specify it for the one cell).
+
+        Attributes:
+        ----------
+        storm_lma: StormLMA
+            StormLMA object of the storm of interest.
+        storm_ods: StormODS
+            StormODS object of the storm of interest.
+        cells: dict (optional)
+            Dictionary of Cell objects containing the information of
+            each cell of the storm (if it has more than one or the user wishes
+            to specify it for the one cell).
+
+    """
+
+    def __init__(self, storm_lma, storm_ods, cells=None):
+        """ Initialize the object. """
+
+        self.storm_lma = storm_lma
+        self.storm_ods = storm_ods
+        self.cells = cells
+
+    @staticmethod
+    def nice_plots():
+        """ Use the seaborn package to make figures nicer. """
+
+        sns.set_context('talk', font_scale=2.0)
+
+    def get_cell_initial_plotter(self, cell_name):
+        """
+        Return an LMAPlotter object with the data of the initial sources
+        of all flashes in the cell.
+
+        """
+        return self.cells[cell_name].get_cell_initial_plotter()
+
+    def get_cell_plotter(self, cell_name):
+        """
+        Return an LMAPlotter object with the data of all the sources
+        of all flashes in the cell.
+
+        """
+        return self.cells[cell_name].get_cell_plotter()
+
+    def get_type_sources(self, cell_name):
+        """ Print the storm summary for each flash type in cell_name. """
+
+        cell_ods = self.cells[cell_name].ods
+        cell_lma = self.cells[cell_name].lma
+
+        for t in cell_ods.storm['Type'].unique():
+            s = 'Flash type: {0}'.format(t)
+            print(s)
+            print('-' * len(s))
+
+            group = cell_ods.storm.groupby('Type').get_group(t)
+            numbers = group['flash-number'].unique()
+
+            sources = cell_lma.get_sources_from_flash_number(numbers)
+            storm = StormLMA(sources)
+
+            storm.print_storm_summary(charge='positive')
+            storm.print_storm_summary(charge='negative')
+
+    def plot_flash_areas(self, cell_name):
+        """
+        Plot a histogram of the flash areas of all the flash types
+        in the cell, each in a separate figure.
+
+        """
+
+        self.cells[cell_name].plot_flash_areas()
+
+    def plot_initiation_heights(self, cell_name):
+        """
+        Plot a histogram of the initiation height of all the flash types
+        in the cell, each in a separate figure.
+
+        """
+
+        self.cells[cell_name].plot_initiation_heights()
+
+    def plot_area_comparison(self, cell_name, flash_types=None):
+        """
+        Plot a superimposed histogram of the flash areas of the specified
+        flash types in cell_name.
+
+            Parameters
+            ----------
+            cell_name: str
+                Name of the cell of interest.
+            flash_types: list (optional)
+                List of strings containing the flash types to plot. The
+                default is to plot all flash types together.
+
+            Returns
+            -------
+            ax: mpl Axes
+                Matplotlib axes of the figure.
+
+        """
+
+        return self.cells[cell_name].plot_area_comparison(flash_types)
+
+    def plot_initiation_height_comparison(self, cell_name, flash_types=None):
+        """
+        Plot a superimposed histogram of the initiation heights of the
+        specified flash types in cell_name.
+
+            Parameters
+            ----------
+            cell_name: str
+                Name of the cell of interest.
+            flash_types: list (optional)
+                List of strings containing the flash types to plot. The
+                default is to plot all flash types together.
+
+            Returns
+            -------
+            ax: mpl Axes
+                Matplotlib axes of the figure.
+
+        """
+
+        cell = self.cells[cell_name]
+        return cell.plot_initiation_height_comparison(flash_types)
+
+
+class Cell(object):
+    """
+    A class structure to hold the data for a cell in a storm and basic
+    functions.
+
+        Parameters:
+        -----------
+        name: str
+            Name of the cell.
+        times: list
+            List of datetime objects with the times each x,y limit is
+            specified.
+        xlims: list
+            List of tuples containing the limits (in meters) in the x
+            direction of a coordinate system centered at the ICLRT.
+        ylims: list
+            List of tuples containing the limits (in meters) in the y
+            direction of a coordinate system centered at the ICLRT.
+
+        Attributes:
+        -----------
+        name: str
+            Name of the cell.
+        times: list
+            List of datetime objects with the times each x,y limit is
+            specified.
+        xlims: list
+            List of tuples containing the limits (in meters) in the x
+            direction of a coordinate system centered at the ICLRT.
+        ylims: list
+            List of tuples containing the limits (in meters) in the y
+            direction of a coordinate system centered at the ICLRT.
+        lma: StormLMA
+            StormLMA object with the data for this cell.
+        ods: StormODS
+            StormODS object with the data for this cell.
+
+
+    """
+
+    def __init__(self, name, times, xlims, ylims):
+        """ Initialize the object. """
+
+        self.name = name
+        self.times = times
+        self.xlims = xlims
+        self.ylims = ylims
+
+    def get_cell_initial_plotter(self):
+        """
+        Return an LMAPlotter object with the data of the initial sources
+        of all flashes in the cell.
+
+        """
+
+        numbers = self.lma.storm['flash-number'].unique()
+
+        return self.lma.get_initial_plotter_from_number(numbers)
+
+    def get_cell_plotter(self):
+        """
+        Return an LMAPlotter object with the data of all the sources
+        of all flashes in the cell.
+
+        """
+
+        numbers = self.lma.storm['flash-number'].unique()
+
+        return self.lma.get_flash_plotter_from_number(numbers)
+
+    def plot_flash_areas(self):
+        """
+        Plot a histogram of the flash areas of all the flash types
+        in the cell, each in a separate figure.
+
+        """
+
+        for t in self.ods.storm['Type'].unique():
+            self.ods.analyze_flash_areas(flash_type=t)
+
+    def plot_initiation_heights(self):
+        """
+        Plot a histogram of the initiation height of all the flash types
+        in the cell, each in a separate figure.
+
+        """
+
+        for t in self.ods.storm['Type'].unique():
+            self.ods.analyze_initiation_heights(flash_type=t)
+
+    def plot_area_comparison(self, flash_types=None):
+        """
+        Plot a superimposed histogram of the flash areas of the specified
+        flash types in the cell.
+
+            Parameters
+            ----------
+            flash_types: list (optional)
+                List of strings containing the flash types to plot. The
+                default is to plot all flash types together.
+
+            Returns
+            -------
+            ax: mpl Axes
+                Matplotlib axes of the figure.
+
+        """
+
+        if flash_types is None:
+            flash_types = self.ods.storm['Type'].unique()
+
+        types = []
+        for t in flash_types:
+            types.append(self.ods.get_flash_type(t))
+
+        series = []
+        for t in types:
+            series.append(t['Area (km^2)'])
+
+        series_dict = dict()
+        for i in range(len(types)):
+            series_dict[types[i]] = series[i]
+
+        data_frame = pd.DataFrame(series_dict)
+
+        fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+        data_frame.plot.hist(alpha=0.5, ax=ax)
+
+        title = 'Histogram of flash areas'
+        ax.set_title(title)
+        ax.set_xlabel(r'Flash Area (km$^2$)')
+        ax.legend()
+
+        return ax
+
+    def plot_initiation_height_comparison(self, flash_types=None):
+        """
+        Plot a superimposed histogram of the initiation heights of the
+        specified flash types in the cell.
+
+            Parameters
+            ----------
+            flash_types: list (optional)
+                List of strings containing the flash types to plot. The
+                default is to plot all flash types together.
+
+            Returns
+            -------
+            ax: mpl Axes
+                Matplotlib axes of the figure.
+
+        """
+
+        if flash_types is None:
+            flash_types = self.ods.storm['Type'].unique()
+
+        types = []
+        for t in flash_types:
+            types.append(self.ods.get_flash_type(t))
+
+        series = []
+        for t in types:
+            series.append(t['Initiation Height (km)'])
+
+        series_dict = dict()
+        for i in range(len(types)):
+            series_dict[types[i]] = series[i]
+
+        data_frame = pd.DataFrame(series_dict)
+
+        fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+        data_frame.plot.hist(alpha=0.5, ax=ax)
+
+        title = 'Histogram of initiation heights'
+        ax.set_title(title)
+        ax.set_xlabel('Initiation Height (km)')
+        ax.legend()
+
+        return ax
