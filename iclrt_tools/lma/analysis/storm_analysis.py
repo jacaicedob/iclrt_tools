@@ -1593,7 +1593,8 @@ class StormODS(Storm):
             pickle.dump(self.__dict__, f)
 
     def sort_flashes_into_cells(self, storm_lma, times, xlims,
-                                ylims, cell_names, inplace=True):
+                                ylims, cell_names, min_sources=5,
+                                inplace=True):
 
         """
         Sort the analyzed flashes in the ODS files by cells using the LMA
@@ -1615,6 +1616,10 @@ class StormODS(Storm):
                     each cell at each time.
                 cell_names: list
                     List of names for each cell.
+                min_sources: int (optional)
+                    Minimum number of sources that would be considered a match
+                inplace: bool (optional)
+                    Boolean to apply the results to the current object
 
         """
 
@@ -1705,7 +1710,7 @@ class StormODS(Storm):
                     flash = flash[flash['y (m)'] > ylims[i][0]]
                     flash = flash[flash['y (m)'] < ylims[i][1]]
 
-                    if len(flash) > 5:
+                    if len(flash) > min_sources:
                         flash_count += 1
                         results['DateTime'].append(index)
                         results['Cell'].append(cell_names[i])
@@ -1726,6 +1731,7 @@ class StormODS(Storm):
 
         # Remove duplicate indices
         results = results.reset_index()
+        results.sort_values(by='Cell', inplace=True)
         results.drop_duplicates(subset='index', inplace=True)
         results.set_index('index', inplace=True)
         results.sort_index(inplace=True)
@@ -1770,8 +1776,8 @@ class Analysis(object):
     def __init__(self, storm_lma, storm_ods, cells=None):
         """ Initialize the object. """
 
-        self.storm_lma = storm_lma
-        self.storm_ods = storm_ods
+        self.lma = storm_lma
+        self.ods = storm_ods
         self.cells = cells
 
     @staticmethod
@@ -1879,7 +1885,7 @@ class Analysis(object):
         cell = self.cells[cell_name]
         return cell.plot_initiation_height_comparison(flash_types)
 
-    def sort_into_cells(self, file_name):
+    def sort_into_cells(self, file_name, min_sources=5):
         """
         Sort all the flashes of the storm into the cells specified
         by self.cells
@@ -1890,6 +1896,8 @@ class Analysis(object):
                 File name (without the file extension) to save the sorted
                 data. The data will be saves in comma-separated values (.csv)
                 and as a pickle (.p).
+            min_sources: int (optional)
+                    Minimum number of sources that would be considered a match
 
         """
 
@@ -1901,7 +1909,8 @@ class Analysis(object):
                                                     self.cells[cell].times,
                                                     self.cells[cell].xlims,
                                                     self.cells[cell].ylims,
-                                                    self.cells[cell].name,
+                                                    [self.cells[cell].name],
+                                                    min_sources=min_sources,
                                                     inplace=False)
             results.append(temp)
 
@@ -1910,12 +1919,14 @@ class Analysis(object):
         dfs = []
 
         for result in results:
-            dfs.append(pd.DataFrame(result['Cell']).reset_index(inplace=True))
+            data_frame = pd.DataFrame(result['Cell'])
+            data_frame.reset_index(inplace=True)
+            dfs.append(data_frame)
 
         # Merge teh cells together.
         temp = dfs[0]
         for i in range(len(dfs) - 1):
-            temp = pd.merge(temp, df[i+1], how='outer')
+            temp = pd.merge(temp, dfs[i+1], how='outer')
 
         # Sort the entries by the cell names
         temp.sort_values(by='Cell', inplace=True)
@@ -2057,7 +2068,12 @@ class Cell(object):
 
         series_dict = dict()
         for i in range(len(types)):
-            series_dict[types[i]] = series[i]
+            if flash_types[i] == 'IC':
+                key = ' IC'
+            else:
+                key = flash_types[i]
+
+            series_dict[key] = series[i]
 
         data_frame = pd.DataFrame(series_dict)
 
@@ -2102,7 +2118,12 @@ class Cell(object):
 
         series_dict = dict()
         for i in range(len(types)):
-            series_dict[types[i]] = series[i]
+            if flash_types[i] == 'IC':
+                key = ' IC'
+            else:
+                key = flash_types[i]
+
+            series_dict[key] = series[i]
 
         data_frame = pd.DataFrame(series_dict)
 

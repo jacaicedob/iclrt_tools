@@ -271,21 +271,21 @@ cell_3_ylims = [(5.1e3, 20e3),
 
 # Combine definitions into a Cell object
 cells = dict()
-cells['Cell 1'] = st.Cell(cell_1_times, cell_1_xlims, cell_1_ylims)
-cells['Cell 2'] = st.Cell(cell_2_times, cell_2_xlims, cell_2_ylims)
-cells['Cell 3'] = st.Cell(cell_3_times, cell_3_xlims, cell_3_ylims)
-cells['Cell 1-2'] = st.Cell(cell_12_times, cell_12_xlims, cell_12_ylims)
+cells['Cell 1'] = st.Cell('Cell 1', cell_1_times, cell_1_xlims, cell_1_ylims)
+cells['Cell 2'] = st.Cell('Cell 2', cell_2_times, cell_2_xlims, cell_2_ylims)
+cells['Cell 3'] = st.Cell('Cell 3', cell_3_times, cell_3_xlims, cell_3_ylims)
+cells['Cell 1-2'] = st.Cell('Cell 1-2', cell_12_times, cell_12_xlims, cell_12_ylims)
 
 # Create the Analsysis object
 analyzer = st.Analysis(storm_lma, storm_ods, cells)
 
 # If the flashes have not been sorted into each cell, do so.
 if sort_flashes:
-    analyzer.sort_into_cells(sorted_file_name)
+    analyzer.sort_into_cells(sorted_file_name, 15)
 
 # Get the StormLMA and StormODS objects from sorted data.
 for cell in cells:
-    cells[cell].set_lma(analyzer.lma.get_lma_from_ods(cell))
     cells[cell].set_ods(analyzer.ods.get_cell_ods(cell))
+    cells[cell].set_lma(analyzer.lma.get_lma_from_ods(cells[cell].ods))
     cells[cell].lma.storm.sort_index(inplace=True)
 
