@@ -423,25 +423,6 @@ class StormLMA(Storm):
 
         self.__dict__.update(tmp_dict)
 
-    def get_cell_ods(self, cell_name):
-        """
-            Return a StormODS object with the data corresponding to cell_name.
-
-            Parameters:
-            -----------
-                cell_name: str
-                    Name of the cell from which to get the data.
-
-            Returns:
-            --------
-                temp: StormODS
-                    StormODS object with the data of cell_name.
-
-        """
-
-        temp = self.storm.groupby('Cell').get_group(cell_name)
-        return StormODS(temp)
-
     def get_charge_regions(self):
         """ Return DataFrames corresponding to each charge region. """
 
@@ -1523,6 +1504,25 @@ class StormODS(Storm):
         data_frame.loc[:, 'flash-number'] = series
 
         return data_frame
+
+    def get_cell_ods(self, cell_name):
+        """
+            Return a StormODS object with the data corresponding to cell_name.
+
+            Parameters:
+            -----------
+                cell_name: str
+                    Name of the cell from which to get the data.
+
+            Returns:
+            --------
+                temp: StormODS
+                    StormODS object with the data of cell_name.
+
+        """
+
+        temp = self.storm.groupby('Cell').get_group(cell_name)
+        return StormODS(temp)
 
     def get_flash_type(self, flash_type='all'):
         """ Returns a DataFrame with all the flashes of a certain type. """

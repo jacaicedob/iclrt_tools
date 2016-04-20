@@ -359,6 +359,17 @@ def get_cell_plotter(cell_name):
     return cell_lma.get_flash_plotter_from_number(numbers)
 
 
+def get_type_sources(cell_ods, cell_lma):
+    for t in cell_ods.storm['Type'].unique():
+        s = 'Flash type: {0}'.format(t)
+        print(s)
+        print('-' * len(s))
+
+        numbers = cell_ods.storm.groupby('Type').get_group(t)['flash-number'].unique()
+        storm = st.StormLMA(cell_lma.get_sources_from_flash_number(numbers))
+        storm.print_storm_summary(charge='positive')
+        storm.print_storm_summary(charge='negative')
+
 def plot_flash_areas(cell_name):
     cell = storm_ods.get_cell_ods(cell_name)
 
@@ -460,39 +471,6 @@ def main():
     # sort_into_cells()
 
     print("Done!")
-
-    # cell_1_ods = get_cell_ods('Cell 1')
-    # cell_1_lma = get_lma_from_ods(cell_1_ods)
-    #
-    # cell_1_lma.plot_all_charge_regions()
-    # p1 = get_cell_initial_plotter('Cell 1')
-
-    # plot_flash_areas('Cell 1')
-    # plot_initiation_heights('Cell 1')
-
-    # plot_ics_vs_cgs_areas('Cell 1')
-    # plot_ics_vs_cgs_init_height('Cell 1')
-
-    # p = get_cell_initial_plotter('Cell 1')
-    # p.plot_plan()
-    # plt.show()
-
-    # cell_2_ods = get_cell_ods('Cell 2')
-    # len(cell_2_ods.storm.index)
-
-    # cell_3_ods = get_cell_ods('Cell 3')
-    # cell_3_lma = get_lma_from_ods(cell_3_ods)
-    #
-    # p3 = get_cell_initial_plotter('Cell 3')
-
-    # cell_3_lma.plot_all_charge_regions(show_plot=True)
-    # print(len(cell_3_ods.storm.index))
-
-    # nice_plots()
-    # fig, ax = plt.subplots(1, 1, figsize=(12,6))
-    # p1.plot_plan(fig=fig, ax=ax, c='blue')
-    # p3.plot_plan(fig=fig, ax=ax, c='green')
-    # plt.show()
 
 if __name__ == '__main__':
     main()
