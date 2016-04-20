@@ -337,46 +337,11 @@ def sort_into_cells():
     storm_ods.save_to_pickle(file_p)
 
 
-def get_cell_ods(cell_name):
-    global storm_ods
-
-    temp = storm_ods.storm.copy()
-    temp = temp.groupby('Cell').get_group(cell_name)
-
-    return st.StormODS(temp)
-
-
-def get_lma_from_ods(storm_ods):
-    global storm_lma
-
-    temp = storm_ods.storm.dropna(subset=['Cell'])
-    temp = temp['flash-number'].dropna().unique()
-
-    numbers = []
-    for n in temp:
-        if type(n) == tuple:
-            for m in n:
-                numbers.append(m)
-        else:
-            numbers.append(n)
-
-    print(len(temp))
-    print(len(numbers))
-
-    flashes = []
-    for n in numbers:
-        flashes.append(
-            storm_lma.storm[storm_lma.storm['flash-number'] == n])
-
-    lma = pd.concat(flashes)
-    return st.StormLMA(lma)
-
-
 def get_cell_initial_plotter(cell_name):
     global storm_ods, storm_lma
 
-    cell_ods = get_cell_ods(cell_name)
-    cell_lma = get_lma_from_ods(cell_ods)
+    cell_ods = storm_ods.get_cell_ods(cell_name)
+    cell_lma = storm_lma.get_lma_from_ods(cell_ods)
 
     numbers = cell_lma.storm['flash-number'].unique()
 
@@ -386,8 +351,8 @@ def get_cell_initial_plotter(cell_name):
 def get_cell_plotter(cell_name):
     global storm_ods, storm_lma
 
-    cell_ods = get_cell_ods(cell_name)
-    cell_lma = get_lma_from_ods(cell_ods)
+    cell_ods = storm_ods.get_cell_ods(cell_name)
+    cell_lma = storm_lma.get_lma_from_ods(cell_ods)
 
     numbers = cell_lma.storm['flash-number'].unique()
 
@@ -395,21 +360,21 @@ def get_cell_plotter(cell_name):
 
 
 def plot_flash_areas(cell_name):
-    cell = get_cell_ods(cell_name)
+    cell = storm_ods.get_cell_ods(cell_name)
 
     for t in cell.storm['Type'].unique():
         cell.analyze_flash_areas(flash_type=t)
 
 
 def plot_initiation_heights(cell_name):
-    cell = get_cell_ods(cell_name)
+    cell = storm_ods.get_cell_ods(cell_name)
 
     for t in cell.storm['Type'].unique():
         cell.analyze_initiation_heights(flash_type=t)
 
 
 def plot_ics_vs_cgs_areas(cell_name):
-    cell = get_cell_ods(cell_name)
+    cell = storm_ods.get_cell_ods(cell_name)
 
     ics = cell.get_flash_type('IC')
     cgs = cell.get_flash_type('-CG')
@@ -429,7 +394,7 @@ def plot_ics_vs_cgs_areas(cell_name):
 
 
 def plot_ics_vs_cgs_init_height(cell_name):
-    cell = get_cell_ods(cell_name)
+    cell = storm_ods.get_cell_ods(cell_name)
 
     ics = cell.get_flash_type('IC')
     cgs = cell.get_flash_type('-CG')
@@ -444,6 +409,49 @@ def plot_ics_vs_cgs_init_height(cell_name):
             'and -CGs\n{0}'.format(cell_name)
     ax.set_title(title)
     ax.set_xlabel('Initiation Height (km)')
+    ax.legend()
+
+
+def plot_cgs_vs_rtl_areas(cell_name):
+    cell = storm_ods.get_cell_ods(cell_name)
+
+    rtls = cell.get_flash_type('RTL')
+    cgs = cell.get_flash_type('-CG')
+
+    rtl_series = rtls['Area (km^2)']
+    cg_series = cgs['Area (km^2)']
+
+    data_frame = pd.DataFrame({'RTLs': rtl_series, 'CGs': cg_series})
+    fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+    data_frame.plot.hist(alpha=0.5, ax=ax)
+
+    title = 'Histogram of flash areas for RTLs ' \
+            'and -CGs\n{0}'.format(cell_name)
+    ax.set_title(title)
+    ax.set_xlabel(r'Flash Area (km$^2$)')
+    ax.legend()
+
+
+def plot_all_areas(cell_name):
+    cell = storm_ods.get_cell_ods(cell_name)
+
+    rtls = cell.get_flash_type('RTL')
+    cgs = cell.get_flash_type('-CG')
+    ics = cell.get_flash_type('IC')
+
+    rtl_series = rtls['Area (km^2)']
+    cg_series = cgs['Area (km^2)']
+    ic_series = ics['Area (km^2)']
+
+    data_frame = pd.DataFrame({'RTLs': rtl_series, 'CGs': cg_series,
+                               ' ICs': ic_series})
+    fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+    data_frame.plot.hist(alpha=0.5, ax=ax)
+
+    title = 'Histogram of flash areas for RTLs ' \
+            'and -CGs\n{0}'.format(cell_name)
+    ax.set_title(title)
+    ax.set_xlabel(r'Flash Area (km$^2$)')
     ax.legend()
 
 

@@ -2,6 +2,8 @@
 
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+from matplotlib import dates
 import datetime
 import numpy as np
 import pickle
@@ -421,6 +423,25 @@ class StormLMA(Storm):
 
         self.__dict__.update(tmp_dict)
 
+    def get_cell_ods(self, cell_name):
+        """
+            Return a StormODS object with the data corresponding to cell_name.
+
+            Parameters:
+            -----------
+                cell_name: str
+                    Name of the cell from which to get the data.
+
+            Returns:
+            --------
+                temp: StormODS
+                    StormODS object with the data of cell_name.
+
+        """
+
+        temp = self.storm.groupby('Cell').get_group(cell_name)
+        return StormODS(temp)
+
     def get_charge_regions(self):
         """ Return DataFrames corresponding to each charge region. """
 
@@ -441,27 +462,67 @@ class StormLMA(Storm):
     
         return self.positive_charge, self.negative_charge, self.other
 
+    def get_lma_from_ods(self, storm_ods):
+        """
+        Return a StormLMA object with the data corresponding to the flashes
+        in the .ods file.
+
+        Parameters
+        ----------
+        storm_ods: StormODS
+            Object containing the flash information to be extracted.
+
+        Returns
+        -------
+            lma: StormLMA
+                StormLMA object containing the data corresponding to the
+                flashes in the .ods file
+
+        """
+
+        temp = storm_ods.storm.dropna(subset=['Cell'])
+        temp = temp['flash-number'].dropna().unique()
+
+        numbers = []
+        for n in temp:
+            if type(n) == tuple:
+                for m in n:
+                    numbers.append(m)
+            else:
+                numbers.append(n)
+
+        lma = StormLMA(self.get_sources_from_flash_number(numbers))
+
+        return lma
+
     def get_sources_from_flash_number(self, flash_number=None):
         """
-            Get the LMA sources for flash_number.
+        Get the LMA sources for flash_number.
 
-            Parameters
-            ----------
-                flash_number: int
-                    Flash number to get.
+        Parameters
+        ----------
+            flash_number: int
+                Flash number to get.
 
-            Returns
-            -------
-                subset : DataFrame
-                    DataFrame with sources.
-            """
+        Returns
+        -------
+            subset : DataFrame
+                DataFrame with sources.
+        """
 
         if type(flash_number) == np.int64 or type(flash_number) == int:
             subset = self.storm[self.storm['flash-number'] == flash_number]
         else:
             temp = []
             for n in flash_number:
-                temp.append(self.storm[self.storm['flash-number'] == n])
+                if type(n) is tuple or type(n) is list:
+                    for m in n:
+                        temp.append(self.storm[self.storm['flash-number'] == m])
+
+                else:
+                    temp.append(self.storm[self.storm['flash-number'] == n])
+
+                # temp.append(self.storm[self.storm['flash-number'] == n])
 
             subset = pd.concat(temp)
 
@@ -499,7 +560,12 @@ class StormLMA(Storm):
         else:
             temp = []
             for n in flash_number:
-                temp.append(self.storm[self.storm['flash-number'] == n])
+                if type(n) is tuple or type(n) is list:
+                    for m in n:
+                        temp.append(self.storm[self.storm['flash-number'] == m])
+
+                else:
+                    temp.append(self.storm[self.storm['flash-number'] == n])
 
             subset = pd.concat(temp)
 
@@ -1247,10 +1313,10 @@ class StormODS(Storm):
         ax.set_xlabel('Flash area (km^2)')
         ax.set_ylabel('Number of flashes')
 
-        print(temp_storm['Area (km^2)'].describe())
-
         if show_plot:
             plt.show()
+
+        print(temp_storm['Area (km^2)'].describe())
 
     def analyze_initiation_heights(self, flash_type='all', show_plot=True):
         """ Analyze the initiation heights of the specified flash type. """
@@ -1266,10 +1332,10 @@ class StormODS(Storm):
         ax.set_xlabel('Initiation Height (km)')
         ax.set_ylabel('Number of flashes')
 
-        print(temp_storm['Initiation Height (km)'].describe())
-
         if show_plot:
             plt.show()
+
+        print(temp_storm['Initiation Height (km)'].describe())
 
     def calculate_flash_rates(self, interval=5, flash_type='all'):
         """
