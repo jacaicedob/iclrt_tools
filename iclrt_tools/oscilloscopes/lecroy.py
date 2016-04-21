@@ -13,9 +13,10 @@ import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
 
+
 class lecroy_data(object):
     def __init__(self, f_name):
-        with open(f_name,'rb') as fin:
+        with open(f_name, 'rb') as fin:
             ##header_data=fin.read(357)
 
             self.dummy = fin.read(11)

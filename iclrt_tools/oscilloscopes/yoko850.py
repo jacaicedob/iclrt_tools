@@ -235,12 +235,16 @@ class Yoko850File(object):
         try:
             try:
                 f = open(self.filename + '.wvf', 'rb')
+
             except IOError:
                 try:
                     f = open(self.filename + '.WVF', 'rb')
+
                 except IOError:
                     raise
-            # with open(self.filename + '.wvf', 'rb') as f:
+
+            finally:
+                # with open(self.filename + '.wvf', 'rb') as f:
                 # Rewind the file to the beginning
                 f.seek(0, 0)
 
@@ -252,49 +256,50 @@ class Yoko850File(object):
                 # (2-byte) data)
                 data = np.zeros(stopIndex - startIndex + 1)
 
-                d_s = f.read(2*len(data))
+                d_s = f.read(2 * len(data))
                 data = np.fromstring(d_s, dtype=np.dtype('>h'))
 
-#               for i in xrange(data.shape[0]):
-#                   data[i], = struct.unpack('>h',f.read(2))   # Read 2 bytes
-#                                                              # of data at
-#                                                              # a time
-#                                                              # (big-endian)
+                #               for i in xrange(data.shape[0]):
+                #                   data[i], = struct.unpack('>h',f.read(2))   # Read 2 bytes
+                #                                                              # of data at
+                #                                                              # a time
+                #                                                              # (big-endian)
 
                 # Scale the raw ADC values
-                data = calFactor * (VResolution[traceNumber-1] * data + VOffset[traceNumber-1])
+                data = calFactor * (
+                VResolution[traceNumber - 1] * data + VOffset[traceNumber - 1])
 
                 # Calculate the timebase
-                dataTime = np.arange(0,data.shape[0])*HResolution + timeStart
+                dataTime = np.arange(0,
+                                     data.shape[0]) * HResolution + timeStart
 
                 # Calculate the vertical offset based on the first 1000 samples
 
                 if wantOffset is True or (hasattr(wantOffset, 'lower') and
                                                   wantOffset.lower() == 'y'):
-#                   f.seek(0,0)
-#                   f.seek(2 * (blockSize*(traceNumber - 1) + dataOffset),0)
-#
-#                   thousandSamples = np.zeros(1000)
-#                   for i in xrange(thousandSamples.shape[0]):
-#                       thousandSamples[i], = struct.unpack('>h',f.read(2))
-#                    thousandSampleOffset = np.mean(calFactor * (thousandSamples * \
-#                                                  VResolution[traceNumber-1] + \
-#                                                  VOffset[traceNumber-1]))
-#                   data = data - thousandSampleOffset
+                    #                   f.seek(0,0)
+                    #                   f.seek(2 * (blockSize*(traceNumber - 1) + dataOffset),0)
+                    #
+                    #                   thousandSamples = np.zeros(1000)
+                    #                   for i in xrange(thousandSamples.shape[0]):
+                    #                       thousandSamples[i], = struct.unpack('>h',f.read(2))
+                    #                    thousandSampleOffset = np.mean(calFactor * (thousandSamples * \
+                    #                                                  VResolution[traceNumber-1] + \
+                    #                                                  VOffset[traceNumber-1]))
+                    #                   data = data - thousandSampleOffset
 
                     """
                     Average first or last 1000 points to remove offset
                     """
-                    #~ data-=np.mean(data[0:1000])  # First
-                    data -= np.mean(data[-1000:]) # Last
+                    # ~ data-=np.mean(data[0:1000])  # First
+                    data -= np.mean(data[-1000:])  # Last
 
                 # Get the trace label
-                traceLabel = traceID[traceNumber-1]
+                traceLabel = traceID[traceNumber - 1]
 
                 result = YokoTrace(data, dataTime, traceLabel, HResolution,
                                    HOffset, Date, GPSTime)
 
-            finally:
                 f.close()
 
         except IOError as e:

@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 
-# Add personal packages directory to path
-import sys
-sys.path.append('/home/jaime/Documents/Python Code')
-
 # Import custom modules from the new system path
 import iclrt_tools.oscilloscopes.lecroy as lc
 import iclrt_tools.oscilloscopes.yoko850 as yk850
@@ -52,7 +48,7 @@ class Waveform(object):
         s += "Measurement distance (m): {distance}\n".format(
              distance=self.distance)
         s += "Scope Name: {name}\n".format(name=self.scope_name)
-        s += "Scope Type: {scope}\n".format(scope=self.scope_name)
+        s += "Scope Type: {scope}\n".format(scope=self.scope_type)
         s += "File location: {file}\n".format(file=self.file_name)
         s += "Trace number: {trace:d}\n".format(trace=self.trace_number)
         s += "Cal factor: {cal:0.2f}\n".format(cal=self.cal_factor)

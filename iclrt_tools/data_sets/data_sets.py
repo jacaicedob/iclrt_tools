@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-# Add personal packages directory to path
-import sys
 import os
 
 # Import custom modules from the above directory
@@ -115,6 +113,8 @@ class DataSet(object):
                                         cal_factor=cal_factor,
                                         units=units, distance=distance,
                                         t_start=t_start, t_end=t_end)
+
+                    print(meas)
 
                     scope_data[measurement_name] = meas
 
