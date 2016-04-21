@@ -32,13 +32,16 @@ storm_lma_2 = st.StormLMA.from_lma_files(cell_2_files, dates)
 
 storm_ods_1 = st.StormODS.from_ods_file(file_name)
 storm_ods_2 = st.StormODS.from_ods_file(file_name_2)
+st.Analysis.nice_plots()
 
 # storm_lma_2.plot_charge_region(charge='positive')
 # storm_lma_2.plot_charge_region(charge='negative')
 # storm_lma_2.plot_all_charge_regions(show_plot=True)
 
-ics = storm_ods_1.get_flash_type('IC')
-cgs = storm_ods_1.get_flash_type('-CG')
+# ics = storm_ods_1.get_flash_type('IC')
+# cgs = storm_ods_1.get_flash_type('-CG')
+ics = storm_ods_2.get_flash_type('IC')
+cgs = storm_ods_2.get_flash_type('-CG')
 
 # ic_series = ics['Initiation Height (km)']
 # cg_series = cgs['Initiation Height (km)']
@@ -48,9 +51,9 @@ cg_series = cgs['Area (km^2)']
 data_frame = pd.DataFrame({' ICs': ic_series, '-CGs': cg_series})
 fig, ax = plt.subplots(1, 1, figsize=(12, 6))
 data_frame.plot.hist(alpha=0.5, ax=ax)
-# ax.set_title('Histogram of initiation heights for ICs and -CGs')
+# ax.set_title('Histogram of Initiation Heights for ICs and -CGs')
 # ax.set_xlabel('Initiation Height (km)')
-ax.set_title('Histogram of flash areas for ICs and -CGs')
+ax.set_title('Histogram of Flash Areas (from Plan View) for ICs and -CGs')
 ax.set_xlabel(r'Flash Area (km$^2$)')
 ax.legend()
 plt.show()

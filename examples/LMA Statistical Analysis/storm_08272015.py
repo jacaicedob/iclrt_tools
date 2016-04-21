@@ -64,6 +64,94 @@ if get_flash_numbers:
     storm_ods = s
 
 # Cell definitions
+# Entire storm
+cell_times = [datetime.datetime(2015, 8, 27, 22, 36, 0),
+              datetime.datetime(2015, 8, 27, 22, 40, 0),
+              datetime.datetime(2015, 8, 27, 22, 44, 0),
+              datetime.datetime(2015, 8, 27, 22, 48, 0),
+              datetime.datetime(2015, 8, 27, 22, 52, 0),
+              datetime.datetime(2015, 8, 27, 22, 56, 0),
+              datetime.datetime(2015, 8, 27, 23, 0, 0),
+              datetime.datetime(2015, 8, 27, 23, 4, 0),
+              datetime.datetime(2015, 8, 27, 23, 8, 0),
+              datetime.datetime(2015, 8, 27, 23, 13, 0),
+              datetime.datetime(2015, 8, 27, 23, 17, 0),
+              datetime.datetime(2015, 8, 27, 23, 21, 0),
+              datetime.datetime(2015, 8, 27, 23, 26, 0),
+              datetime.datetime(2015, 8, 27, 23, 30, 0),
+              datetime.datetime(2015, 8, 27, 23, 34, 0),
+              datetime.datetime(2015, 8, 27, 23, 38, 0),
+              datetime.datetime(2015, 8, 27, 23, 43, 0),
+              datetime.datetime(2015, 8, 27, 23, 47, 0),
+              datetime.datetime(2015, 8, 27, 23, 51, 0),
+              datetime.datetime(2015, 8, 27, 23, 56, 0),
+              datetime.datetime(2015, 8, 28, 0, 0, 0),
+              datetime.datetime(2015, 8, 28, 0, 5, 0),
+              datetime.datetime(2015, 8, 28, 0, 9, 0),
+              datetime.datetime(2015, 8, 28, 0, 14, 0),
+              datetime.datetime(2015, 8, 28, 0, 19, 0),
+              datetime.datetime(2015, 8, 28, 0, 23, 0),
+              datetime.datetime(2015, 8, 28, 0, 28, 0),
+              datetime.datetime(2015, 8, 28, 0, 33, 0)]
+
+cell_xlims = [(-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3)]
+
+cell_ylims = [(-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3),
+              (-20e3, 20e3)]
+
 # Define Cell 1
 cell_1_times = [datetime.datetime(2015, 8, 27, 22, 36, 0),
                 datetime.datetime(2015, 8, 27, 22, 40, 0),
@@ -275,6 +363,9 @@ cells['Cell 1'] = st.Cell('Cell 1', cell_1_times, cell_1_xlims, cell_1_ylims)
 cells['Cell 2'] = st.Cell('Cell 2', cell_2_times, cell_2_xlims, cell_2_ylims)
 cells['Cell 3'] = st.Cell('Cell 3', cell_3_times, cell_3_xlims, cell_3_ylims)
 cells['Cell 1-2'] = st.Cell('Cell 1-2', cell_12_times, cell_12_xlims, cell_12_ylims)
+
+cells = dict()
+cells['All'] = st.Cell('All', cell_times, cell_xlims, cell_ylims)
 
 # Create the Analsysis object
 analyzer = st.Analysis(storm_lma, storm_ods, cells)

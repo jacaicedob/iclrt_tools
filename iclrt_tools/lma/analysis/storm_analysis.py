@@ -845,7 +845,7 @@ class StormLMA(Storm):
             os.remove(temp_file)
 
     def plot_charge_region(self, charge='positive', hist=True,
-                           show_plot=False):
+                           show_plot=False, include_all=False):
         """
         Plot the LMA sources of a charge region. The histogram can be plotted
         also.
@@ -869,7 +869,10 @@ class StormLMA(Storm):
                 Axis instance of histogram (only when hist is True)
         """
 
-        positive_charge, negative_charge, other = self.get_charge_regions()
+        if include_all:
+            positive_charge, negative_charge, other = self.get_charge_regions()
+        else:
+            positive_charge, negative_charge, _ = self.get_charge_regions()
     
         if charge == 'positive':
             charge = positive_charge
@@ -893,7 +896,11 @@ class StormLMA(Storm):
         else:
             color = 'g'
             title = 'Other Sources'
-    
+
+        if include_all:
+            other.plot(y='alt(m)', style='.', c='g', lw=0, alpha=0.01,
+                       ax=ax, legend=False)
+
         charge.plot(y='alt(m)', style='.', c=color, lw=0, alpha=0.01,
                     ax=ax, legend=False)
     
@@ -901,7 +908,7 @@ class StormLMA(Storm):
             charge['alt(m)'].hist(ax=ax2, orientation='horizontal',
                                   color=color, alpha=0.5, bins=1000, lw=0)
     
-            ax2.set_title('Altitude Histrogram')
+            ax2.set_title('Altitude Histogram')
             ax2.set_xlabel('Number of sources')
     
         ax.set_title(title)
@@ -978,7 +985,7 @@ class StormLMA(Storm):
                                            color='r', alpha=0.5, bins=1000, lw=0)
             negative_charge['alt(m)'].hist(ax=ax2, orientation='horizontal',
                                            color='b', alpha=0.5, bins=1000, lw=0)
-            ax2.set_title('Altitude Histrogram')
+            ax2.set_title('Altitude Histogram')
             ax2.set_xlabel('Number of sources')
     
         ax.set_title('Sources')
@@ -2080,7 +2087,7 @@ class Cell(object):
         fig, ax = plt.subplots(1, 1, figsize=(12, 6))
         data_frame.plot.hist(alpha=0.5, ax=ax)
 
-        title = 'Histogram of flash areas'
+        title = 'Histogram of Flash Areas (from Plan View)'
         ax.set_title(title)
         ax.set_xlabel(r'Flash Area (km$^2$)')
         ax.legend()
@@ -2130,7 +2137,7 @@ class Cell(object):
         fig, ax = plt.subplots(1, 1, figsize=(12, 6))
         data_frame.plot.hist(alpha=0.5, ax=ax)
 
-        title = 'Histogram of initiation heights'
+        title = 'Histogram of Initiation Heights'
         ax.set_title(title)
         ax.set_xlabel('Initiation Height (km)')
         ax.legend()
