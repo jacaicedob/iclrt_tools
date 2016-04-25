@@ -1296,7 +1296,7 @@ class StormODS(Storm):
         fig, ax = plt.subplots(1, 1, figsize=(12, 6))
 
         temp_storm['Area (km^2)'].hist(ax=ax)
-        ax.set_title('Histogram of flash areas for '
+        ax.set_title('Histogram of Flash Areas (from Plan View) for '
                      '{0}s'.format(flash_type.upper()))
         ax.set_xlabel('Flash area (km^2)')
         ax.set_ylabel('Number of flashes')
@@ -1329,17 +1329,21 @@ class StormODS(Storm):
 
         return ax
 
-    def calculate_flash_rates(self, interval=5, flash_type='all'):
+    def calculate_flash_rates(self, interval=5, flash_type='all',
+                              plot=False, show_plot=False):
         """
         Calculate and print the flash rates in the specified time interval
         for the specified flash types.
 
         Parameters
         ----------
-        interval: int
+        interval: int (optional)
             Time interval in minutes.
-        flash_type: str
+        flash_type: str (optional)
             Flash type to do the calculation.
+        plot: bool (optional)
+            Plot and return the figure axis
+
 
         Returns
         -------
@@ -1375,6 +1379,7 @@ class StormODS(Storm):
         print('-' * len(s))
 
         rates = []
+        times = []
         while t_start < self.storm.index.max():
             temp = temp_storm[temp_storm.index < t_end]
             temp = temp[temp.index >= t_start]
@@ -1384,6 +1389,7 @@ class StormODS(Storm):
 
             rate = (len(temp) / t_interval.total_seconds()) * 60
             rates.append(rate)
+            times.append(t_start)
 
             t_start = t_end
             print('{0} -- {1} UTC = {2:0.2f} '
@@ -1412,7 +1418,24 @@ class StormODS(Storm):
         print('Max {0:0.2f} per minute'.format(np.max(rates)))
         print('Minimum {0:0.2f} per minute'.format(np.min(rates)))
 
-        return temp_storm
+        if plot or show_plot:
+            rs = pd.Series(rates, name='{0} Flash rate'.format(flash_type.upper()),
+                           index=pd.to_datetime(times))
+
+            # ax = rs.plot()
+            fig, ax = plt.subplots(1, 1)
+            ax.plot(rs.index.to_pydatetime(), rs)
+            ax.set_title('{0} Flash rate'.format(flash_type.upper()))
+            ax.set_ylabel(r'Rate (min$^{-1}$)')
+            ax.set_xlabel('Time (UTC)')
+
+        if show_plot:
+            plt.show()
+
+        if plot:
+            return temp_storm, ax
+        else:
+            return temp_storm
 
     @classmethod
     def from_ods_file(cls, file):
@@ -1518,7 +1541,7 @@ class StormODS(Storm):
 
     def get_cell_ods(self, cell_name):
         """
-            Return a StormODS object with the data corresponding to cell_name.
+        Return a StormODS object with the data corresponding to cell_name.
 
             Parameters:
             -----------
@@ -1574,6 +1597,28 @@ class StormODS(Storm):
             p = storm_lma.get_flash_plotter(t1, t2)
             p.plot_all()
             plt.show()
+
+    def plot_rtl_lines(self, ax, show_plot=False):
+        """
+        Plot vertical lines corresponding to the times of RTLs.
+
+        Parameters
+        ----------
+        ax: mpl Axes
+            Axes instance to plot lines.
+
+        Returns
+        -------
+        ax: mpl Axes
+            Axes instance
+
+        """
+        rtls = self.get_flash_type(flash_type='RTL')
+        ymin, ymax = ax.get_ylim()
+        ax.vlines(x=rtls.index, ymin=ymin, ymax=ymax, color='r', alpha=0.5)
+
+        return ax
+
 
     def print_storm_summary(self, charge=None, flash_types=None):
         """ Print the summary of the storm. """
