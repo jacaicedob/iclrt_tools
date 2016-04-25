@@ -1304,6 +1304,9 @@ class StormODS(Storm):
         if show_plot:
             plt.show()
 
+        s = '\nType: {0}'.format(flash_type)
+        print(s)
+        print('-' * len(s))
         print(temp_storm['Area (km^2)'].describe())
 
         return ax
@@ -1325,6 +1328,9 @@ class StormODS(Storm):
         if show_plot:
             plt.show()
 
+        s = '\nType: {0}'.format(flash_type)
+        print(s)
+        print('-' * len(s))
         print(temp_storm['Initiation Height (km)'].describe())
 
         return ax
@@ -1616,6 +1622,9 @@ class StormODS(Storm):
         rtls = self.get_flash_type(flash_type='RTL')
         ymin, ymax = ax.get_ylim()
         ax.vlines(x=rtls.index, ymin=ymin, ymax=ymax, color='r', alpha=0.5)
+
+        if show_plot:
+            plt.show()
 
         return ax
 
