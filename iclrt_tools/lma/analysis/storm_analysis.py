@@ -1288,14 +1288,15 @@ class StormODS(Storm):
 
         return storm
 
-    def analyze_flash_areas(self, flash_type='all', show_plot=True):
+    def analyze_flash_areas(self, flash_type='all', show_plot=True,
+                            hist_lims=None):
         """ Analyze the areas of the specified flash type. """
 
         temp_storm = self.get_flash_type(flash_type=flash_type)
 
         fig, ax = plt.subplots(1, 1, figsize=(12, 6))
 
-        temp_storm['Area (km^2)'].hist(ax=ax)
+        temp_storm['Area (km^2)'].hist(ax=ax, range=hist_lims)
         ax.set_title('Histogram of Flash Areas (from Plan View) for '
                      '{0}s'.format(flash_type.upper()))
         ax.set_xlabel('Flash area (km^2)')
@@ -1311,14 +1312,15 @@ class StormODS(Storm):
 
         return ax
 
-    def analyze_initiation_heights(self, flash_type='all', show_plot=True):
+    def analyze_initiation_heights(self, flash_type='all', show_plot=True,
+                                   hist_lims=None):
         """ Analyze the initiation heights of the specified flash type. """
 
         temp_storm = self.get_flash_type(flash_type=flash_type)
 
         fig, ax = plt.subplots(1, 1, figsize=(12, 6))
 
-        temp_storm['Initiation Height (km)'].hist(ax=ax)
+        temp_storm['Initiation Height (km)'].hist(ax=ax, range=hist_lims)
         ax.set_title('Histogram of initiation heights for '
                      '{0}s'.format(flash_type.upper()))
 
