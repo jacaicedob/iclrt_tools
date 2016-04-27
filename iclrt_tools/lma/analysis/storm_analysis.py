@@ -1351,7 +1351,8 @@ class StormODS(Storm):
             Flash type to do the calculation.
         plot: bool (optional)
             Plot and return the figure axis
-
+        show_plot: bool (optional)
+            Show the plot
 
         Returns
         -------
@@ -1430,9 +1431,14 @@ class StormODS(Storm):
             rs = pd.Series(rates, name='{0} Flash rate'.format(flash_type.upper()),
                            index=pd.to_datetime(times))
 
+            # Convert interval in minutes to fraction of day. There are
+            # 86400.0 seconds in a day
+            interval = t_interval.total_seconds() / 86400.0
+
             # ax = rs.plot()
             fig, ax = plt.subplots(1, 1)
-            ax.plot(rs.index.to_pydatetime(), rs)
+            ax.bar(rs.index.to_pydatetime(), rs, width=interval)
+            ax.xaxis_date()
             ax.set_title('{0} Flash rate'.format(flash_type.upper()))
             ax.set_ylabel(r'Rate (min$^{-1}$)')
             ax.set_xlabel('Time (UTC)')
@@ -1623,13 +1629,17 @@ class StormODS(Storm):
         """
         rtls = self.get_flash_type(flash_type='RTL')
         ymin, ymax = ax.get_ylim()
-        ax.vlines(x=rtls.index, ymin=ymin, ymax=ymax, color='r', alpha=0.5)
+        ax.vlines(x=rtls.index, ymin=ymin, ymax=ymax, color='r', alpha=0.5,
+                  label='RTL Times')
+        legend = ax.legend(frameon=True)
+        frame = legend.get_frame()
+        frame.set_facecolor('#FFFFFF')
+        frame.set_edgecolor('#000000')
 
         if show_plot:
             plt.show()
 
         return ax
-
 
     def print_storm_summary(self, charge=None, flash_types=None):
         """ Print the summary of the storm. """
