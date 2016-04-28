@@ -16,9 +16,9 @@ import numpy as np
 
 # sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 07-17-2012/Figures/')
 
-# sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 03-04-2016/Figures/')
+sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/LightningEvolution/Storm-03-04-2016/Figures/')
 
-sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 03-25-2016/Figures/')
+# sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 03-25-2016/Figures/')
 
 import field_mill_to_first_flash as first
 
