@@ -62,14 +62,14 @@ class FieldMillData(object):
 
     def filter_time(self, tlims):
         # Convert the time limits to timedelta objects
-        t0 = datetime.datetime.strptime(tlims[0], '%H:%M:%S.%f')
-        t1 = datetime.datetime.strptime(tlims[1], '%H:%M:%S.%f')
+        t0 = datetime.datetime.strptime(tlims[0], '%m/%d/%y %H:%M:%S.%f')
+        t1 = datetime.datetime.strptime(tlims[1], '%m/%d/%y %H:%M:%S.%f')
 
-        t0 = datetime.datetime(self.t[0].year, self.t[0].month, self.t[0].day,
-                               t0.hour, t0.minute, t0.second, t0.microsecond)
+        # t0 = datetime.datetime(self.t[0].year, self.t[0].month, self.t[0].day,
+        #                        t0.hour, t0.minute, t0.second, t0.microsecond)
 
-        t1 = datetime.datetime(self.t[0].year, self.t[0].month, self.t[0].day,
-                               t1.hour, t1.minute, t1.second, t1.microsecond)
+        # t1 = datetime.datetime(self.t[0].year, self.t[0].month, self.t[0].day,
+        #                        t1.hour, t1.minute, t1.second, t1.microsecond)
 
         # Filter the data
         ind = self.t >= t0

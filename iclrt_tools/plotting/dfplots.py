@@ -961,7 +961,7 @@ class pickerPlot(Plot):
 
         self.fig.canvas.draw()
             
-    def _onkeypress(self, event):
+    def _on_keypress(self, event):
         line = self.selected_line
         
         if line:
@@ -972,58 +972,58 @@ class pickerPlot(Plot):
             ylims = self.ax.get_ylim()
 
             if event.key == 'ctrl+left' and self.move_flag:
-                #~ print('Moving left...')
+                # print('Moving left...')
                 line.set_xdata(line.get_xdata() - 10*dt)
                 
             elif event.key == 'left' and self.move_flag:
-                #~ print('Moving left...')
+                # print('Moving left...')
                 line.set_xdata(line.get_xdata() - dt)
                 
             elif event.key == 'ctrl+right' and self.move_flag:
-                #~ print('Moving right...')
+                # print('Moving right...')
                 line.set_xdata(line.get_xdata() + 10*dt)
                 
             elif event.key == 'right' and self.move_flag:
-                #~ print('Moving right...')
+                # print('Moving right...')
                 line.set_xdata(line.get_xdata() + dt)
                 
             elif event.key == 'up' and self.move_flag:
-                #~ print('Moving up...')
+                # print('Moving up...')
                 line.set_ydata(line.get_ydata() + dy)
 
                 if not self.fix_axis:
                     self.ax.set_ylim([ylims[0] + dy, ylims[1] + dy])
             
             elif event.key == 'ctrl+up' and self.move_flag:
-                #~ print('Moving up...')
+                # print('Moving up...')
                 line.set_ydata(line.get_ydata() + 10*dy)
 
                 if not self.fix_axis:
                     self.ax.set_ylim([ylims[0] + 10*dy, ylims[1] + 10*dy])
             
             elif event.key == 'alt+up' and self.move_flag:
-                #~ print('Moving up...')
+                # print('Moving up...')
                 line.set_ydata(line.get_ydata() + 100*dy)
 
                 if not self.fix_axis:
                     self.ax.set_ylim([ylims[0] + 100*dy, ylims[1] + 100*dy])
                 
             elif event.key == 'down' and self.move_flag:
-                #~ print('Moving down...')
+                # print('Moving down...')
                 line.set_ydata(line.get_ydata() - dy)
 
                 if not self.fix_axis:
                     self.ax.set_ylim([ylims[0] - dy, ylims[1] - dy])
             
             elif event.key == 'ctrl+down' and self.move_flag:
-                #~ print('Moving down...')
+                # print('Moving down...')
                 line.set_ydata(line.get_ydata() - 10*dy)
 
                 if not self.fix_axis:
                     self.ax.set_ylim([ylims[0] - 10*dy, ylims[1] - 10*dy])
             
             elif event.key == 'alt+down' and self.move_flag:
-                #~ print('Moving down...')
+                # print('Moving down...')
                 line.set_ydata(line.get_ydata() - 100*dy)
 
                 if not self.fix_axis:
@@ -1032,34 +1032,30 @@ class pickerPlot(Plot):
             self.fig.canvas.draw()
 
         if event.key == 'x':
-            self.span.visible = True
-            self.span_v.visible = False
+            self.span.set_visibility(True, False)
             self.rect_sel.set_active(False)
 
         elif event.key == 'f':
             self.fix_axis = not self.fix_axis
 
         else:
-            super(pickerPlot, self)._onkeypress(event)
+            super(pickerPlot, self)._on_keypress(event)
 
-    def _onkeyrelease(self, event):
+    def _on_keyrelease(self, event):
         if event.key == 'x':
-            self.span.visible = False
-            self.span_v.visible = False
+            self.span.set_visibility(False, False)
             self.rect_sel.set_active(False)
 
         elif event.key == 'y':
-            self.span.visible = False
-            self.span_v.visible = False
+            self.span.set_visibility(False, False)
             self.rect_sel.set_active(False)
 
         elif event.key == 'a':
-            self.span.visible = False
-            self.span_v.visible = False
+            self.span.set_visibility(False, False)
             self.rect_sel.set_active(False)
 
         else:
-            super(pickerPlot, self)._onkeyrelease(event)
+            super(pickerPlot, self)._on_keyrelease(event)
 
 
 class RelativeTimePlot(object):
