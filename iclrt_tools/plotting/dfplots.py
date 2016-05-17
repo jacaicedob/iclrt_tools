@@ -2597,11 +2597,15 @@ class LMAPlotter(object):
             self.ax_plan = ax
 
         if c is None:
+            if self.coloring == 'charge':
+                c = self.plot_data['charge']
+            else:
+                c = self.plot_data['seconds_of_day']
+
             self.scat_plan = self.ax_plan.scatter(self.plot_data['x'],
                                                   self.plot_data['y'],
                                                   marker='.',
-                                                  c=self.plot_data[
-                                                     'seconds_of_day'],
+                                                  c=c,
                                                   cmap=self.cmap, s=30, lw=0)
         else:
             self.scat_plan = self.ax_plan.scatter(self.plot_data['x'],

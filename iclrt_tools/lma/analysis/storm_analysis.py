@@ -967,10 +967,12 @@ class StormLMA(Storm):
             other.plot(y='alt(m)', style='.', c='g', lw=0,
                        alpha=alpha, ax=ax, legend=False)
 
-        positive_charge.plot(y='alt(m)', style='.', c='r', lw=0,
-                             alpha=alpha, ax=ax, legend=False)
-        negative_charge.plot(y='alt(m)', style='.', c='b', lw=0,
-                             alpha=alpha, ax=ax, legend=False)
+        if not positive_charge.empty:
+            positive_charge.plot(y='alt(m)', style='.', c='r', lw=0,
+                                 alpha=alpha, ax=ax, legend=False)
+        if not negative_charge.empty:
+            negative_charge.plot(y='alt(m)', style='.', c='b', lw=0,
+                                 alpha=alpha, ax=ax, legend=False)
     
         # xlims = ax.get_xlim()
         # ax.plot([xlims[0], xlims[1]],
@@ -1268,13 +1270,14 @@ class StormODS(Storm):
                       range(len(storm))])
         storm['DateTime'] = pd.to_datetime(storm['DateTime'],
                                            format='%m/%d/%y %H:%M:%S.%f')
+
         storm.set_index('DateTime', inplace=True)
 
         # Convert the values in the duration column to timedelta objects
         storm['Duration(s)'] = pd.to_timedelta(storm['Duration (ms)'],
                                                unit='ms')
 
-        # Remove unnecessary colums
+        # Remove unnecessary columns
         _ = storm.pop('Date')
         _ = storm.pop('Time')
         _ = storm.pop('Flash')
