@@ -140,7 +140,8 @@ class XLMAExportedFile(LMAFile):
                     words = line.split()
 
                     source = LMASource(self.date, words[0], words[1], words[2],
-                                       words[3], words[4], words[6], words[9], words[8])
+                                       words[3], words[4], words[6], words[9],
+                                       words[8])
 
                     source.set_xyz_coords(self.center_coordinate, self.shift)
                     self.data.append(source)

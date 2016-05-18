@@ -58,7 +58,9 @@ else:
     storm_ods.from_pickle(pickle_file)
 
 if get_flash_numbers:
-    s = storm_ods.get_analyzed_flash_numbers(storm_lma, verbose=True)
+    to_sort = st.StormLMA(storm_lma.filter_stations(7, inplace=False))
+    to_sort.filter_chi_squared(1, inplace=True)
+    s = storm_ods.get_analyzed_flash_numbers(to_sort, verbose=True)
     s.save_to_pickle(flash_numbers_pickle)
     s.to_csv(flash_numbers_csv)
     storm_ods = s
