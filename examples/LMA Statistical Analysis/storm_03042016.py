@@ -97,8 +97,11 @@ if get_flash_numbers_from_lma:
     storm_2_ods.save_to_pickle(cell_2_ods_pickle)
     storm_2_ods.storm.to_csv(cell_2_ods_pickle_csv)
 
-# st.Analysis.nice_plots()
-#
+
+cell_1_analyzer = st.Analysis(storm_1_lma, storm_1_ods)
+cell_2_analyzer = st.Analysis(storm_2_lma, storm_2_ods)
+st.Analysis.nice_plots()
+
 # # storm_2_lma.plot_charge_region(charge='positive')
 # # storm_2_lma.plot_charge_region(charge='negative')
 # # storm_2_lma.plot_all_charge_regions(show_plot=True)
