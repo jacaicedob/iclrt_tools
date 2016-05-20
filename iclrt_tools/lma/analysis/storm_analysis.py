@@ -1967,68 +1967,110 @@ class Analysis(object):
             area_61.append(0.5 * abs(sum(x1 * y2 - x2 * y1 for
                                          x1, y1, x2, y2 in lines)))
 
-            stations = 7
-            chi = 5
-
-            storm = StormLMA(self.lma.filter_stations(stations, inplace=False))
-            storm.filter_chi_squared(chi, inplace=True)
-
-            flash = storm.get_sources_from_flash_number(number)
-            flash = flash[flash['charge'] != 0]
-
-            x = flash['x (m)'].get_values()
-            y = flash['y (m)'].get_values()
-
-            f = np.vstack((x, y)).T
-
-            hull = scipy.spatial.ConvexHull(f)
-            verts = f[hull.vertices].tolist()
-            verts.append(f[hull.vertices[0]])
-            lines = np.hstack([verts, np.roll(verts, -1, axis=0)])
-            area_75.append(0.5 * abs(sum(x1 * y2 - x2 * y1 for
-                                         x1, y1, x2, y2 in lines)))
-
-            stations = 7
-            chi = 1
-
-            storm = StormLMA(self.lma.filter_stations(stations, inplace=False))
-            storm.filter_chi_squared(chi, inplace=True)
-
-            flash = storm.get_sources_from_flash_number(number)
-            flash = flash[flash['charge'] != 0]
-
-            x = flash['x (m)'].get_values()
-            y = flash['y (m)'].get_values()
-
-            f = np.vstack((x, y)).T
-
-            hull = scipy.spatial.ConvexHull(f)
-            verts = f[hull.vertices].tolist()
-            verts.append(f[hull.vertices[0]])
-            lines = np.hstack([verts, np.roll(verts, -1, axis=0)])
-            area_71.append(0.5 * abs(sum(x1 * y2 - x2 * y1 for
-                                         x1, y1, x2, y2 in lines)))
-
-            area_mean.append(np.mean([area_65[-1], area_61[-1],
-                                      area_71[-1], area_75[-1]]))
+            # stations = 7
+            # chi = 5
+            #
+            # storm = StormLMA(self.lma.filter_stations(stations, inplace=False))
+            # storm.filter_chi_squared(chi, inplace=True)
+            #
+            # flash = storm.get_sources_from_flash_number(number)
+            # flash = flash[flash['charge'] != 0]
+            #
+            # x = flash['x (m)'].get_values()
+            # y = flash['y (m)'].get_values()
+            #
+            # f = np.vstack((x, y)).T
+            #
+            # hull = scipy.spatial.ConvexHull(f)
+            # verts = f[hull.vertices].tolist()
+            # verts.append(f[hull.vertices[0]])
+            # lines = np.hstack([verts, np.roll(verts, -1, axis=0)])
+            # area_75.append(0.5 * abs(sum(x1 * y2 - x2 * y1 for
+            #                              x1, y1, x2, y2 in lines)))
+            #
+            # stations = 7
+            # chi = 1
+            #
+            # storm = StormLMA(self.lma.filter_stations(stations, inplace=False))
+            # storm.filter_chi_squared(chi, inplace=True)
+            #
+            # flash = storm.get_sources_from_flash_number(number)
+            # flash = flash[flash['charge'] != 0]
+            #
+            # x = flash['x (m)'].get_values()
+            # y = flash['y (m)'].get_values()
+            #
+            # f = np.vstack((x, y)).T
+            #
+            # hull = scipy.spatial.ConvexHull(f)
+            # verts = f[hull.vertices].tolist()
+            # verts.append(f[hull.vertices[0]])
+            # lines = np.hstack([verts, np.roll(verts, -1, axis=0)])
+            # area_71.append(0.5 * abs(sum(x1 * y2 - x2 * y1 for
+            #                              x1, y1, x2, y2 in lines)))
+            #
+            # area_mean.append(np.mean([area_65[-1], area_61[-1],
+            #                           area_71[-1], area_75[-1]]))
             date_time.append(flash.index[0])
 
         # Convert the areas from m^2 to km^2
         area_65 = np.array(area_65) * 1e-6
         area_61 = np.array(area_61) * 1e-6
-        area_75 = np.array(area_75) * 1e-6
-        area_71 = np.array(area_71) * 1e-6
+        # area_75 = np.array(area_75) * 1e-6
+        # area_71 = np.array(area_71) * 1e-6
         area_mean = np.array(area_mean) * 1e-6
 
         result = dict()
         result['flash-number'] = unique
         result['Area_65 (km^2)'] = area_65
         result['Area_61 (km^2)'] = area_61
-        result['Area_75 (km^2)'] = area_75
-        result['Area_71 (km^2)'] = area_71
+        # result['Area_75 (km^2)'] = area_75
+        # result['Area_71 (km^2)'] = area_71
         result['Area_mean (km^2)'] = area_mean
         # result['DateTime'] = date_time
 
+        result = pd.DataFrame(result, index=date_time)
+
+        return result
+
+    def calculate_initiation_heights(self):
+        """
+        Calculate the initiation height of every flash in .ods file
+        by averaging the first 10 LMA sources and appending the results
+        to self.ods in a different column for comparison to the one done
+        by me using the xlma software.
+        """
+        # Select all sources with assigned charge
+        temp_storm = self.lma.storm[self.lma.storm['charge'] != 0]
+
+        unique = temp_storm['flash-number'].unique()
+        indices = range(len(unique))
+
+        init_height = []
+        date_time = []
+
+        for index in indices:
+            stations = 6
+            chi = 1
+
+            storm = StormLMA(self.lma.filter_stations(stations, inplace=False))
+            storm.filter_chi_squared(chi, inplace=True)
+
+            number = unique[index]
+
+            if np.isnan(number):
+                init_height.append(np.nan)
+                continue
+
+            flash = storm.get_sources_from_flash_number(number)
+            if len(flash) == 0:
+                continue
+            # print(number, len(flash), flash['alt(m)'][:10].mean())
+            init_height.append(flash['alt(m)'][:10].mean())
+            date_time.append(flash.index[0])
+
+        result = dict()
+        result['InitiationHeightLMA(m)'] = init_height
         result = pd.DataFrame(result, index=date_time)
 
         return result
