@@ -10,7 +10,7 @@ import pickle
 
 # Operations to be performed on raw data
 sort_flashes_into_cells = False
-get_flash_numbers_from_lma = True
+get_flash_numbers_from_lma = False
 
 path = '/home/jaime/Documents/ResearchTopics/Publications/'\
        'LightningEvolution/Storm-03-04-2016/'
@@ -34,22 +34,24 @@ cell_2_lma_files = [path + 'LMA/ChargeAnalysis_Cell2_0600-exported.csv',
 dates = ['03/04/2016']
 
 # Pickled files
-cell_1_pickle = path + 'Statistical Analysis/cell_1_lma.p'
-cell_2_pickle = path + 'Statistical Analysis/cell_2_lma.p'
+cell_1_lma_pickle = path + 'Statistical Analysis/cell_1_lma.p'
+cell_2_lma_pickle = path + 'Statistical Analysis/cell_2_lma.p'
 
 # Load Cell 1 LMA
-if not(os.path.isfile(cell_1_pickle)):
-    storm_lma_1 = st.StormLMA.from_lma_files(cell_1_lma_files, dates)
+if not(os.path.isfile(cell_1_lma_pickle)):
+    storm_1_lma = st.StormLMA.from_lma_files(cell_1_lma_files, dates)
+    storm_1_lma.save_to_pickle(cell_1_lma_pickle)
 else:
-    storm_lma_1 = st.StormLMA()
-    storm_lma_1.from_pickle(cell_1_pickle)
+    storm_1_lma = st.StormLMA()
+    storm_1_lma.from_pickle(cell_1_lma_pickle)
 
 # Load Cell 1 LMA
-if not(os.path.isfile(cell_2_pickle)):
-    storm_lma_2 = st.StormLMA.from_lma_files(cell_2_lma_files, dates)
+if not(os.path.isfile(cell_2_lma_pickle)):
+    storm_2_lma = st.StormLMA.from_lma_files(cell_2_lma_files, dates)
+    storm_2_lma.save_to_pickle(cell_2_lma_pickle)
 else:
-    storm_lma_2 = st.StormLMA()
-    storm_lma_2.from_pickle(cell_2_pickle)
+    storm_2_lma = st.StormLMA()
+    storm_2_lma.from_pickle(cell_2_lma_pickle)
 
 # LOAD .ODS DATA
 # Raw CSV files
@@ -60,45 +62,51 @@ cell_2_ods_file = path + 'Cell2 Analysis 03042016.csv'
 cell_1_ods_pickle = path + 'Statistical Analysis/cell_1_ods.p'
 cell_2_ods_pickle = path + 'Statistical Analysis/cell_2_ods.p'
 
+cell_1_ods_pickle_csv = path + 'Statistical Analysis/cell_1_ods.csv'
+cell_2_ods_pickle_csv = path + 'Statistical Analysis/cell_2_ods.csv'
+
 # Load Cell 1 ods
 if not(os.path.isfile(cell_1_ods_pickle)):
-    storm_ods_1 = st.StormODS.from_ods_file(cell_1_ods_file)
+    storm_1_ods = st.StormODS.from_ods_file(cell_1_ods_file)
 else:
-    storm_ods_1 = st.StormODS()
-    storm_ods_1.from_pickle(cell_1_ods_pickle)
+    storm_1_ods = st.StormODS()
+    storm_1_ods.from_pickle(cell_1_ods_pickle)
 
 # Load Cell 2 ods
 if not(os.path.isfile(cell_2_ods_pickle)):
-    storm_ods_2 = st.StormODS.from_ods_file(cell_2_ods_file)
+    storm_2_ods = st.StormODS.from_ods_file(cell_2_ods_file)
 else:
-    storm_ods_2 = st.StormODS()
-    storm_ods_2.from_pickle(cell_2_ods_pickle)
+    storm_2_ods = st.StormODS()
+    storm_2_ods.from_pickle(cell_2_ods_pickle)
 
 # Perform operations on raw data (if applicable)
 if get_flash_numbers_from_lma:
     # Cell 1
-    data = st.StormLMA(storm_lma_1.filter_stations(6, inplace=False))
+    data = st.StormLMA(storm_1_lma.filter_stations(6, inplace=False))
     data.filter_chi_squared(5, inplace=True)
-    s = storm_ods_1.get_analyzed_flash_numbers(data, verbose=True)
-    storm_ods_1 = st.StormODS(s)
+    s = storm_1_ods.get_analyzed_flash_numbers(data, verbose=True)
+    storm_1_ods = st.StormODS(s)
+    storm_1_ods.save_to_pickle(cell_1_ods_pickle)
+    storm_1_ods.storm.to_csv(cell_1_ods_pickle_csv)
 
     # Cell 2
-    data = st.StormLMA(storm_lma_2.filter_stations(6, inplace=False))
+    data = st.StormLMA(storm_2_lma.filter_stations(6, inplace=False))
     data.filter_chi_squared(5, inplace=True)
-    s = storm_ods_2.get_analyzed_flash_numbers(data, verbose=True)
-    storm_ods_2 = st.StormODS(s)
-
+    s = storm_2_ods.get_analyzed_flash_numbers(data, verbose=True)
+    storm_2_ods = st.StormODS(s)
+    storm_2_ods.save_to_pickle(cell_2_ods_pickle)
+    storm_2_ods.storm.to_csv(cell_2_ods_pickle_csv)
 
 # st.Analysis.nice_plots()
 #
-# # storm_lma_2.plot_charge_region(charge='positive')
-# # storm_lma_2.plot_charge_region(charge='negative')
-# # storm_lma_2.plot_all_charge_regions(show_plot=True)
+# # storm_2_lma.plot_charge_region(charge='positive')
+# # storm_2_lma.plot_charge_region(charge='negative')
+# # storm_2_lma.plot_all_charge_regions(show_plot=True)
 #
-# # ics = storm_ods_1.get_flash_type('IC')
-# # cgs = storm_ods_1.get_flash_type('-CG')
-# ics = storm_ods_2.get_flash_type('IC')
-# cgs = storm_ods_2.get_flash_type('-CG')
+# # ics = storm_1_ods.get_flash_type('IC')
+# # cgs = storm_1_ods.get_flash_type('-CG')
+# ics = storm_2_ods.get_flash_type('IC')
+# cgs = storm_2_ods.get_flash_type('-CG')
 #
 # # ic_series = ics['Initiation Height (km)']
 # # cg_series = cgs['Initiation Height (km)']
@@ -116,10 +124,10 @@ if get_flash_numbers_from_lma:
 # plt.show()
 #
 #
-# # storm_ods_1.get_flash_rate(category='IC')
-# # storm_ods_1.get_flash_rate(category='CG')
-# # storm_lma_1.plot_all_charge_regions()
+# # storm_1_ods.get_flash_rate(category='IC')
+# # storm_1_ods.get_flash_rate(category='CG')
+# # storm_1_lma.plot_all_charge_regions()
 # #
-# # storm_ods_2.get_flash_rate(category='IC')
-# # storm_ods_2.get_flash_rate(category='CG')
-# # storm_lma_2.plot_all_charge_regions(show_plot=True)
+# # storm_2_ods.get_flash_rate(category='IC')
+# # storm_2_ods.get_flash_rate(category='CG')
+# # storm_2_lma.plot_all_charge_regions(show_plot=True)
