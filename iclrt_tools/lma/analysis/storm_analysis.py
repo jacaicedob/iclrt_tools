@@ -9,7 +9,10 @@ import numpy as np
 import pickle
 import seaborn as sns
 import os
+import numpy as np
+import scipy
 import sys
+import tqdm
 
 import iclrt_tools.plotting.dfplots as df
 import iclrt_tools.lat_lon.lat_lon as ll
@@ -1503,16 +1506,18 @@ class StormODS(Storm):
         analyzed_flashes['flash-number'] = []
         analyzed_flashes['DateTime'] = []
 
+        # Get the flash numbers for the flashes with assigned charges
         temp = storm_lma.storm[storm_lma.storm['charge'] != 0]
         numbers = temp['flash-number'].unique()
 
         # Start the computation
-        count = 1
+        # count = 1
         total = len(data_frame.index) * len(numbers)
 
         if verbose:
             print('Total Iterations: {0}'.format(total))
-            start = datetime.datetime.now()
+            pbar = tqdm.tqdm(total=total)
+            # start = datetime.datetime.now()
 
         for i in data_frame.index:
             # # Ignore the times in the file that are outside the range of
@@ -1530,9 +1535,10 @@ class StormODS(Storm):
                     number_list.append(flash_number)
 
                 if verbose:
-                    count += 1
-                    print('Analyzing... {0:0.2f}%'.format(count / total * 100),
-                          end='\r')
+                    # count += 1
+                    pbar.update(1)
+                    # print('Analyzing... {0:0.2f}%'.format(count / total * 100),
+                    #       end='\r')
 
             if number_list:
                 if len(number_list) == 1:
@@ -1544,14 +1550,27 @@ class StormODS(Storm):
                 analyzed_flashes['DateTime'].append(i)
 
         if verbose:
-            end = datetime.datetime.now()
-            print('Analysis time: {0}\n'.format(end - start))
+            # end = datetime.datetime.now()
+            pbar.close()
+            # print('Analysis time: {0}\n'.format(end - start))
 
+        # Make a Series from the flash-numbers with the time as the index
         series = pd.Series(analyzed_flashes['flash-number'],
                            index=analyzed_flashes['DateTime'])
 
-        series.drop_duplicates(keep='first', inplace=True)
+        # Remove duplicate flash numbers
+        # series.drop_duplicates(keep='first', inplace=True)
 
+        # Remove the duplicate indices (if any)
+        series = series.reset_index(inplace=False)
+        series.drop_duplicates('index', keep='first', inplace=True)
+        series.set_index('index', inplace=True)
+        series.index.rename('DateTime', inplace=True)
+        series.columns = ['flash-number']
+
+        # return series
+
+        # Insert series into data_frame
         data_frame.loc[:, 'flash-number'] = series
 
         return data_frame
@@ -1574,6 +1593,15 @@ class StormODS(Storm):
 
         temp = self.storm.groupby('Cell').get_group(cell_name)
         return StormODS(temp)
+
+    def get_entry_from_flash_number(self, number):
+        """ Return the row with the information for the flash number. """
+
+        if isinstance(number, list) or isinstance(number, tuple):
+            return None
+
+        else:
+            return self.storm[self.storm['flash-number'] == int(number)]
 
     def get_flash_type(self, flash_type='all'):
         """ Returns a DataFrame with all the flashes of a certain type. """
@@ -1861,6 +1889,149 @@ class Analysis(object):
         """ Use the seaborn package to make figures nicer. """
 
         sns.set_context('talk', font_scale=2.0)
+
+    def calculate_flash_areas(self):
+        """
+        Calculate the area of every flash in self.ods using the
+        LMA sources from self.lma in plan view and using the convex hull
+        approximation. Add the calculated area as a column on the
+        self.ods DataFrame.
+
+        """
+
+        if 'x (m)' not in self.lma.storm.columns:
+            self.lma.convert_latlon_to_m()
+
+        # Select all sources with assigned charge
+        temp_storm = self.lma.storm[self.lma.storm['charge'] != 0]
+
+        unique = temp_storm['flash-number'].unique()
+        indices = range(len(unique))
+
+        area_65 = []
+        area_61 = []
+        area_75 = []
+        area_71 = []
+        area_mean = []
+        date_time = []
+
+        for index in indices:
+            stations = 6
+            chi = 5
+
+            storm = StormLMA(self.lma.filter_stations(stations, inplace=False))
+            storm.filter_chi_squared(chi, inplace=True)
+
+            number = unique[index]
+            # print(number, type(number))
+            if np.isnan(number):
+                area_65.append(np.nan)
+                area_61.append(np.nan)
+                area_75.append(np.nan)
+                area_71.append(np.nan)
+                continue
+
+            flash = storm.get_sources_from_flash_number(number)
+            flash = flash[flash['charge'] != 0]
+
+            x = flash['x (m)'].get_values()
+            y = flash['y (m)'].get_values()
+
+            f = np.vstack((x, y)).T
+
+            hull = scipy.spatial.ConvexHull(f)
+            verts = f[hull.vertices].tolist()
+            verts.append(f[hull.vertices[0]])
+            lines = np.hstack([verts, np.roll(verts, -1, axis=0)])
+            area_65.append(0.5 * abs(sum(x1 * y2 - x2 * y1 for
+                                         x1, y1, x2, y2 in lines)))
+
+            stations = 6
+            chi = 1
+
+            storm = StormLMA(self.lma.filter_stations(stations, inplace=False))
+            storm.filter_chi_squared(chi, inplace=True)
+
+            flash = storm.get_sources_from_flash_number(number)
+            flash = flash[flash['charge'] != 0]
+
+            x = flash['x (m)'].get_values()
+            y = flash['y (m)'].get_values()
+
+            f = np.vstack((x, y)).T
+
+            hull = scipy.spatial.ConvexHull(f)
+            verts = f[hull.vertices].tolist()
+            verts.append(f[hull.vertices[0]])
+            lines = np.hstack([verts, np.roll(verts, -1, axis=0)])
+            area_61.append(0.5 * abs(sum(x1 * y2 - x2 * y1 for
+                                         x1, y1, x2, y2 in lines)))
+
+            stations = 7
+            chi = 5
+
+            storm = StormLMA(self.lma.filter_stations(stations, inplace=False))
+            storm.filter_chi_squared(chi, inplace=True)
+
+            flash = storm.get_sources_from_flash_number(number)
+            flash = flash[flash['charge'] != 0]
+
+            x = flash['x (m)'].get_values()
+            y = flash['y (m)'].get_values()
+
+            f = np.vstack((x, y)).T
+
+            hull = scipy.spatial.ConvexHull(f)
+            verts = f[hull.vertices].tolist()
+            verts.append(f[hull.vertices[0]])
+            lines = np.hstack([verts, np.roll(verts, -1, axis=0)])
+            area_75.append(0.5 * abs(sum(x1 * y2 - x2 * y1 for
+                                         x1, y1, x2, y2 in lines)))
+
+            stations = 7
+            chi = 1
+
+            storm = StormLMA(self.lma.filter_stations(stations, inplace=False))
+            storm.filter_chi_squared(chi, inplace=True)
+
+            flash = storm.get_sources_from_flash_number(number)
+            flash = flash[flash['charge'] != 0]
+
+            x = flash['x (m)'].get_values()
+            y = flash['y (m)'].get_values()
+
+            f = np.vstack((x, y)).T
+
+            hull = scipy.spatial.ConvexHull(f)
+            verts = f[hull.vertices].tolist()
+            verts.append(f[hull.vertices[0]])
+            lines = np.hstack([verts, np.roll(verts, -1, axis=0)])
+            area_71.append(0.5 * abs(sum(x1 * y2 - x2 * y1 for
+                                         x1, y1, x2, y2 in lines)))
+
+            area_mean.append(np.mean([area_65[-1], area_61[-1],
+                                      area_71[-1], area_75[-1]]))
+            date_time.append(flash.index[0])
+
+        # Convert the areas from m^2 to km^2
+        area_65 = np.array(area_65) * 1e-6
+        area_61 = np.array(area_61) * 1e-6
+        area_75 = np.array(area_75) * 1e-6
+        area_71 = np.array(area_71) * 1e-6
+        area_mean = np.array(area_mean) * 1e-6
+
+        result = dict()
+        result['flash-number'] = unique
+        result['Area_65 (km^2)'] = area_65
+        result['Area_61 (km^2)'] = area_61
+        result['Area_75 (km^2)'] = area_75
+        result['Area_71 (km^2)'] = area_71
+        result['Area_mean (km^2)'] = area_mean
+        # result['DateTime'] = date_time
+
+        result = pd.DataFrame(result, index=date_time)
+
+        return result
 
     def get_cell_initial_plotter(self, cell_name):
         """
