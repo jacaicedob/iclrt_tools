@@ -177,11 +177,26 @@ class StormLMA(Storm):
         self.nldn_detections = None
 
     @staticmethod
-    def _calculate_histogram(data_series):
+    def _calculate_histogram(data_series, column):
         """ Compute the histogram of a Series and return the bin centers. """
 
         # Extract data from DataSeries into a np array
-        data = np.array(data_series['alt(m)'].dropna())
+        data = np.array(data_series[column].dropna())
+
+        # Calculate histogram of the data and find the bin centers
+        hist, bin_edges = np.histogram(data, bins=1000)
+        bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+
+        # Return the altitude (bin_center) of the largest value
+        # in the histogram
+        return hist, bin_centers
+
+    @staticmethod
+    def _calculate_histogram_max(data_series, column):
+        """ Compute the histogram of a Series and return the bin centers. """
+
+        # Extract data from DataSeries into a np array
+        data = np.array(data_series[column].dropna())
 
         # Calculate histogram of the data and find the bin centers
         hist, bin_edges = np.histogram(data, bins=1000)
@@ -1180,8 +1195,13 @@ class StormLMA(Storm):
 
             if not subset.empty:
                 t_peaks.append(ind_start)
-                pos_peaks.append(self._calculate_histogram(subset_pos_charge))
-                neg_peaks.append(self._calculate_histogram(subset_neg_charge))
+                temp = self._calculate_histogram_max(subset_pos_charge,
+                                                     'alt(m)')
+                pos_peaks.append(temp)
+
+                temp = self._calculate_histogram_max(subset_neg_charge,
+                                                     'alt(m)')
+                neg_peaks.append(temp)
 
             start_time = end_time
             end_time += t_increment
@@ -1205,6 +1225,25 @@ class StormLMA(Storm):
         ax.set_xlabel('Time')
 
         return fig, ax
+
+    def plot_power_histogram(self, ax=None):
+        if ax is not None:
+            fig = ax.get_figure()
+        else:
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+
+        pos, neg, _ = self.get_charge_regions()
+
+        pos_hist, pos_bin = self._calculate_histogram(pos, 'P(dBW)')
+        neg_hist, neg_bin = self._calculate_histogram(neg, 'P(dBW)')
+
+        ax.plot(pos_bin, pos_hist, '-r', alpha=0.5)
+        ax.plot(neg_bin, neg_hist, '-b', alpha=0.5)
+        ax.set_xlabel('Power (dBW)')
+        ax.set_ylabel('Count')
+
+        return ax
 
     def print_storm_summary(self, charge=None, flash_types=None):
         """ Print the summary of the storm. """
