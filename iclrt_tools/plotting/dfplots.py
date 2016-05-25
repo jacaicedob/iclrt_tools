@@ -1876,7 +1876,7 @@ class RadarPlotter(object):
 
 
 class LMAPlotter(object):
-    def __init__(self, lma_file, shift=(0, 0)):
+    def __init__(self, lma_file, charge=False, shift=(0, 0)):
         # The shift variable is used to match the RadarPlotter shift variable.
         # In the RadarPlotter, the shift moves the radar (0, 0) to
         # (shift[0], shift[1]), making the desired position as (0, 0).
@@ -1886,7 +1886,10 @@ class LMAPlotter(object):
         self.shift = shift  #-shift[0], -shift[1]
 
         if not isinstance(lma_file, lma.LMAFile):
-            lma_file = lma.LMAFile(lma_file, shift=self.shift)
+            if not charge:
+                lma_file = lma.LMAFile(lma_file, shift=self.shift)
+            else:
+                lma_file = lma.XLMAExportedFile(lma_file, shift=self.shift)
 
         self.raw_data = lma_file.data
         self.filtered_data = self.raw_data
@@ -2297,24 +2300,34 @@ class LMAPlotter(object):
 
         return temp_x, temp_y, temp_t, temp_charge
 
-    def plot_alt_t(self, lims=[0, 20e3]):
+    def plot_alt_t(self, lims=[0, 20e3], ax=None):
         self.plot_x_stack = []
         self.plot_y_stack = []
 
         lims = [lims[0]*1e-3, lims[-1]*1e-3]
 
-        self.fig_alt_t = plt.figure()
-        self.ax_alt_t = self.fig_alt_t.add_subplot(111)
+        if ax is None:
+            self.fig_alt_t = plt.figure()
+            self.ax_alt_t = self.fig_alt_t.add_subplot(111)
+        else:
+            self.ax_alt_t = ax
+            self.fig_alt_t = ax.get_figure()
 
         if self.coloring == 'time':
             colors = self.cmap(np.linspace(0, 1, len(self.plot_data['t'])))
+            norm = None
+            cmap = self.cmap
         elif self.coloring == 'charge':
             colors = self.plot_data['charge']
+            cmap = mpl.colors.ListedColormap(['blue', 'green', 'red'])
+            bounds = [-3, -1, 0, 1, 3]
+            norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
 
         self.scat_alt_t = self.ax_alt_t.scatter(self.plot_data['t'],
                                                 self.plot_data['z']*1E-3,
                                                 marker='.', c=colors,
-                                                cmap=self.cmap, s=30, lw=0)
+                                                cmap=cmap, norm=norm,
+                                                s=30, lw=0)
 
         self.ax_alt_t.set_ylabel('Altitude (km)')
         self.ax_alt_t.set_xlabel('Time (s)')
