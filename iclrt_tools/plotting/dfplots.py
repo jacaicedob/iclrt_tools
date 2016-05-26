@@ -2540,14 +2540,31 @@ class LMAPlotter(object):
 
         data = np.hstack((thisx[:, np.newaxis], thisy[:, np.newaxis]))
         # thischarge = thischarge[:, np.newaxis]
-        self.scat_alt_t.set_offsets(data)
 
+        self.ax_alt_t.clear()
         if self.coloring == 'time':
             colors = self.cmap(np.linspace(0, 1, len(thist)))
+            norm = None
+            cmap = self.cmap
         elif self.coloring == 'charge':
             colors = thischarge
+            cmap = mpl.colors.ListedColormap(['blue', 'green', 'red'])
+            bounds = [-3, -1, 0, 1, 3]
+            norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
 
-        self.scat_alt_t.set_color(colors)
+        self.ax_alt_t.scatter(thisx, thisy, marker='.', c=colors, cmap=cmap,
+                              norm=norm, s=30, lw=0)
+
+        # self.scat_alt_t.set_offsets(data)
+        #
+        # if self.coloring == 'time':
+        #     colors = self.cmap(np.linspace(0, 1, len(thist)))
+        # elif self.coloring == 'charge':
+        #     colors = thischarge
+        #
+        # self.scat_alt_t.set_color(colors)
+
+
 
         max_y = -np.inf
         min_y = np.inf
@@ -2596,30 +2613,36 @@ class LMAPlotter(object):
         # for label in self.ax_alt_t.xaxis.get_ticklabels(minor=False):
         #     label.set_rotation(30)
 
-    def plot_plan(self, fig=None, ax=None, xlims=[-20E3, 20E3],
+    def plot_plan(self, ax=None, xlims=[-20E3, 20E3],
                   ylims=[-20E3, 20E3], c=None):
         self.plot_x_stack = []
         self.plot_y_stack = []
 
-        if fig is None or ax is None:
+        if ax is None:
             self.fig_plan = plt.figure()
             self.ax_plan = self.fig_plan.add_subplot(111)
 
         else:
-            self.fig_plan = fig
+            self.fig_plan = ax.get_figure()
             self.ax_plan = ax
 
         if c is None:
             if self.coloring == 'charge':
                 c = self.plot_data['charge']
+                cmap = mpl.colors.ListedColormap(['blue', 'green', 'red'])
+                bounds = [-3, -1, 0, 1, 3]
+                norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
             else:
                 c = self.plot_data['seconds_of_day']
+                cmap = self.cmap
+                norm = None
 
             self.scat_plan = self.ax_plan.scatter(self.plot_data['x'],
                                                   self.plot_data['y'],
                                                   marker='.',
                                                   c=c,
-                                                  cmap=self.cmap, s=30, lw=0)
+                                                  cmap=cmap,
+                                                  norm=norm, s=30, lw=0)
         else:
             self.scat_plan = self.ax_plan.scatter(self.plot_data['x'],
                                                   self.plot_data['y'],
@@ -2736,15 +2759,30 @@ class LMAPlotter(object):
             plt.close(self.fig_plan)
 
     def update_graph_plan(self, thisx, thisy, thist, thischarge):
-        data = np.hstack((thisx[:, np.newaxis], thisy[:, np.newaxis]))
-        self.scat_plan.set_offsets(data)
+        # data = np.hstack((thisx[:, np.newaxis], thisy[:, np.newaxis]))
+        # self.scat_plan.set_offsets(data)
+        #
+        # if self.coloring == 'time':
+        #     colors = self.cmap(np.linspace(0, 1, len(thist)))
+        # elif self.coloring == 'charge':
+        #     colors = thischarge
+        #
+        # self.scat_plan.set_color(colors)
 
-        if self.coloring == 'time':
-            colors = self.cmap(np.linspace(0, 1, len(thist)))
-        elif self.coloring == 'charge':
-            colors = thischarge
+        self.ax_plan.clear()
 
-        self.scat_plan.set_color(colors)
+        if self.coloring == 'charge':
+            c = thischarge
+            cmap = mpl.colors.ListedColormap(['blue', 'green', 'red'])
+            bounds = [-3, -1, 0, 1, 3]
+            norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+        else:
+            c = self.cmap(np.linspace(0, 1, len(thist)))
+            cmap = self.cmap
+            norm = None
+
+        self.ax_plan.scatter(thisx, thisy, marker='.', c=c, cmap=cmap,
+                             norm=norm, s=30, lw=0)
 
         max_y = -np.inf
         min_y = np.inf
