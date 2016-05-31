@@ -11,6 +11,7 @@ import seaborn as sns
 import os
 import numpy as np
 import scipy
+import scipy.signal
 import sys
 import tqdm
 
@@ -62,20 +63,17 @@ class Storm(object):
 
         results = dict()
         results['DateTime'] = []
-        results['x (m)'] = []
-        results['y (m)'] = []
+        results['x(m)'] = []
+        results['y(m)'] = []
 
-        count = 0
         total = len(self.storm)
 
         if verbose:
-            print('Total Entries: {0}'.format(total))
-            start = datetime.datetime.now()
+            pbar = tqdm.tqdm(total=total)
 
         for i, s in self.storm.iterrows():
             if verbose:
-                print('Converting... {0:0.2f}%'.format(count / total * 100),
-                      end='\r')
+                pbar.update(1)
 
             # Convert to WGS-84
             location = ll.Location(s['lat'], s['lon'])
@@ -113,30 +111,30 @@ class Storm(object):
             x, y, z = ssl[0], ssl[1], ssl[2]
 
             results['DateTime'].append(i)
-            results['x (m)'].append(x)
-            results['y (m)'].append(y)
-
-            count += 1
-
-        if verbose:
-            end = datetime.datetime.now()
-            print('Conversion time: {0}\n'.format(end - start))
+            results['x(m)'].append(x)
+            results['y(m)'].append(y)
 
         # Insert the x result into the DataFrame
-        x_series = pd.Series(results['x (m)'], index=results['DateTime'])
+        x_series = pd.Series(results['x(m)'], index=results['DateTime'])
 
         if x_col is None:
             x_col = len(self.storm.columns)
 
-        self.storm.insert(x_col, 'x (m)', x_series)
+        self.storm.insert(x_col, 'x(m)', x_series)
 
         # Insert the y result into the DataFrame
-        y_series = pd.Series(results['y (m)'], index=results['DateTime'])
+        y_series = pd.Series(results['y(m)'], index=results['DateTime'])
 
         if y_col is None:
             y_col = len(self.storm.columns)
 
-        self.storm.insert(y_col, 'y (m)', y_series)
+        self.storm.insert(y_col, 'y(m)', y_series)
+
+    def get_column_series(self, col):
+        if col in self.storm.columns:
+            return self.storm[col]
+        else:
+            raise KeyError(col)
 
     def __len__(self):
         return len(self.storm)
@@ -177,19 +175,19 @@ class StormLMA(Storm):
         self.nldn_detections = None
 
     @staticmethod
-    def _calculate_histogram(data_series, column):
+    def _calculate_histogram(data_series, column, **kwargs):
         """ Compute the histogram of a Series and return the bin centers. """
 
         # Extract data from DataSeries into a np array
         data = np.array(data_series[column].dropna())
 
         # Calculate histogram of the data and find the bin centers
-        hist, bin_edges = np.histogram(data, bins=1000)
+        hist, bin_edges = np.histogram(data, **kwargs)
         bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
 
         # Return the altitude (bin_center) of the largest value
         # in the histogram
-        return hist, bin_centers
+        return hist, bin_centers, bin_edges
 
     @staticmethod
     def _calculate_histogram_max(data_series, column):
@@ -399,9 +397,12 @@ class StormLMA(Storm):
         print('Correlated detection efficiency: {0}'.format(
             len(self.nldn_detections['flash-number']) / len(numbers)))
 
-    def filter_stations(self, num_stations=6, inplace=True):
+    def copy(self):
+        return StormLMA(self.storm.copy())
+
+    def filtered_stations(self, num_stations=6, inplace=True):
         # Filter data by number of stations.
-        # The default filtering is 6 or more stations.
+        # The default filtereding is 6 or more stations.
 
         storm = self.storm
         storm = storm[storm['#-of-stations-contributed'] >= num_stations]
@@ -411,9 +412,9 @@ class StormLMA(Storm):
         else:
             return storm
 
-    def filter_chi_squared(self, chi_sq=5, inplace=True):
+    def filtered_chi_squared(self, chi_sq=5, inplace=True):
         # Filter data by chi^2 value.
-        # The default filtering is a chi^2 <= 5.
+        # The default filtereding is a chi^2 <= 5.
 
         storm = self.storm
         storm = storm[storm['reduced-chi^2'] <= chi_sq]
@@ -429,8 +430,8 @@ class StormLMA(Storm):
 
         storm = cls._parse_lma_files(files, dates)
         storm = cls(storm)
-        storm.filter_stations(num_stations)
-        storm.filter_chi_squared(chi_sq)
+        storm.filtered_stations(num_stations)
+        storm.filtered_chi_squared(chi_sq)
 
         return storm
 
@@ -585,7 +586,10 @@ class StormLMA(Storm):
                      str(subset['lon'][ind]),
                      str(subset['alt(m)'][ind]),
                      str(subset['reduced-chi^2'][ind]),
+                     'NA',
                      str(subset['P(dBW)'][ind]),
+                     'NA',
+                     str(subset['charge'][ind]),
                      str(subset['mask'][ind])])
 
                 data += '\n'
@@ -594,7 +598,7 @@ class StormLMA(Storm):
 
         # sys.exit(1)
         # Create the LMAPlotter object and run the measure_area() function
-        p = df.LMAPlotter(temp_file)
+        p = df.LMAPlotter(temp_file, charge=True)
 
         # Delete the temporary .dat file
         if os.path.isfile(temp_file):
@@ -1226,24 +1230,118 @@ class StormLMA(Storm):
 
         return fig, ax
 
-    def plot_power_histogram(self, ax=None):
+    def plot_power_histogram(self, ax=None, sep_charges=False, **histargs):
+        """
+        Plot the power histogram. The user can specify to plot
+        a separate histogram for each charge polarity.
+
+        Parameters
+        ----------
+        ax: mpl Axes object, optional
+            Axes object to plot.
+        sep_charges: bool, optional
+            Flag to plot separate histograms for each charge.
+        histargs : object
+            Arguments for the computation of the histogram.
+
+        Returns
+        -------
+        ax: mpl Axes
+            mpl Axes of figure
+
+        """
+
         if ax is not None:
             fig = ax.get_figure()
         else:
             fig = plt.figure()
             ax = fig.add_subplot(111)
 
-        pos, neg, _ = self.get_charge_regions()
+        if sep_charges:
+            # Calculate histogram
+            hist_dict = self.power_histogram(sep_charges=sep_charges,
+                                             **histargs)
 
-        pos_hist, pos_bin = self._calculate_histogram(pos, 'P(dBW)')
-        neg_hist, neg_bin = self._calculate_histogram(neg, 'P(dBW)')
+            # Extract data to plot
+            pos_bin = hist_dict['positive']['bins']
+            pos_hist = hist_dict['positive']['hist']
 
-        ax.plot(pos_bin, pos_hist, '-r', alpha=0.5)
-        ax.plot(neg_bin, neg_hist, '-b', alpha=0.5)
+            neg_bin = hist_dict['negative']['bins']
+            neg_hist = hist_dict['negative']['hist']
+
+            other_bin = hist_dict['other']['bins']
+            other_hist = hist_dict['other']['hist']
+
+            # Plot data
+            ax.plot(pos_bin, pos_hist, '-r', alpha=0.5)
+            ax.plot(neg_bin, neg_hist, '-b', alpha=0.5)
+            ax.plot(other_bin, other_hist, '-g', alpha=0.5)
+
+        else:
+            # Calculate histogram
+            hist_dict = self.power_histogram(sep_charges=sep_charges,
+                                             **histargs)
+
+            # Extract data to plot
+            bins = hist_dict['all']['bins']
+            hist = hist_dict['all']['hist']
+
+            mu = self.storm['P(dBW)'].mean()
+            sigma = self.storm['P(dBW)'].std()
+            gaussian = mpl.mlab.normpdf(bins, mu, sigma)
+            gaussian *= max(hist)
+
+            ax.plot(bins, hist, '-g', alpha=0.5)
+            ax.plot(bins, gaussian, '-k')
+
         ax.set_xlabel('Power (dBW)')
         ax.set_ylabel('Count')
 
         return ax
+
+    def power_histogram(self, sep_charges=False, **histargs):
+        hist_dict = dict()
+
+        if sep_charges:
+            # Get different charge regions
+            pos, neg, other = self.get_charge_regions()
+
+            # Calculate histogram
+            pos_hist, pos_bin, _ = self._calculate_histogram(pos, 'P(dBW)',
+                                                             **histargs)
+            neg_hist, neg_bin, _ = self._calculate_histogram(neg, 'P(dBW)',
+                                                             **histargs)
+            other_hist, other_bin, _ = self._calculate_histogram(other,
+                                                                 'P(dBW)',
+                                                                 **histargs)
+
+            # Remove bins with zero events
+            indices = np.where(pos_hist == 0, [False], [True])
+            pos_hist = pos_hist[indices]
+            pos_bin = pos_bin[indices]
+
+            indices = np.where(neg_hist == 0, [False], [True])
+            neg_hist = neg_hist[indices]
+            neg_bin = neg_bin[indices]
+
+            indices = np.where(other_hist == 0, [False], [True])
+            other_hist = other_hist[indices]
+            other_bin = other_bin[indices]
+
+            hist_dict['positive'] = {'hist': pos_hist, 'bins': pos_bin}
+            hist_dict['negative'] = {'hist': neg_hist, 'bins': neg_bin}
+            hist_dict['other'] = {'hist': other_hist, 'bins': other_bin}
+
+        else:
+            hist, bins, _ = self._calculate_histogram(self.storm, 'P(dBW)',
+                                                      **histargs)
+            indices = np.where(hist == 0, [False], [True])
+            hist = hist[indices]
+            bins = bins[indices]
+
+            hist_dict['all'] = {'hist': hist, 'bins': bins}
+
+        return hist_dict
 
     def print_storm_summary(self, charge=None, flash_types=None):
         """ Print the summary of the storm. """
@@ -1848,10 +1946,10 @@ class StormODS(Storm):
                     flash = StormLMA(sources.iloc[0:20])
                     flash.convert_latlon_to_m(3, 4)
 
-                    flash = flash.storm[flash.storm['x (m)'] > xlims[i][0]]
-                    flash = flash[flash['x (m)'] < xlims[i][1]]
-                    flash = flash[flash['y (m)'] > ylims[i][0]]
-                    flash = flash[flash['y (m)'] < ylims[i][1]]
+                    flash = flash.storm[flash.storm['x(m)'] > xlims[i][0]]
+                    flash = flash[flash['x(m)'] < xlims[i][1]]
+                    flash = flash[flash['y(m)'] > ylims[i][0]]
+                    flash = flash[flash['y(m)'] < ylims[i][1]]
 
                     if len(flash) > min_sources:
                         flash_count += 1
@@ -1938,7 +2036,7 @@ class Analysis(object):
 
         """
 
-        if 'x (m)' not in self.lma.storm.columns:
+        if 'x(m)' not in self.lma.storm.columns:
             self.lma.convert_latlon_to_m()
 
         # Select all sources with assigned charge
@@ -1958,8 +2056,8 @@ class Analysis(object):
             stations = 6
             chi = 5
 
-            storm = StormLMA(self.lma.filter_stations(stations, inplace=False))
-            storm.filter_chi_squared(chi, inplace=True)
+            storm = StormLMA(self.lma.filtered_stations(stations, inplace=False))
+            storm.filtered_chi_squared(chi, inplace=True)
 
             number = unique[index]
             # print(number, type(number))
@@ -1973,8 +2071,8 @@ class Analysis(object):
             flash = storm.get_sources_from_flash_number(number)
             flash = flash[flash['charge'] != 0]
 
-            x = flash['x (m)'].get_values()
-            y = flash['y (m)'].get_values()
+            x = flash['x(m)'].get_values()
+            y = flash['y(m)'].get_values()
 
             f = np.vstack((x, y)).T
 
@@ -1988,14 +2086,14 @@ class Analysis(object):
             stations = 6
             chi = 1
 
-            storm = StormLMA(self.lma.filter_stations(stations, inplace=False))
-            storm.filter_chi_squared(chi, inplace=True)
+            storm = StormLMA(self.lma.filtered_stations(stations, inplace=False))
+            storm.filtered_chi_squared(chi, inplace=True)
 
             flash = storm.get_sources_from_flash_number(number)
             flash = flash[flash['charge'] != 0]
 
-            x = flash['x (m)'].get_values()
-            y = flash['y (m)'].get_values()
+            x = flash['x(m)'].get_values()
+            y = flash['y(m)'].get_values()
 
             f = np.vstack((x, y)).T
 
@@ -2009,14 +2107,14 @@ class Analysis(object):
             # stations = 7
             # chi = 5
             #
-            # storm = StormLMA(self.lma.filter_stations(stations, inplace=False))
-            # storm.filter_chi_squared(chi, inplace=True)
+            # storm = StormLMA(self.lma.filtered_stations(stations, inplace=False))
+            # storm.filtered_chi_squared(chi, inplace=True)
             #
             # flash = storm.get_sources_from_flash_number(number)
             # flash = flash[flash['charge'] != 0]
             #
-            # x = flash['x (m)'].get_values()
-            # y = flash['y (m)'].get_values()
+            # x = flash['x(m)'].get_values()
+            # y = flash['y(m)'].get_values()
             #
             # f = np.vstack((x, y)).T
             #
@@ -2030,14 +2128,14 @@ class Analysis(object):
             # stations = 7
             # chi = 1
             #
-            # storm = StormLMA(self.lma.filter_stations(stations, inplace=False))
-            # storm.filter_chi_squared(chi, inplace=True)
+            # storm = StormLMA(self.lma.filtered_stations(stations, inplace=False))
+            # storm.filtered_chi_squared(chi, inplace=True)
             #
             # flash = storm.get_sources_from_flash_number(number)
             # flash = flash[flash['charge'] != 0]
             #
-            # x = flash['x (m)'].get_values()
-            # y = flash['y (m)'].get_values()
+            # x = flash['x(m)'].get_values()
+            # y = flash['y(m)'].get_values()
             #
             # f = np.vstack((x, y)).T
             #
@@ -2092,8 +2190,8 @@ class Analysis(object):
             stations = 6
             chi = 1
 
-            storm = StormLMA(self.lma.filter_stations(stations, inplace=False))
-            storm.filter_chi_squared(chi, inplace=True)
+            storm = StormLMA(self.lma.filtered_stations(stations, inplace=False))
+            storm.filtered_chi_squared(chi, inplace=True)
 
             number = unique[index]
 
@@ -2470,3 +2568,85 @@ class Cell(object):
 
     def set_ods(self, ods):
         self.ods = ods
+
+
+class PostXLMAAnalysis(object):
+    """
+    A class structure to perform a similar analysis done when generating
+    the .ods files. The functions in this class will allows the user
+    to extract the same information in the .ods files but using the actual
+    LMA data for improved accuracy.
+
+    Parameters:
+    -----------
+        storm_lma: StormLMA object
+            Data exported from the xlma software after doing charge analysis.
+
+    Attributes:
+    -----------
+        lma: StormLMA object
+            Data to be processed.
+        processed_data: Pandas DataFrame
+            Container for the processed data.
+
+    """
+
+    def __init__(self, storm_lma):
+        """ Initialize the object. """
+
+        self.lma = storm_lma
+        self.processed_data = None
+
+        self.lma.convert_latlon_to_m(verbose=True)
+
+    def set_flash_types(self):
+        numbers = self.lma.storm['flash-number'].unique()
+
+        for number in numbers:
+            flash = StormLMA(self.lma.get_sources_from_flash_number(number))
+            if len(flash.storm) < 75:
+                continue
+
+            fig_plan = plt.figure()
+            ax_plan = fig_plan.add_subplot(211)
+
+            fig_alt_t = plt.figure()
+            ax_alt_t = fig_alt_t.add_subplot(212)
+            
+            # Plot graphs
+            p = flash.get_flash_plotter_from_number(number)
+            p.set_coloring('charge')
+            p.plot_plan(ax=ax_plan)
+            p.plot_alt_t(ax=ax_alt_t)
+            plt.show()
+
+            # Get all limits from both plots
+            xlims = p.ax_plan.get_xlim()
+            ylims = p.ax_plan.get_ylim()
+            tlims = p.ax_alt_t.get_xlim()
+            zlims = np.array(p.ax_alt_t.get_ylim())*1e3
+            
+            # Filter sources in flash
+            filtered = flash.storm[flash.storm['x(m)'] >= xlims[0]]
+            filtered = filtered[filtered['x(m)'] <= xlims[-1]]
+            filtered = filtered[filtered['y(m)'] >= ylims[0]]
+            filtered = filtered[filtered['y(m)'] <= ylims[-1]]
+            filtered = filtered[filtered['alt(m)'] >= zlims[0]]
+            filtered = filtered[filtered['alt(m)'] <= zlims[-1]]
+
+            t1 = datetime.datetime.strftime(mpl.dates.num2date(tlims[0]),
+                                            '%Y-%m-%d %H:%M:%S.%f')
+            t2 = datetime.datetime.strftime(mpl.dates.num2date(tlims[-1]),
+                                            '%Y-%m-%d %H:%M:%S.%f')
+            filtered = filtered.loc[t1:t2]
+
+            flash = StormLMA(filtered)
+
+            print(flash.storm)
+
+
+
+
+
+
+
