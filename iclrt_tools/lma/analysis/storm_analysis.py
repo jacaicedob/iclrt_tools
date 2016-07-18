@@ -206,7 +206,7 @@ class StormLMA(Storm):
 
     @staticmethod
     def _parse_lma_files(files, dates):
-        """ Parse the LMA .dat files to generate the DataFrame. """
+        """ Parse the LMA .csv files to generate the DataFrame. """
 
         pds = []
 
@@ -760,6 +760,59 @@ class StormLMA(Storm):
             os.remove(temp_file)
 
         return p
+
+    def get_flash_number_count(self):
+        """ Return the count for all flash numbers in the file. """
+
+        grouped = self.storm.groupby(['flash-number'])
+        flash_number_count = grouped.size().reset_index()
+        flash_number_count.columns = ['flash-number', 'count']
+
+        return flash_number_count
+
+    def get_flashes_by_size(self, size='big'):
+        """
+        Return a DataFrame with the sources corresponding to the flash
+        size as defined by the xlma sorting algorithm.
+
+        The choices are:
+            'big' : 75 or more sources
+            'medium': 11 - 74 sources
+
+        Parameters
+        ----------
+        size: str
+            String corresponding to the desired flash size.
+
+        Returns
+        -------
+        df: DataFrame
+            DataFrame with the sources that correspond to flashes of the
+            specified size.
+
+        """
+
+        # Count the number of sources for each flash-number
+        flash_number_count = self.get_flash_number_count()
+
+        # Sort the flash numbers according to the specified size
+        if size == 'big':
+            flash_numbers = flash_number_count[flash_number_count['count'] >=
+                                               75]
+        else:  # elif size == 'medium':
+            flash_numbers = flash_number_count[flash_number_count['count'] >=
+                                               11]
+            flash_numbers = flash_numbers[flash_numbers['count'] < 75]
+
+        # Get all sources for the specified size
+        pds = []
+        for fn in flash_numbers['flash-number']:
+            pds.append(self.storm[self.storm['flash-number'] == fn])
+
+        flashes = pd.concat(pds, ignore_index=True)
+
+        # Return final DataFrame
+        return flashes
 
     def measure_flash_area(self, file_name=None):
         """
@@ -1371,7 +1424,25 @@ class StormLMA(Storm):
         print(storm.describe())
         print('\n')
 
+    def save_flashes_by_size(self, size, file_name):
+        """ Save the DataFrame to both CSV and Pickle. """
+
+        data_frame = self.get_flashes_by_size(size)
+        data_frame.to_pickle(file_name)
+        data_frame.to_csv(file_name)#, index=False)
+
+    def save_flash_number_count(self, file_name):
+        """ Save the flash number count DataFrame to both CSV and Pickle. """
+        data_frame = self.get_flash_number_count()
+        data_frame.to_pickle(file_name)
+        data_frame.to_csv(file_name, index=False)
+
+    def save_to_csv(self, file_name):
+        """ Save entire StormLMA object to a CSV. """
+        self.storm.to_csv(file_name, index=False)
+
     def save_to_pickle(self, file_name):
+        """ Save entire StormLMA object to a pickle. """
         with open(file_name, 'wb') as f:
             pickle.dump(self.__dict__, f)
 
