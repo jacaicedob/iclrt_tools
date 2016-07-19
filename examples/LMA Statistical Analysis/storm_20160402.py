@@ -4,7 +4,7 @@ import iclrt_tools.lma.analysis.storm_analysis as st
 import datetime
 import os
 
-# File names for first and second part of LMA storm analysis
+# File names containing all data
 path = '/home/jaime/Documents/ResearchTopics/Publications/' \
        'LightningEvolution/StatisticalAnalysis/2016-04-02'
 
@@ -17,6 +17,7 @@ csv_big_source_count = path + '/Pandas/Storm_20160402_pandas_big_source_count' \
 
 dates = ['04/02/2016']
 
+# Load or Initialize then load all the data from the files above.
 if not(os.path.isfile(csv_all_flashes)):
     # Read in the individual files and save them out to a CSV file
     xlma_files = [path + '/xlma/ChargeAnalysis_20160402_0930-exported.csv',
@@ -68,3 +69,5 @@ if not(os.path.isfile(csv_all_source_count)):
 if not(os.path.isfile(csv_big_source_count)):
     print("Saving big flash number counts to CSV...")
     storm_lma_big.save_flash_number_count(csv_big_source_count)
+
+

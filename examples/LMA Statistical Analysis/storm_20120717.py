@@ -4,7 +4,7 @@ import iclrt_tools.lma.analysis.storm_analysis as st
 import datetime
 import os
 
-# File names for first and second part of LMA storm analysis
+# File names containing all data
 path = '/home/jaime/Documents/ResearchTopics/Publications/' \
        'LightningEvolution/StatisticalAnalysis/2012-07-17'
 
@@ -15,8 +15,12 @@ csv_big_flashes = path + '/Pandas/Storm_20120717_pandas_big.csv'
 csv_big_source_count = path + '/Pandas/Storm_20120717_pandas_big_source_count' \
                               '.csv'
 
+ods_file = [path + '/ods/Cell1 Analysis 07172012.csv',
+            path + '/ods/Cell2 Analysis 07172012.csv']
+
 dates = ['07/17/2012']
 
+# Load or Initialize then load all the data from the files above.
 if not(os.path.isfile(csv_all_flashes)):
     # Read in the individual files and save them out to a CSV file
     xlma_files = [path + '/xlma/ChargeAnalysis_20120717_1900.exported.csv',
@@ -66,6 +70,10 @@ if not(os.path.isfile(csv_all_source_count)):
 if not(os.path.isfile(csv_big_source_count)):
     print("Saving big flash number counts to CSV...")
     storm_lma_big.save_flash_number_count(csv_big_source_count)
+
+
+# Correlate the ODS with the LMA
+storm_lma
 
 # # File names and analysis flags for .ods files
 # sort_flashes = False
