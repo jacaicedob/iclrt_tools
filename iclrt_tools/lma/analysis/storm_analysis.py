@@ -1429,7 +1429,7 @@ class StormLMA(Storm):
 
         data_frame = self.get_flashes_by_size(size)
         data_frame.to_pickle(file_name)
-        data_frame.to_csv(file_name)#, index=False)
+        data_frame.to_csv(file_name, index=False)
 
     def save_flash_number_count(self, file_name):
         """ Save the flash number count DataFrame to both CSV and Pickle. """
@@ -1489,11 +1489,14 @@ class StormODS(Storm):
                                                unit='ms')
 
         # Remove unnecessary columns
-        _ = storm.pop('Date')
-        _ = storm.pop('Time')
-        _ = storm.pop('Flash')
-        _ = storm.pop('Comments')
-        _ = storm.pop('Duration (ms)')
+        # _ = storm.pop('Date')
+        # _ = storm.pop('Time')
+        # _ = storm.pop('Comments')
+        # _ = storm.pop('Duration (ms)')
+        try:
+            _ = storm.pop('Flash')
+        except KeyError:
+            pass
 
         storm['Initiation Height (km)'] = pd.to_numeric(
             storm['Initiation Height (km)'], errors='coerce')
@@ -1865,8 +1868,14 @@ class StormODS(Storm):
                 elif len(number_list) > 1:
                     multiple += 1
                     number_list = tuple(number_list)
+
+                    ### Comment out if you plan on not ignoring these!!!
+                    number_list = np.nan
+                    ###
+
                 else:
                     empty += 1
+                    number_list = np.nan
 
                 analyzed_flashes['flash-number'].append(number_list)
                 analyzed_flashes['DateTime'].append(i)
