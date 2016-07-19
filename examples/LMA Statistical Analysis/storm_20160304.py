@@ -34,27 +34,30 @@ if not(os.path.isfile(csv_all_flashes)):
     print("Saving xlma all to CSV...")
     storm_lma.save_to_csv(csv_all_flashes)
 
-else:
-    print("Loading all flashes from CSV...")
-    storm_lma = st.StormLMA.from_lma_files([csv_all_flashes], dates)
+if not (os.path.isfile(csv_big_flashes)):
+    if storm_lma is None:
+        print("Loading all flashes from CSV...")
+        storm_lma = st.StormLMA.from_lma_files([csv_all_flashes], dates)
 
-if not(os.path.isfile(csv_big_flashes)):
     print("Saving big flashes to CSV...")
     storm_lma.save_flashes_by_size('big', csv_big_flashes)
-
     storm_lma_big = st.StormLMA.from_lma_files([csv_big_flashes],
                                                dates)
 
-else:
-    print("Loading the big flashes from CSV...")
-    storm_lma_big = st.StormLMA.from_lma_files([csv_big_flashes],
-                                               dates)
+if not (os.path.isfile(csv_all_source_count)):
+    if storm_lma is None:
+        print("Loading all flashes from CSV...")
+        storm_lma = st.StormLMA.from_lma_files([csv_all_flashes], dates)
 
-if not(os.path.isfile(csv_all_source_count)):
     print("Saving all flash number counts to CSV...")
     storm_lma.save_flash_number_count(csv_all_source_count)
 
-if not(os.path.isfile(csv_big_source_count)):
+if not (os.path.isfile(csv_big_source_count)):
+    if storm_lma_big is None:
+        print("Loading the big flashes from CSV...")
+        storm_lma_big = st.StormLMA.from_lma_files([csv_big_flashes],
+                                                   dates)
+
     print("Saving big flash number counts to CSV...")
     storm_lma_big.save_flash_number_count(csv_big_source_count)
 

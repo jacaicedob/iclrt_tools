@@ -21,6 +21,9 @@ ods_file = [path + '/ods/Cell1 Analysis 07172012.csv',
 dates = ['07/17/2012']
 
 # Load or Initialize then load all the data from the files above.
+storm_lma = None
+storm_lma_big = None
+
 if not(os.path.isfile(csv_all_flashes)):
     # Read in the individual files and save them out to a CSV file
     xlma_files = [path + '/xlma/ChargeAnalysis_20120717_1900.exported.csv',
@@ -47,33 +50,36 @@ if not(os.path.isfile(csv_all_flashes)):
     print("Saving xlma all to CSV...")
     storm_lma.save_to_csv(csv_all_flashes)
 
-else:
-    print("Loading all flashes from CSV...")
-    storm_lma = st.StormLMA.from_lma_files([csv_all_flashes], dates)
-
 if not(os.path.isfile(csv_big_flashes)):
+    if storm_lma is None:
+        print("Loading all flashes from CSV...")
+        storm_lma = st.StormLMA.from_lma_files([csv_all_flashes], dates)
+
     print("Saving big flashes to CSV...")
     storm_lma.save_flashes_by_size('big', csv_big_flashes)
 
     storm_lma_big = st.StormLMA.from_lma_files([csv_big_flashes],
                                                dates)
 
-else:
-    print("Loading the big flashes from CSV...")
-    storm_lma_big = st.StormLMA.from_lma_files([csv_big_flashes],
-                                               dates)
-
 if not(os.path.isfile(csv_all_source_count)):
+    if storm_lma is None:
+        print("Loading all flashes from CSV...")
+        storm_lma = st.StormLMA.from_lma_files([csv_all_flashes], dates)
+
     print("Saving all flash number counts to CSV...")
     storm_lma.save_flash_number_count(csv_all_source_count)
 
 if not(os.path.isfile(csv_big_source_count)):
+    if storm_lma_big is None:
+        print("Loading the big flashes from CSV...")
+        storm_lma_big = st.StormLMA.from_lma_files([csv_big_flashes],
+                                               dates)
+
     print("Saving big flash number counts to CSV...")
     storm_lma_big.save_flash_number_count(csv_big_source_count)
 
 
-# Correlate the ODS with the LMA
-storm_lma
+
 
 # # File names and analysis flags for .ods files
 # sort_flashes = False
