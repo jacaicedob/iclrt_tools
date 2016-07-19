@@ -18,6 +18,12 @@ csv_big_flashes_2 = path + '/Pandas/Storm_20150828_pandas_big.csv'
 csv_big_source_count = path + '/Pandas/Storm_20150827_pandas_big_source_count' \
                               '.csv'
 
+# Load or Initialize then load all the data from the files above.
+storm_lma = None
+storm_lma_big = None
+storm_lma_2 = None
+storm_lma_big_2 = None
+
 if not(os.path.isfile(csv_all_flashes)):
     # Read in the individual files and save them out to a CSV file
     xlma_files = [path + '/xlma/ChargeAnalysis-1of2-exported.csv']

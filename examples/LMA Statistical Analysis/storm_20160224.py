@@ -17,6 +17,10 @@ csv_big_source_count = path + '/Pandas/Storm_20160224_pandas_big_source_count' \
 
 dates = ['02/24/2016']
 
+# Load or Initialize then load all the data from the files above.
+storm_lma = None
+storm_lma_big = None
+
 if not(os.path.isfile(csv_all_flashes)):
     # Read in the individual files and save them out to a CSV file
     xlma_files = [path + '/xlma/ChargeAnalysis_20160224_1120-exported.csv',
