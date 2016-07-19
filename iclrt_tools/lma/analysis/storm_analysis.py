@@ -266,6 +266,7 @@ class StormLMA(Storm):
         # _ = storm.pop('reduced-chi^2')
         # _ = storm.pop('time(UT-sec-of-day)')
         storm.set_index('DateTime', inplace=True)
+        storm.sort_index(inplace=True)
         return storm
 
     def analyze_pos_neg_charge(self):
@@ -322,7 +323,7 @@ class StormLMA(Storm):
         # Read in file
         nldn = pd.read_csv(nldn_file, sep=' ',
                            names=['Date', 'Time', 'lat', 'lon', 'kA', 'Type',
-                                  'Mult', 'Dummy', 'Dummy2'])
+                                  'Mult', 'Dummy'])
 
         # Convert dates to datetime and set the index of the DataFrame
         nldn.insert(0, 'DateTime',
@@ -337,7 +338,6 @@ class StormLMA(Storm):
         _ = nldn.pop('Date')
         _ = nldn.pop('Time')
         _ = nldn.pop('Dummy')
-        _ = nldn.pop('Dummy2')
 
         # Limit the NLDN times to the storm times
         start_ind = self.storm.index.min()
@@ -1665,6 +1665,127 @@ class StormODS(Storm):
         else:
             return temp_storm
 
+    def calculate_nldn_efficiency(self, nldn_file, verbose=False):
+        """
+        Calculate the efficiency of NLDN by correlating the NLDN detected
+        flashes with the ODS detected flashes. Save the result as a
+        class attribute self.nldn_detections.
+
+        Parameters:
+        -----------
+        nldn_file: str
+            File path to the NLDN file.
+
+        """
+
+        # Read in file
+        nldn = pd.read_csv(nldn_file, sep=' ',
+                           names=['Date', 'Time', 'lat', 'lon', 'kA', 'Type',
+                                  'Mult', 'Dummy'])
+
+        # Convert dates to datetime and set the index of the DataFrame
+        nldn.insert(0, 'DateTime',
+                    ['{0} {1}'.format(nldn['Date'][i], nldn['Time'][i])
+                     for i in
+                     range(len(nldn))])
+        nldn['DateTime'] = pd.to_datetime(nldn['DateTime'],
+                                          format='%m/%d/%y %H:%M:%S.%f')
+        nldn.set_index('DateTime', inplace=True)
+
+        # Remove unwanted columns
+        _ = nldn.pop('Date')
+        _ = nldn.pop('Time')
+        _ = nldn.pop('Dummy')
+
+        # Limit the NLDN times to the storm times
+        start_ind = self.storm.index.min() - datetime.timedelta(microseconds=5E5)  # -0.5 sec
+        end_ind = self.storm.index.max() + datetime.timedelta(microseconds=5E5)  # + 0.5 sec
+        self.nldn = nldn.loc[start_ind:end_ind]
+        self.nldn.sort_index(inplace=True)
+
+        # Setup the container for the results data
+        nldn_detections = dict()
+        nldn_detections['DateTime'] = []
+        nldn_detections['ODS_time'] = []
+        nldn_detections['ODS_type'] = []
+
+        # Setup counters for number of flashes processed (count), number of
+        # flashes with no correlation (empty), and number of flashes with
+        # multiple flash numbers (multiple)
+        count = 0
+        multiple = 0
+        empty = 0
+
+        if verbose:
+            total = len(self.storm.index)
+            print('Total Iterations: {0}'.format(total))
+            pbar = tqdm.tqdm(total=total)
+
+        dt = datetime.timedelta(microseconds=1E5)  # 0.1 seconds
+        for i in self.storm.index:
+            t1 = i - dt
+            t2 = i + dt
+
+            nldn_events = self.nldn.loc[t1:t2].index.unique()
+
+            if verbose:
+                pbar.update(1)
+
+            if nldn_events is not None:
+                if len(nldn_events) == 1:
+                    nldn_events = nldn_events[0]
+                    nldn_detections['ODS_time'].append(i)
+                    nldn_detections['ODS_type'].append(self.storm.loc[i]['Type'])
+                    nldn_detections['DateTime'].append(nldn_events)
+                    count += 1
+                elif len(nldn_events) > 1:
+                    multiple += 1
+                    for e in nldn_events:
+                        count += 1
+                        nldn_detections['ODS_time'].append(i)
+                        nldn_detections['ODS_type'].append(self.storm.loc[i]['Type'])
+                        nldn_detections['DateTime'].append(e)
+                else:
+                    empty += 1
+                    nldn_detections['ODS_time'].append(i)
+                    nldn_detections['ODS_type'].append(self.storm.loc[i]['Type'])
+                    nldn_detections['DateTime'].append(nldn_events)
+
+        if verbose:
+            pbar.close()
+            print("Summary: ")
+            print("  Total Detections: {0}\n  Empty: {1}\n"
+                  "  Multiple: {2}\n  Total Entries: {3}\n"
+                  "  Efficiency: {4:0.2f}".format(count, empty, multiple, total, count/total))
+
+        # Make a Series from the ODS times with the time as the index
+        series = pd.Series(nldn_detections['ODS_time'],
+                           index=nldn_detections['DateTime'])
+
+        # Remove the duplicate indices (if any)
+        series = series.reset_index(inplace=False)
+        series.drop_duplicates('index', keep='first', inplace=True)
+        series.set_index('index', inplace=True)
+        series.index.rename('DateTime', inplace=True)
+        series.columns = ['ODS_time']
+
+        # Insert series into data_frame
+        self.nldn.loc[:, 'ODS_time'] = series
+
+        # Make a Series from the ODS types with the time as the index
+        series = pd.Series(nldn_detections['ODS_type'],
+                           index=nldn_detections['DateTime'])
+
+        # Remove the duplicate indices (if any)
+        series = series.reset_index(inplace=False)
+        series.drop_duplicates('index', keep='first', inplace=True)
+        series.set_index('index', inplace=True)
+        series.index.rename('DateTime', inplace=True)
+        series.columns = ['ODS_type']
+
+        # Insert series into data_frame
+        self.nldn.loc[:, 'ODS_type'] = series
+
     @classmethod
     def from_ods_file(cls, file):
         """ Initialize the object from files and dates """
@@ -1696,6 +1817,8 @@ class StormODS(Storm):
                 flash-number column.
 
         """
+        # Define the time delta around the ODS timestamps
+        dt = datetime.timedelta(microseconds=40000)  # 0.04 seconds
 
         # Limit the storm_ods times to the storm times
         start_ind = storm_lma.storm.index.min()
@@ -1714,53 +1837,45 @@ class StormODS(Storm):
         analyzed_flashes['flash-number'] = []
         analyzed_flashes['DateTime'] = []
 
-        # Get the flash numbers for the flashes with assigned charges
-        temp = storm_lma.storm[storm_lma.storm['charge'] != 0]
-        numbers = temp['flash-number'].unique()
-
-        # Start the computation
-        # count = 1
-        total = len(data_frame.index) * len(numbers)
+        # Setup counters for number of flashes processed (count), number of
+        # flashes with no correlation (empty), and number of flashes with
+        # multiple flash numbers (multiple)
+        count = 0
+        empty = 0
+        multiple = 0
 
         if verbose:
+            total = len(data_frame.index)
             print('Total Iterations: {0}'.format(total))
             pbar = tqdm.tqdm(total=total)
-            # start = datetime.datetime.now()
 
         for i in data_frame.index:
-            # # Ignore the times in the file that are outside the range of
-            # # the analyzed storm.
-            # if not (self.storm.index.min() <= i <= self.storm.index.max()):
-            #     continue
+            t1 = i - dt
+            t2 = i + dt
 
-            number_list = []
-            for flash_number in numbers:
-                flash = storm_lma.storm[storm_lma.storm['flash-number'] ==
-                                        flash_number]
-                dt = datetime.timedelta(microseconds=30000)  # 0.03 sec
+            number_list = storm_lma.storm.loc[t1:t2]['flash-number'].unique()
+            count += 1
 
-                if flash.index.min() - dt < i < flash.index.max() + dt:
-                    number_list.append(flash_number)
+            if verbose:
+                pbar.update(1)
 
-                if verbose:
-                    # count += 1
-                    pbar.update(1)
-                    # print('Analyzing... {0:0.2f}%'.format(count / total * 100),
-                    #       end='\r')
-
-            if number_list:
+            if number_list is not None:
                 if len(number_list) == 1:
                     number_list = number_list[0]
-                else:
+                elif len(number_list) > 1:
+                    multiple += 1
                     number_list = tuple(number_list)
+                else:
+                    empty += 1
 
                 analyzed_flashes['flash-number'].append(number_list)
                 analyzed_flashes['DateTime'].append(i)
 
         if verbose:
-            # end = datetime.datetime.now()
             pbar.close()
-            # print('Analysis time: {0}\n'.format(end - start))
+            print("Summary: ")
+            print("  Total: {0}\n  Empty: {1}\n"
+                  "  Multiple: {2}".format(count, empty, multiple))
 
         # Make a Series from the flash-numbers with the time as the index
         series = pd.Series(analyzed_flashes['flash-number'],
