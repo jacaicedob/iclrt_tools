@@ -15,6 +15,9 @@ csv_big_flashes = path + '/Pandas/Storm_20160325_pandas_big.csv'
 csv_big_source_count = path + '/Pandas/Storm_20160325_pandas_big_source_count' \
                               '.csv'
 
+ods_file = [path + '/ods/Cell 1 Analysis 03252016.csv',
+            path + '/ods/Cell 2 Analysis 03252016.csv']
+
 dates = ['03/25/2016']
 
 # Load or Initialize then load all the data from the files above.
@@ -72,3 +75,8 @@ if not (os.path.isfile(csv_big_source_count)):
 
     print("Saving big flash number counts to CSV...")
     storm_lma_big.save_flash_number_count(csv_big_source_count)
+
+# Read in the information
+storm_lma = st.StormLMA.from_lma_files([csv_big_flashes], dates)
+storm_ods = st.StormODS.from_ods_file(ods_file[0])
+storm_ods_2 = st.StormODS.from_ods_file(ods_file[1])
