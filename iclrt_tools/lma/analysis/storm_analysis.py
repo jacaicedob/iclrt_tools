@@ -1446,6 +1446,119 @@ class StormLMA(Storm):
         with open(file_name, 'wb') as f:
             pickle.dump(self.__dict__, f)
 
+    def sort_flashes_into_cells(self, times, xlims, ylims, cell_names,
+                                inplace=True):
+
+        """
+        Sort the analyzed flashes in the ODS files by cells using the LMA
+        sources from the LMA exported file into defined cells. This method
+        can only be called on an ODS storm.
+
+            Parameters:
+            -----------
+                times: list
+                    List of times for which the limits and name of each cell
+                    is defined.
+                xlims: list
+                    List of tuples containing the limits in the x-direction of
+                    each cell at each time.
+                ylims: list
+                    List of tuples containing the limits in the y-direction of
+                    each cell at each time.
+                cell_names: list
+                    List of names for each cell.
+                inplace: bool (optional)
+                    Boolean to apply the results to the current object
+
+        """
+        # Remove all the entries that are Nan and sort the indices
+        storm = self.storm.dropna(subset=['flash-number'])
+        storm.sort_index(inplace=True)
+        storm.convert_latlon_to_m(verbose=True)
+
+        # If xlims, ylims, or cell_names is a constant, duplicate that value
+        # so that the length of the lists are the same, using the times list
+        # as the base.
+
+        if type(xlims[0]) != tuple:
+            if type(xlims[0]) != list:
+                temp_x1 = xlims[0]
+                temp_x2 = xlims[1]
+                xlims = []
+
+                for i in range(len(times)):
+                    xlims.append((temp_x1, temp_x2))
+
+        if type(ylims[0]) != tuple:
+            if type(ylims[0]) != list:
+                temp_y1 = ylims[0]
+                temp_y2 = ylims[1]
+                ylims = []
+
+                for i in range(len(times)):
+                    ylims.append((temp_y1, temp_y2))
+
+        if type(cell_names[0]) == str:
+            temp_name = cell_names[0]
+            cell_names = []
+
+            for i in range(len(times)):
+                cell_names.append(temp_name)
+
+        # Start loop
+        results = dict()
+        results['DateTime'] = []
+        results['Cell'] = []
+        flash_count = 0
+
+        for i in range(len(times) - 1):
+            print('Processing: {0} -- {1} UTC.'.format(times[i], times[i+1]))
+            t_start = times[i]
+            t_end = times[i+1]
+
+            if t_start < storm.index.min():
+                t_start = storm.index.min()
+            if t_end > storm.index.max():
+                t_end = storm.index.max()
+
+            temp = storm.loc[t_start:t_end]
+
+            for index, row in temp.iterrows():
+                try:
+                    if xlims[i][0] < storm['x(m)'] < xlims[i][1]:
+                        if ylims[i][0] < storm['y(m)'] < ylims[i][1]:
+                            flash_count += 1
+                            results['DateTime'].append(index)
+                            results['Cell'].append(cell_names[i])
+
+                    # else:
+                    #     results['DateTime'].append(index)
+                    #     results['Cell'].append(pd.np.nan)
+
+                except IndexError:
+                    results['DateTime'].append(index)
+                    results['Cell'].append(pd.np.nan)
+
+            print('  Flashes found: {0}'.format(flash_count))
+
+        print('\nDone!')
+        results = pd.Series(results['Cell'], index=results['DateTime'],
+                            name='Cell')
+
+        # Remove duplicate indices
+        results = results.reset_index()
+        results.sort_values(by='Cell', inplace=True)
+        results.drop_duplicates(subset='index', inplace=True)
+        results.set_index('index', inplace=True)
+        results.sort_index(inplace=True)
+
+        if inplace:
+            self.storm.loc[:, 'Cell'] = results
+        else:
+            temp = self.storm.copy()
+            temp.loc[:, 'Cell'] = results
+            return temp
+
 
 class StormODS(Storm):
     """
@@ -1821,7 +1934,7 @@ class StormODS(Storm):
 
         """
         # Define the time delta around the ODS timestamps
-        dt = datetime.timedelta(microseconds=40000)  # 0.04 seconds
+        dt = datetime.timedelta(microseconds=2e4)  # 20 msec
 
         # Limit the storm_ods times to the storm times
         start_ind = storm_lma.storm.index.min()
@@ -2065,21 +2178,12 @@ class StormODS(Storm):
             print('Getting analyzed flash numbers:')
             self.storm = self.get_analyzed_flash_numbers(storm_lma,
                                                          verbose=True)
-            self.save_to_pickle('./flash_numbers.p')
 
         # Remove all the entries that are Nan and sort the indices
         storm = self.storm.dropna(subset=['flash-number'])
         storm.sort_index(inplace=True)
 
-        # # Convert the times list into datetime
-        # # This assumes only one date per .ods file
-        # s = '{0}/{1}/{2}'.format(storm.index[0].month, storm.index[0].day,
-        #                          storm.index[0].year)
-        # for i in range(len(times)):
-        #     times[i] = datetime.datetime.strptime(s + ' ' + times[i],
-        #                                           '%m/%d/%Y %H%M')
-
-        # If xlimss, ylims, or cell_names is a constant, duplicate that value
+        # If xlims, ylims, or cell_names is a constant, duplicate that value
         # so that the length of the lists are the same, using the times list
         # as the base.
 
