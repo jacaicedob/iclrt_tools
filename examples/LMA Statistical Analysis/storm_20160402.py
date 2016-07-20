@@ -81,7 +81,8 @@ if not (os.path.isfile(csv_big_source_count)):
     print("Saving big flash number counts to CSV...")
     storm_lma_big.save_flash_number_count(csv_big_source_count)
 
-if not (os.path.isfile(lma_csv_big_matched_flashes)) or not (os.path.isfile(ods_csv_big_matched_flashes)):
+if not (os.path.isfile(lma_csv_big_matched_flashes)) or \
+   not (os.path.isfile(ods_csv_big_matched_flashes)):
     print("Loading the big flashes from CSV...")
     # Read in the information
     storm_lma = st.StormLMA.from_lma_files([csv_big_flashes], dates)
