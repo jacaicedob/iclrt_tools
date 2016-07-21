@@ -31,6 +31,149 @@ dates = ['03/04/2016']
 storm_lma = None
 storm_lma_big = None
 
+# Define Cell 1
+cell_1_times = [datetime.datetime(2016, 3, 4, 5, 39, 0),
+                datetime.datetime(2016, 3, 4, 5, 44, 0),
+                datetime.datetime(2016, 3, 4, 5, 50, 0),
+                datetime.datetime(2016, 3, 4, 5, 55, 0),
+                datetime.datetime(2016, 3, 4, 5, 55, 0),
+                datetime.datetime(2016, 3, 4, 6, 1, 0),
+                datetime.datetime(2016, 3, 4, 6, 1, 0),
+                datetime.datetime(2016, 3, 4, 6, 7, 0),
+                datetime.datetime(2016, 3, 4, 6, 7, 0),
+                datetime.datetime(2016, 3, 4, 6, 12, 0),
+                datetime.datetime(2016, 3, 4, 6, 12, 0),
+                datetime.datetime(2016, 3, 4, 6, 18, 0),
+                datetime.datetime(2016, 3, 4, 6, 28, 0),
+                datetime.datetime(2016, 3, 4, 6, 23, 0),
+                datetime.datetime(2016, 3, 4, 6, 28, 0),
+                datetime.datetime(2016, 3, 4, 6, 34, 0),
+                datetime.datetime(2016, 3, 4, 6, 39, 0),
+                datetime.datetime(2016, 3, 4, 6, 45, 0)]
+
+
+cell_1_xlims = [(-50, 15),
+                (-50, 25),
+                (-50, 37),
+                (-35, 50),
+                (15, 50),
+                (-25, 50),
+                (-25, 50),
+                (-20, 50),
+                (15, 50),
+                (-20, 50),
+                (15, 50),
+                (-10, 50),
+                (20, 50),
+                (0, 50),
+                (5, 50),
+                (15, 50),
+                (25.1, 50),
+                (35.1, 50)]
+
+cell_1_ylims = [(-50, 5),
+                (-50, 5),
+                (-50, 6),
+                (-50, 0),
+                (0.1, 10),
+                (-50, 0),
+                (0.1, 20),
+                (-50, -10),
+                (-9.9, 15),
+                (-50, -10),
+                (-9.9, 15),
+                (-50, -15),
+                (-14.9, 10),
+                (-50, 5),
+                (-50, 5),
+                (-50, 5),
+                (-50, 10),
+                (-50, 10)]
+
+# Define Cell 2
+
+cell_2_times = [datetime.datetime(2016, 3, 4, 5, 39, 0),
+                datetime.datetime(2016, 3, 4, 5, 44, 0),
+                datetime.datetime(2016, 3, 4, 5, 50, 0),
+                datetime.datetime(2016, 3, 4, 5, 55, 0),
+                datetime.datetime(2016, 3, 4, 6, 1, 0),
+                datetime.datetime(2016, 3, 4, 6, 7, 0),
+                datetime.datetime(2016, 3, 4, 6, 7, 0),
+                datetime.datetime(2016, 3, 4, 6, 12, 0),
+                datetime.datetime(2016, 3, 4, 6, 12, 0),
+                datetime.datetime(2016, 3, 4, 6, 18, 0),
+                datetime.datetime(2016, 3, 4, 6, 18, 0),
+                datetime.datetime(2016, 3, 4, 6, 23, 0),
+                datetime.datetime(2016, 3, 4, 6, 23, 0),
+                datetime.datetime(2016, 3, 4, 6, 28, 0),
+                datetime.datetime(2016, 3, 4, 6, 28, 0),
+                datetime.datetime(2016, 3, 4, 6, 34, 0),
+                datetime.datetime(2016, 3, 4, 6, 34, 0),
+                datetime.datetime(2016, 3, 4, 6, 39, 0),
+                datetime.datetime(2016, 3, 4, 6, 39, 0),
+                datetime.datetime(2016, 3, 4, 6, 45, 0),
+                datetime.datetime(2016, 3, 4, 6, 45, 0),
+                datetime.datetime(2016, 3, 4, 6, 50, 0),
+                datetime.datetime(2016, 3, 4, 6, 56, 0),
+                datetime.datetime(2016, 3, 4, 7, 1, 0),
+                datetime.datetime(2016, 3, 4, 7, 7, 0),
+                datetime.datetime(2016, 3, 4, 7, 12, 0)]
+
+
+cell_2_xlims = [(-50, -10),
+                (-50, -5),
+                (-50, 0),
+                (-50, 10),
+                (-50, 5),
+                (-50, 0),
+                (0.1, 20),
+                (-50, 10),
+                (10.1, 30),
+                (-50, 15),
+                (15.1, 40),
+                (-50, -5),
+                (-4.9, 50),
+                (-50, 0),
+                (0.1, 50),
+                (-50, 10),
+                (10.1, 50),
+                (-50, 25),
+                (25.1, 50),
+                (-50, 35),
+                (35.1, 50),
+                (-50, 50),
+                (-50, 50),
+                (-50, 50),
+                (-50, 50),
+                (-50, 50)]
+
+cell_2_ylims = [(30, 50),
+                (25, 50),
+                (10, 50),
+                (10, 50),
+                (5, 50),
+                (-9.9, 50),
+                (30, 50),
+                (-5, 50),
+                (35, 50),
+                (-10, 50),
+                (35, 50),
+                (-25, 25),
+                (10, 50),
+                (-25, 50),
+                (10, 50),
+                (-45, 50),
+                (10, 50),
+                (-50, 50),
+                (15, 50),
+                (-50, 50),
+                (13, 50),
+                (-50, 50),
+                (-50, 50),
+                (-50, 50),
+                (-50, 50),
+                (-50, 50)]
+
 if not(os.path.isfile(csv_all_flashes)):
     # Read in the individual files and save them out to a CSV file
     xlma_files = [path + '/xlma/ChargeAnalysis_20160304_0540.exported.csv',
@@ -108,6 +251,14 @@ if not (os.path.isfile(lma_csv_big_matched_flashes)) or \
     print("  Saving ODS...")
     ods_matched.to_csv(ods_csv_big_matched_flashes, index=False)
     ods_matched_2.to_csv(ods_csv_big_matched_flashes_2, index=False)
+
+
+
+
+
+
+
+
 
 
 # import pandas as pd
