@@ -2076,6 +2076,10 @@ class StormODS(Storm):
         # Define the time delta around the ODS timestamps
         dt = datetime.timedelta(microseconds=2e4)  # 20 msec
 
+        storm_lma = storm_lma.copy()
+        storm_lma.filtered_stations(6, inplace=True)
+        storm_lma.filtered_chi_squared(1, inplace=True)
+
         # Limit the storm_ods times to the storm times
         start_ind = storm_lma.storm.index.min()
         end_ind = storm_lma.storm.index.max()
