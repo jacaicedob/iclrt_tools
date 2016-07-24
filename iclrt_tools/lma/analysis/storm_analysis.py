@@ -1561,7 +1561,7 @@ class StormLMA(Storm):
             return temp
 
     def sort_flashes_into_cells2(self, cells,
-                                inplace=True):
+                                 inplace=True):
 
         """
         Sort the LMA sources from the LMA exported file into defined cells.
@@ -1636,7 +1636,7 @@ class StormLMA(Storm):
             # Start loop
             flash_count = 0
 
-            for i in range(len(times) - 1):
+            for i in range(len(times)):
                 print('Processing: {0} -- {1} UTC.'.format(times[i][0],
                                                            times[i][1]))
                 t_start = times[i][0]
@@ -1685,6 +1685,12 @@ class StormLMA(Storm):
         else:
             temp = self.storm.copy()
             temp.loc[:, 'Cell'] = results
+
+            print("Total number of assigned sources:",
+                  len(temp.dropna(subset=['Cell']).index))
+            print("Total number of assigned flashes:",
+                  len(temp.dropna(subset=['Cell'])['flash-number'].unique()))
+
             return temp
 
 
