@@ -8,11 +8,13 @@ import os
 path = '/home/jaime/Documents/ResearchTopics/Publications/' \
        'LightningEvolution/StatisticalAnalysis/2016-02-24'
 
-csv_all_flashes = path + '/Pandas/Storm_20160224_pandas_all.csv'
-csv_all_source_count = path + '/Pandas/Storm_20160224_pandas_all_source_count' \
+csv_all_flashes = path + '/Pandas/Storm_20160224_pandas_all_lma.csv'
+csv_all_source_count = path + \
+                       '/Pandas/Storm_20160224_pandas_all_lma_source_count' \
                               '.csv'
-csv_big_flashes = path + '/Pandas/Storm_20160224_pandas_big.csv'
-csv_big_source_count = path + '/Pandas/Storm_20160224_pandas_big_source_count' \
+csv_big_flashes = path + '/Pandas/Storm_20160224_pandas_big_lma.csv'
+csv_big_source_count = path + \
+                       '/Pandas/Storm_20160224_pandas_big_lma_source_count' \
                               '.csv'
 
 ods_file = path + '/ods/Cell1 Analysis 02242016.csv'
@@ -25,7 +27,7 @@ ods_csv_big_matched_flashes = path + \
                               '.csv'
 
 csv_duplicate_flashes = path + \
-                        '/Pandas/Storm_20160224_pandas_big_duplicates.csv'
+                        '/Pandas/Storm_20160224_pandas_big_matched_duplicates.csv'
 
 dates = ['02/24/2016']
 

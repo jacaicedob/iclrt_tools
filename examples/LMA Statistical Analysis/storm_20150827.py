@@ -8,14 +8,16 @@ import os
 path = '/home/jaime/Documents/ResearchTopics/Publications/' \
        'LightningEvolution/StatisticalAnalysis/2015-08-27'
 
-csv_all_flashes = path + '/Pandas/Storm_20150827_pandas_all.csv'
-csv_all_flashes_2 = path + '/Pandas/Storm_20150828_pandas_all.csv'
-csv_all_source_count = path + '/Pandas/Storm_20150827_pandas_all_source_count' \
+csv_all_flashes = path + '/Pandas/Storm_20150827_pandas_all_lma.csv'
+csv_all_flashes_2 = path + '/Pandas/Storm_20150828_pandas_all_lma.csv'
+csv_all_source_count = path + \
+                       '/Pandas/Storm_20150827_pandas_alllma__source_count' \
                               '.csv'
 
-csv_big_flashes = path + '/Pandas/Storm_20150827_pandas_big.csv'
-csv_big_flashes_2 = path + '/Pandas/Storm_20150828_pandas_big.csv'
-csv_big_source_count = path + '/Pandas/Storm_20150827_pandas_big_source_count' \
+csv_big_flashes = path + '/Pandas/Storm_20150827_pandas_big_lma.csv'
+csv_big_flashes_2 = path + '/Pandas/Storm_20150828_pandas_big_lma.csv'
+csv_big_source_count = path + \
+                       '/Pandas/Storm_20150827_pandas_big_lma_source_count' \
                               '.csv'
 
 ods_file = path + '/ods/LMA Analysis 08272015.csv'
@@ -28,7 +30,7 @@ ods_csv_big_matched_flashes = path + \
                               '.csv'
 
 csv_duplicate_flashes = path + \
-                        '/Pandas/Storm_20150827_pandas_big_duplicates.csv'
+                        '/Pandas/Storm_20150827_pandas_big_matched_duplicates.csv'
 
 # Load or Initialize then load all the data from the files above.
 storm_lma = None
