@@ -24,6 +24,9 @@ ods_csv_big_matched_flashes = path + \
                               '/Pandas/Storm_20160224_pandas_big_matched_ods' \
                               '.csv'
 
+csv_duplicate_flashes = path + \
+                        '/Pandas/Storm_20160224_pandas_big_duplicates.csv'
+
 dates = ['02/24/2016']
 
 # Load or Initialize then load all the data from the files above.
@@ -74,7 +77,8 @@ if not (os.path.isfile(csv_big_source_count)):
     storm_lma_big.save_flash_number_count(csv_big_source_count)
 
 if not (os.path.isfile(lma_csv_big_matched_flashes)) or \
-   not (os.path.isfile(ods_csv_big_matched_flashes)):
+   not (os.path.isfile(ods_csv_big_matched_flashes)) or \
+   not (os.path.isfile(csv_duplicate_flashes)):
     print("Loading the big flashes from CSV...")
     # Read in the information
     storm_lma = st.StormLMA.from_lma_files([csv_big_flashes], dates)
@@ -82,7 +86,11 @@ if not (os.path.isfile(lma_csv_big_matched_flashes)) or \
 
     print("Matching the LMA flashes to the ODS entries...")
     # Match the LMA flash numbers with the ODS entries
-    result = storm_ods.get_analyzed_flash_numbers(storm_lma, verbose=True)
+    result, dups = storm_ods.get_analyzed_flash_numbers(storm_lma,
+                                                        verbose=True,
+                                                        return_duplicates=True)
+    # Get the matched DataFrames
+    print("Getting the matches...")
     ods_matched = result[~st.pd.isnull(result['flash-number'])]
     numbers = ods_matched['flash-number'].unique()
     lma_matched = storm_lma.get_sources_from_flash_number(numbers)
@@ -93,6 +101,8 @@ if not (os.path.isfile(lma_csv_big_matched_flashes)) or \
     lma_matched.to_csv(lma_csv_big_matched_flashes, index=False)
     print("  Saving ODS...")
     ods_matched.to_csv(ods_csv_big_matched_flashes, index=False)
+    print("Saving the duplicate flash number list...")
+    dups.to_csv(csv_duplicate_flashes)
 
 # storm_ods = st.Storm.from_ods_file(file_name)
 #
