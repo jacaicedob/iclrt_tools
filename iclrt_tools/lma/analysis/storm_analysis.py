@@ -1450,9 +1450,7 @@ class StormLMA(Storm):
                                 inplace=True):
 
         """
-        Sort the analyzed flashes in the ODS files by cells using the LMA
-        sources from the LMA exported file into defined cells. This method
-        can only be called on an ODS storm.
+        Sort the LMA sources from the LMA exported file into defined cells.
 
             Parameters:
             -----------
@@ -1471,32 +1469,38 @@ class StormLMA(Storm):
                     Boolean to apply the results to the current object
 
         """
+        # Convert all coordinates to m if not done so already
+        if not ('x(m)' in self.storm.columns):
+            print("Converting coordinates to meters...")
+            self.convert_latlon_to_m(verbose=True)
+
         # Remove all the entries that are Nan and sort the indices
         storm = self.storm.dropna(subset=['flash-number'])
         storm.sort_index(inplace=True)
-        storm.convert_latlon_to_m(verbose=True)
 
         # If xlims, ylims, or cell_names is a constant, duplicate that value
         # so that the length of the lists are the same, using the times list
         # as the base.
 
-        if type(xlims[0]) != tuple:
-            if type(xlims[0]) != list:
-                temp_x1 = xlims[0]
-                temp_x2 = xlims[1]
-                xlims = []
+        if not isinstance(xlims[0], np.ndarray):
+            if type(xlims[0]) != tuple:
+                if type(xlims[0]) != list:
+                    temp_x1 = xlims[0]
+                    temp_x2 = xlims[1]
+                    xlims = []
 
-                for i in range(len(times)):
-                    xlims.append((temp_x1, temp_x2))
+                    for i in range(len(times)):
+                        xlims.append((temp_x1, temp_x2))
 
-        if type(ylims[0]) != tuple:
-            if type(ylims[0]) != list:
-                temp_y1 = ylims[0]
-                temp_y2 = ylims[1]
-                ylims = []
+        if not isinstance(xlims[0], np.ndarray):
+            if type(ylims[0]) != tuple:
+                if type(ylims[0]) != list:
+                    temp_y1 = ylims[0]
+                    temp_y2 = ylims[1]
+                    ylims = []
 
-                for i in range(len(times)):
-                    ylims.append((temp_y1, temp_y2))
+                    for i in range(len(times)):
+                        ylims.append((temp_y1, temp_y2))
 
         if type(cell_names[0]) == str:
             temp_name = cell_names[0]
@@ -1524,20 +1528,17 @@ class StormLMA(Storm):
             temp = storm.loc[t_start:t_end]
 
             for index, row in temp.iterrows():
-                try:
-                    if xlims[i][0] < storm['x(m)'] < xlims[i][1]:
-                        if ylims[i][0] < storm['y(m)'] < ylims[i][1]:
-                            flash_count += 1
-                            results['DateTime'].append(index)
-                            results['Cell'].append(cell_names[i])
+                # print(row)
+                # print(xlims[i])
+                if xlims[i][0] < row['x(m)'] < xlims[i][1]:
+                    if ylims[i][0] < row['y(m)'] < ylims[i][1]:
+                        flash_count += 1
+                        results['DateTime'].append(index)
+                        results['Cell'].append(cell_names[i])
 
-                    # else:
-                    #     results['DateTime'].append(index)
-                    #     results['Cell'].append(pd.np.nan)
-
-                except IndexError:
-                    results['DateTime'].append(index)
-                    results['Cell'].append(pd.np.nan)
+                # else:
+                #     results['DateTime'].append(index)
+                #     results['Cell'].append(pd.np.nan)
 
             print('  Flashes found: {0}'.format(flash_count))
 
@@ -1554,6 +1555,133 @@ class StormLMA(Storm):
 
         if inplace:
             self.storm.loc[:, 'Cell'] = results
+        else:
+            temp = self.storm.copy()
+            temp.loc[:, 'Cell'] = results
+            return temp
+
+    def sort_flashes_into_cells2(self, cells,
+                                inplace=True):
+
+        """
+        Sort the LMA sources from the LMA exported file into defined cells.
+
+            Parameters:
+            -----------
+                cells: list
+                    List of Cell objects to sort
+                inplace: bool (optional)
+                    Boolean to apply the results to the current object
+
+        """
+        # Convert all coordinates to m if not done so already
+        if not ('x(m)' in self.storm.columns):
+            print("Converting coordinates to meters...")
+            self.convert_latlon_to_m(verbose=True)
+
+        # Remove all the entries that are Nan and sort the indices
+        storm = self.storm.dropna(subset=['flash-number'])
+        storm.sort_index(inplace=True)
+
+        print("Total number of sources before cell sorting: ",
+              len(storm.index))
+        print("Total number of flashes before cell sorting: ",
+              len(storm['flash-number'].unique()))
+
+        results = dict()
+        results['DateTime'] = []
+        results['Cell'] = []
+
+        for cell in cells:
+            xlims = cell.xlims
+            ylims = cell.ylims
+            times = cell.times
+            cell_names = cell.name
+
+            print("*" * 50)
+            print("Cell {0}:".format(cell_names))
+            print("*" * 50)
+
+            # If xlims, ylims, or cell_names is a constant, duplicate that value
+            # so that the length of the lists are the same, using the times list
+            # as the base.
+
+            if not isinstance(xlims[0], np.ndarray):
+                if type(xlims[0]) != tuple:
+                    if type(xlims[0]) != list:
+                        temp_x1 = xlims[0]
+                        temp_x2 = xlims[1]
+                        xlims = []
+
+                        for i in range(len(times)):
+                            xlims.append((temp_x1, temp_x2))
+
+            if not isinstance(xlims[0], np.ndarray):
+                if type(ylims[0]) != tuple:
+                    if type(ylims[0]) != list:
+                        temp_y1 = ylims[0]
+                        temp_y2 = ylims[1]
+                        ylims = []
+
+                        for i in range(len(times)):
+                            ylims.append((temp_y1, temp_y2))
+
+            if type(cell_names[0]) == str:
+                temp_name = cell_names[0]
+                cell_names = []
+
+                for i in range(len(times)):
+                    cell_names.append(temp_name)
+
+            # Start loop
+            flash_count = 0
+
+            for i in range(len(times) - 1):
+                print('Processing: {0} -- {1} UTC.'.format(times[i][0],
+                                                           times[i][1]))
+                t_start = times[i][0]
+                t_end = times[i][1]
+
+                if t_start < storm.index.min():
+                    t_start = storm.index.min()
+                if t_end > storm.index.max():
+                    t_end = storm.index.max()
+
+                temp = storm.loc[t_start:t_end]
+
+                for index, row in temp.iterrows():
+                    # print(row)
+                    # print(xlims[i])
+                    if xlims[i][0] < row['x(m)'] < xlims[i][1]:
+                        if ylims[i][0] < row['y(m)'] < ylims[i][1]:
+                            flash_count += 1
+                            results['DateTime'].append(index)
+                            results['Cell'].append(cell_names[i])
+
+                    # else:
+                    #     results['DateTime'].append(index)
+                    #     results['Cell'].append(pd.np.nan)
+
+                print('  Sources found: {0}'.format(flash_count))
+
+        print('\nDone!')
+        results = pd.Series(results['Cell'], index=results['DateTime'],
+                            name='Cell')
+
+        # Remove duplicate indices
+        results = results.reset_index()
+        results.sort_values(by='Cell', inplace=True)
+        results.drop_duplicates(subset='index', inplace=True)
+        results.set_index('index', inplace=True)
+        results.sort_index(inplace=True)
+
+        if inplace:
+            self.storm.loc[:, 'Cell'] = results
+
+            print("Total number of assigned sources:",
+                  len(self.storm.dropna(subset=['Cell']).index))
+            print("Total number of assigned flashes:",
+                  len(self.storm.dropna(subset=['Cell'])['flash-number'].unique()))
         else:
             temp = self.storm.copy()
             temp.loc[:, 'Cell'] = results
@@ -1916,7 +2044,8 @@ class StormODS(Storm):
 
         self.__dict__.update(tmp_dict)
 
-    def get_analyzed_flash_numbers(self, storm_lma, verbose=False):
+    def get_analyzed_flash_numbers(self, storm_lma, verbose=False,
+                                   return_duplicates=False):
         """
         Get the LMA flash number that corresponds to the analyzed flashes
         in the .ods file.
@@ -1925,6 +2054,11 @@ class StormODS(Storm):
         -----------
             storm_lma: Storm object
                 Storm object representing the data from a .dat file.
+            verbose: bool (optional)
+                Print status.
+            return_duplicates: bool (optional)
+                Returns the list of duplicate flash numbers in addition to the
+                results DataFrame.
 
         Returns:
         --------
@@ -1959,6 +2093,8 @@ class StormODS(Storm):
         count = 0
         empty = 0
         multiple = 0
+        duplicate = 0
+        duplicate_list = []
 
         if verbose:
             total = len(data_frame.index)
@@ -1970,7 +2106,6 @@ class StormODS(Storm):
             t2 = i + dt
 
             number_list = storm_lma.storm.loc[t1:t2]['flash-number'].unique()
-            count += 1
 
             if verbose:
                 pbar.update(1)
@@ -1978,13 +2113,37 @@ class StormODS(Storm):
             if number_list is not None:
                 if len(number_list) == 1:
                     number_list = number_list[0]
+                    if number_list in analyzed_flashes['flash-number']:
+                        duplicate_list.append(number_list)
+                        number_list = np.nan
+                        duplicate += 1
+                    else:
+                        count += 1
                 elif len(number_list) > 1:
-                    multiple += 1
-                    number_list = tuple(number_list)
+                    # Remove already matches flashes
+                    new_list = []
+                    for n in number_list:
+                        if n not in analyzed_flashes['flash-number']:
+                            new_list.append(n)
 
-                    ### Comment out if you plan on not ignoring these!!!
-                    number_list = np.nan
-                    ###
+                    if len(new_list) == 1:
+                        number_list = new_list[0]
+                        if number_list in analyzed_flashes['flash-number']:
+                            duplicate_list.append(number_list)
+                            number_list = np.nan
+                            duplicate += 1
+                        else:
+                            count += 1
+                    elif len(new_list) > 1:
+                        multiple += 1
+                        number_list = tuple(new_list)
+
+                        ### Comment out if you plan on not ignoring these!!!
+                        number_list = np.nan
+                        ###
+                    else:
+                        empty += 1
+                        number_list = np.nan
 
                 else:
                     empty += 1
@@ -1996,12 +2155,18 @@ class StormODS(Storm):
         if verbose:
             pbar.close()
             print("Summary: ")
-            print("  Total: {0}\n  Empty: {1}\n"
-                  "  Multiple: {2}".format(count, empty, multiple))
+            print("  Total: {0}\n  Matched: {1}\n  Empty: {2}\n"
+                  "  Multiple: {3}\n  Duplicate: {4}".format(total, count,
+                                                             empty, multiple,
+                                                             duplicate))
+
+        # Make a Series from the duplicated flashes and save as CSV
+        duplicate_series = pd.Series(duplicate_list, name='duplicates')
 
         # Make a Series from the flash-numbers with the time as the index
         series = pd.Series(analyzed_flashes['flash-number'],
-                           index=analyzed_flashes['DateTime'])
+                           index=analyzed_flashes['DateTime'],
+                           name='flash-number')
 
         # Remove duplicate flash numbers
         # series.drop_duplicates(keep='first', inplace=True)
@@ -2009,6 +2174,8 @@ class StormODS(Storm):
         # Remove the duplicate indices (if any)
         series = series.reset_index(inplace=False)
         series.drop_duplicates('index', keep='first', inplace=True)
+        # Drop all duplicated single flash-numbers
+        series.drop_duplicates('flash-number', keep=False, inplace=True)
         series.set_index('index', inplace=True)
         series.index.rename('DateTime', inplace=True)
         series.columns = ['flash-number']
@@ -2018,7 +2185,10 @@ class StormODS(Storm):
         # Insert series into data_frame
         data_frame.loc[:, 'flash-number'] = series
 
-        return data_frame
+        if return_duplicates:
+            return data_frame, duplicate_series
+        else:
+            return data_frame
 
     def get_cell_ods(self, cell_name):
         """
@@ -2720,6 +2890,29 @@ class Cell(object):
         self.xlims = xlims
         self.ylims = ylims
 
+    @staticmethod
+    def _parse_ods_file(file):
+        """ Parse the .ods files to generate the DataFrame. """
+
+        cell = pd.read_csv(file)
+
+        # Combine the date and time columns into a single datetime column
+        cell.insert(1, 't_start',
+                    ['{0} {1}'.format(cell['Date'][i], cell['t1'][i])
+                     for i in
+                     range(len(cell))])
+        cell['t_start'] = pd.to_datetime(cell['t_start'],
+                                         format='%Y-%m-%d %H:%M')
+
+        cell.insert(2, 't_end',
+                    ['{0} {1}'.format(cell['Date'][i], cell['t2'][i])
+                     for i in
+                     range(len(cell))])
+        cell['t_end'] = pd.to_datetime(cell['t_end'],
+                                       format='%Y-%m-%d %H:%M')
+
+        return cell
+
     def get_cell_initial_plotter(self):
         """
         Return an LMAPlotter object with the data of the initial sources
@@ -2741,6 +2934,40 @@ class Cell(object):
         numbers = self.lma.storm['flash-number'].unique()
 
         return self.lma.get_flash_plotter_from_number(numbers)
+
+    @classmethod
+    def from_ods_file(cls, file):
+        """ Initialize the object from files and dates """
+
+        data = cls._parse_ods_file(file)
+        grouped = data.groupby('Cell')
+
+        cells = []
+
+        for index in grouped.groups.keys():
+            name = [str(index)]
+
+            times = []
+            for i in grouped.groups[index]:
+                start = data['t_start'][i].to_datetime()
+                end = data['t_end'][i].to_datetime()
+                times.append(tuple([start, end]))
+
+            x1 = data['x1'][grouped.groups[index]]
+            x2 = data['x2'][grouped.groups[index]]
+            y1 = data['y1'][grouped.groups[index]]
+            y2 = data['y2'][grouped.groups[index]]
+
+            xlims = [(x1[i], x2[i]) for i in x1.index]
+            ylims = [(y1[i], y2[i]) for i in y1.index]
+
+            # Convert limits to meters
+            xlims = np.array(xlims) * 1e3
+            ylims = np.array(ylims) * 1e3
+
+            cells.append(cls(name, times, xlims, ylims))
+
+        return cells
 
     def plot_flash_areas(self):
         """
