@@ -45,6 +45,8 @@ if not(os.path.isfile(csv_all_flashes)):
 
     print("Reading all xlma files...")
     storm_lma = st.StormLMA.from_lma_files(xlma_files, dates)
+    print("Converting coordinates to meters...")
+    storm_lma.convert_latlon_to_m(verbose=True)
     print("Saving xlma all to CSV...")
     storm_lma.save_to_csv(csv_all_flashes)
 
@@ -93,6 +95,8 @@ if not (os.path.isfile(lma_csv_big_matched_flashes)) or \
     print("Getting the matches...")
     ods_matched = result[~st.pd.isnull(result['flash-number'])]
     numbers = ods_matched['flash-number'].unique()
+    print("Number of matched flash numbers:", len(numbers))
+
     lma_matched = storm_lma.get_sources_from_flash_number(numbers)
 
     # Save to CSV

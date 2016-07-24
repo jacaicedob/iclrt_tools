@@ -42,6 +42,8 @@ if not(os.path.isfile(csv_all_flashes)):
 
     print("Reading all xlma files 08/27/2015...")
     storm_lma = st.StormLMA.from_lma_files(xlma_files, ['08/27/2015'])
+    print("Converting coordinates to meters...")
+    storm_lma.convert_latlon_to_m(verbose=True)
     print("Saving xlma all to CSV 08/27/2015...")
     storm_lma.save_to_csv(csv_all_flashes)
 
@@ -51,21 +53,30 @@ if not(os.path.isfile(csv_all_flashes_2)):
 
     print("Reading all xlma files 08/28/2015...")
     storm_lma_2 = st.StormLMA.from_lma_files(xlma_files, ['08/28/2015'])
+    print("Converting coordinates to meters...")
+    storm_lma_2.convert_latlon_to_m(verbose=True)
     print("Saving xlma all to CSV 08/28/2015...")
     storm_lma_2.save_to_csv(csv_all_flashes_2)
 
 if not(os.path.isfile(csv_big_flashes)):
+    if storm_lma is None:
+        print("Loading all flashes from CSV 08/27/2015...")
+        # Read in the information
+        storm_lma = st.StormLMA.from_lma_files([csv_all_flashes],
+                                               ['08/27/2015'])
+
     print("Saving big flashes to CSV  08/27/2015...")
     storm_lma.save_flashes_by_size('big', csv_big_flashes)
 
-    storm_lma_big = st.StormLMA.from_lma_files([csv_big_flashes],
-                                               ['08/27/2015'])
 if not(os.path.isfile(csv_big_flashes_2)):
+    if storm_lma_2 is None:
+        print("Loading all flashes from CSV 08/28/2015...")
+        # Read in the information
+        storm_lma_2 = st.StormLMA.from_lma_files([csv_all_flashes_2],
+                                                 ['08/28/2015'])
+
     print("Saving big flashes to CSV  08/28/2015...")
     storm_lma_2.save_flashes_by_size('big', csv_big_flashes_2)
-
-    storm_lma_big_2 = st.StormLMA.from_lma_files([csv_big_flashes_2],
-                                                 ['08/28/2015'])
 
 if not(os.path.isfile(csv_all_source_count)):
     print("Loading all flashes from CSV...")
@@ -102,6 +113,8 @@ if not (os.path.isfile(lma_csv_big_matched_flashes)) or \
     print("Getting the matches...")
     ods_matched = result[~st.pd.isnull(result['flash-number'])]
     numbers = ods_matched['flash-number'].unique()
+    print("Number of matched flash numbers:", len(numbers))
+
     lma_matched = storm_lma.get_sources_from_flash_number(numbers)
 
     # Save to CSV
