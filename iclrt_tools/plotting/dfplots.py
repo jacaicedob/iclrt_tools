@@ -2647,8 +2647,8 @@ class LMAPlotter(object):
         # for label in self.ax_alt_t.xaxis.get_ticklabels(minor=False):
         #     label.set_rotation(30)
 
-    def plot_plan(self, ax=None, xlims=(-20E3, 20E3),
-                  ylims=(-20E3, 20E3), c=None):
+    def plot_plan(self, ax=None, xlims=(-50E3, 50E3),
+                  ylims=(-50E3, 50E3), c=None):
         self.plan_x_stack = []
         self.plan_y_stack = []
 
