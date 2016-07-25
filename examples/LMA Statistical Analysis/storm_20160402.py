@@ -3,6 +3,7 @@
 import iclrt_tools.lma.analysis.storm_analysis as st
 import datetime
 import os
+import sys
 
 # File names containing all data
 path = '/home/jaime/Documents/ResearchTopics/Publications/' \
@@ -110,6 +111,9 @@ if not (os.path.isfile(lma_big_matched)) or \
     print("Loading the big flashes from CSV...")
     # Read in the information
     storm_lma = st.StormLMA.from_lma_files([lma_big], dates)
+    storm_lma.filter_x(lims=[-50e3, 50e3], inplace=True)
+    storm_lma.filter_y(lims=[-50e3, 50e3], inplace=True)
+
     storm_ods = st.StormODS.from_csv_file(ods_all)
 
     print("Matching the LMA flashes to the ODS entries...")
@@ -151,6 +155,8 @@ def split_flashes():
         duplicates = st.pd.read_csv(csv_big_matched_duplicates,
                                     names=['index', 'flash-number'])
 
+    storm_lma.filter_x(lims=[-50e3, 50e3], inplace=True)
+    storm_lma.filter_y(lims=[-50e3, 50e3], inplace=True)
     storm = storm_lma.copy()
     dups = duplicates['flash-number'].unique()
 
@@ -221,6 +227,7 @@ def split_flashes():
             s = st.pd.Series(dups[num + 1:], name="Duplicates")
             s.to_csv(temp_duplicates)
 
+sys.exit(1)
 split_flashes()
 
 if not (os.path.isfile(lma_big_lessdups_matched)) or \
@@ -229,6 +236,9 @@ if not (os.path.isfile(lma_big_lessdups_matched)) or \
     print("Loading the big flashes from CSV...")
     # Read in the information
     storm_lma = st.StormLMA.from_lma_files([lma_big_lessdups], dates)
+    storm_lma.filter_x(lims=[-50e3, 50e3], inplace=True)
+    storm_lma.filter_y(lims=[-50e3, 50e3], inplace=True)
+
     storm_ods = st.StormODS.from_ods_all(ods_all[0])
     storm_ods_2 = st.StormODS.from_ods_all(ods_all[1])
 

@@ -3,6 +3,7 @@
 import iclrt_tools.lma.analysis.storm_analysis as st
 import datetime
 import os
+import sys
 
 # File names for first and second part of LMA storm analysis
 path = '/home/jaime/Documents/ResearchTopics/Publications/' \
@@ -134,13 +135,18 @@ if not (os.path.isfile(lma_big_matched)) or \
     storm_lma = st.StormLMA.from_lma_files([lma_big,
                                             lma_big_2],
                                            dates)
+    storm_lma.filter_x(lims=[-35e3, 35e3], inplace=True)
+    storm_lma.filter_y(lims=[-35e3, 35e3], inplace=True)
+
     storm_ods = st.StormODS.from_csv_file(ods_all)
 
     print("Matching the LMA flashes to the ODS entries...")
     # Match the LMA flash numbers with the ODS entries
     result, dups = storm_ods.get_analyzed_flash_numbers(storm_lma,
                                                         verbose=True,
-                                                        return_duplicates=True)
+                                                        return_duplicates=True,
+                                                        stations=6,
+                                                        chi2=1)
 
     dups = dups.reset_index()
     dups.drop_duplicates('duplicates', inplace=True)
@@ -189,6 +195,8 @@ def split_flashes():
         duplicates = st.pd.read_csv(csv_big_matched_duplicates,
                                     names=['index', 'flash-number'])
 
+    storm_lma.filter_x(lims=[-35e3, 35e3], inplace=True)
+    storm_lma.filter_y(lims=[-35e3, 35e3], inplace=True)
     storm = storm_lma.copy()
     dups = duplicates['flash-number'].unique()
 
@@ -259,7 +267,7 @@ def split_flashes():
             s = st.pd.Series(dups[num + 1:], name="Duplicates")
             s.to_csv(temp_duplicates)
 
-
+sys.exit(1)
 split_flashes()
 
 if not (os.path.isfile(lma_big_lessdups_matched)) or \
@@ -270,6 +278,9 @@ if not (os.path.isfile(lma_big_lessdups_matched)) or \
     storm_lma = st.StormLMA.from_lma_files([lma_big,
                                             lma_big_2],
                                            dates)
+    storm_lma.filter_x(lims=[-35e3, 35e3], inplace=True)
+    storm_lma.filter_y(lims=[-35e3, 35e3], inplace=True)
+
     storm_ods = st.StormODS.from_csv_file(ods_all)
 
     print("Matching the LMA flashes to the ODS entries...")

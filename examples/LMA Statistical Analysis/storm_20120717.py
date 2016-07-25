@@ -3,6 +3,7 @@
 import iclrt_tools.lma.analysis.storm_analysis as st
 import datetime
 import os
+import sys
 
 # File names containing all data
 path = '/home/jaime/Documents/ResearchTopics/Publications/' \
@@ -124,6 +125,7 @@ if not (os.path.isfile(lma_big_matched)) or \
     storm_lma = st.StormLMA.from_lma_files([lma_big], dates)
     storm_lma.filter_x(lims=[-50e3, 50e3], inplace=True)
     storm_lma.filter_y(lims=[-50e3, 50e3], inplace=True)
+
     storm_ods = st.StormODS.from_csv_file(ods_all[0])
     storm_ods_2 = st.StormODS.from_csv_file(ods_all[1])
 
@@ -131,10 +133,14 @@ if not (os.path.isfile(lma_big_matched)) or \
     # Match the LMA flash numbers with the ODS entries
     result, dups = storm_ods.get_analyzed_flash_numbers(storm_lma,
                                                         verbose=True,
-                                                        return_duplicates=True)
+                                                        return_duplicates=True,
+                                                        stations=6,
+                                                        chi2=1)
     result_2, dups_2 = storm_ods_2.get_analyzed_flash_numbers(storm_lma,
                                                               verbose=True,
-                                                              return_duplicates=True)
+                                                              return_duplicates=True,
+                                                              stations=6,
+                                                              chi2=1)
 
     # Get the matched DataFrames
     print("Getting the matches...")
@@ -211,6 +217,7 @@ def split_flashes():
 
             # Get the maximum flash number of storm
             new_number = storm.storm['flash-number'].max() + 10
+            print(new_number)
 
             # Get the sources for the current flash number
             data = storm.storm[storm.storm['flash-number'] == dups[num]]
@@ -249,6 +256,7 @@ def split_flashes():
             s = st.pd.Series(dups[num + 1:], name="Duplicates")
             s.to_csv(temp_duplicates)
 
+sys.exit(1)
 split_flashes()
 
 if not (os.path.isfile(lma_big_lessdups_matched)) or \
