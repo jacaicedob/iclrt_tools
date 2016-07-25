@@ -8,29 +8,60 @@ import os
 path = '/home/jaime/Documents/ResearchTopics/Publications/' \
        'LightningEvolution/StatisticalAnalysis/2015-08-27'
 
-csv_all_flashes = path + '/Pandas/Storm_20150827_pandas_all_lma.csv'
-csv_all_flashes_2 = path + '/Pandas/Storm_20150828_pandas_all_lma.csv'
+# All Flashes
+ods_all = path + '/ods/LMA Analysis 08272015.csv'
+lma_all = path + '/Pandas/Storm_20150827_pandas_all_lma.csv'
+lma_all_2 = path + '/Pandas/Storm_20150828_pandas_all_lma.csv'
 csv_all_source_count = path + \
-                       '/Pandas/Storm_20150827_pandas_alllma__source_count' \
-                              '.csv'
+                       '/Pandas/Storm_20150827_pandas_all_lma_source_count' \
+                       '.csv'
 
-csv_big_flashes = path + '/Pandas/Storm_20150827_pandas_big_lma.csv'
-csv_big_flashes_2 = path + '/Pandas/Storm_20150828_pandas_big_lma.csv'
+# Big Flashes
+lma_big = path + '/Pandas/Storm_20150827_pandas_big_lma.csv'
+lma_big_2 = path + '/Pandas/Storm_20150828_pandas_big_lma.csv'
 csv_big_source_count = path + \
                        '/Pandas/Storm_20150827_pandas_big_lma_source_count' \
-                              '.csv'
+                       '.csv'
 
-ods_file = path + '/ods/LMA Analysis 08272015.csv'
+# ODS-LMA Matched Big Flashes
+lma_big_matched = path + \
+                  '/Pandas/Storm_20150827_pandas_big_matched_lma' \
+                  '.csv'
+lma_big_matched_2 = path + \
+                    '/Pandas/Storm_20150828_pandas_big_matched_lma' \
+                    '.csv'
+ods_big_matched = path + \
+                  '/Pandas/Storm_20150827_pandas_big_matched_ods' \
+                  '.csv'
 
-lma_csv_big_matched_flashes = path + \
-                              '/Pandas/Storm_20150827_pandas_big_matched_lma' \
-                              '.csv'
-ods_csv_big_matched_flashes = path + \
-                              '/Pandas/Storm_20150827_pandas_big_matched_ods' \
-                              '.csv'
+csv_big_matched_duplicates = path + \
+                             '/Pandas/Storm_20150827_pandas_big_matched' \
+                             '_duplicates.csv'
 
-csv_duplicate_flashes = path + \
-                        '/Pandas/Storm_20150827_pandas_big_matched_duplicates.csv'
+# Needed to split duplicates
+temp_duplicates = path + '/Pandas/temp_dups.csv'
+
+# Flashes After Splitting duplicates
+lma_big_lessdups = path + \
+                   '/Pandas/Storm_20150827_pandas_big_lessduplicates_lma' \
+                   '.csv'
+lma_big_lessdups_2 = path + \
+                     '/Pandas/Storm_20150828_pandas_big_lessduplicates' \
+                     '_lma.csv'
+
+# ODS-LMA Matched Flashes After Splitting duplicates
+lma_big_lessdups_matched = path + '/Pandas/Storm_20150827_pandas_big_' \
+                           'lessduplicates_matched_lma.csv'
+lma_big_lessdups_matched_2 = path + '/Pandas/Storm_20150828_pandas_big_' \
+                             'lessduplicates_matched_lma.csv'
+ods_big_lessdups_matched = path + '/Pandas/Storm_20150827_pandas_big_' \
+                           'lessduplicates_matched_ods.csv'
+csv_big_lessdups_matched_duplicates = path + '/Pandas/Storm_20150827_pandas_' \
+                                      'big_lessduplicates_matched_' \
+                                      'duplicates.csv'
+
+# Dates
+dates = ['08/27/2015', '08/28/2015']
 
 # Load or Initialize then load all the data from the files above.
 storm_lma = None
@@ -38,78 +69,83 @@ storm_lma_big = None
 storm_lma_2 = None
 storm_lma_big_2 = None
 
-if not(os.path.isfile(csv_all_flashes)):
+if not(os.path.isfile(lma_all)):
     # Read in the individual files and save them out to a CSV file
     xlma_files = [path + '/xlma/ChargeAnalysis-1of2-exported.csv']
 
     print("Reading all xlma files 08/27/2015...")
-    storm_lma = st.StormLMA.from_lma_files(xlma_files, ['08/27/2015'])
+    storm_lma = st.StormLMA.from_lma_files(xlma_files, dates[0])
     print("Converting coordinates to meters...")
     storm_lma.convert_latlon_to_m(verbose=True)
     print("Saving xlma all to CSV 08/27/2015...")
-    storm_lma.save_to_csv(csv_all_flashes)
+    storm_lma.save_to_csv(lma_all)
 
-if not(os.path.isfile(csv_all_flashes_2)):
+if not(os.path.isfile(lma_all_2)):
     # Read in the individual files and save them out to a CSV file
     xlma_files = [path + '/xlma/ChargeAnalysis-2of2-exported.csv']
 
     print("Reading all xlma files 08/28/2015...")
-    storm_lma_2 = st.StormLMA.from_lma_files(xlma_files, ['08/28/2015'])
+    storm_lma_2 = st.StormLMA.from_lma_files(xlma_files, dates[1])
     print("Converting coordinates to meters...")
     storm_lma_2.convert_latlon_to_m(verbose=True)
     print("Saving xlma all to CSV 08/28/2015...")
-    storm_lma_2.save_to_csv(csv_all_flashes_2)
+    storm_lma_2.save_to_csv(lma_all_2)
 
-if not(os.path.isfile(csv_big_flashes)):
+if not(os.path.isfile(lma_big)):
     if storm_lma is None:
         print("Loading all flashes from CSV 08/27/2015...")
         # Read in the information
-        storm_lma = st.StormLMA.from_lma_files([csv_all_flashes],
-                                               ['08/27/2015'])
+        storm_lma = st.StormLMA.from_lma_files([lma_all],
+                                               dates[0])
 
     print("Saving big flashes to CSV  08/27/2015...")
-    storm_lma.save_flashes_by_size('big', csv_big_flashes)
+    storm_lma.save_flashes_by_size('big', lma_big)
 
-if not(os.path.isfile(csv_big_flashes_2)):
+if not(os.path.isfile(lma_big_2)):
     if storm_lma_2 is None:
         print("Loading all flashes from CSV 08/28/2015...")
         # Read in the information
-        storm_lma_2 = st.StormLMA.from_lma_files([csv_all_flashes_2],
-                                                 ['08/28/2015'])
+        storm_lma_2 = st.StormLMA.from_lma_files([lma_all_2],
+                                                 dates[1])
 
     print("Saving big flashes to CSV  08/28/2015...")
-    storm_lma_2.save_flashes_by_size('big', csv_big_flashes_2)
+    storm_lma_2.save_flashes_by_size('big', lma_big_2)
 
 if not(os.path.isfile(csv_all_source_count)):
     print("Loading all flashes from CSV...")
-    storm_lma = st.StormLMA.from_lma_files([csv_all_flashes, csv_all_flashes_2],
-                                           ['08/27/2015', '08/28/2015'])
+    storm_lma = st.StormLMA.from_lma_files([lma_all, lma_all_2],
+                                           dates)
     print("Saving all flash number counts to CSV...")
     storm_lma.save_flash_number_count(csv_all_source_count)
 
 if not(os.path.isfile(csv_big_source_count)):
     print("Loading the big flashes from CSV...")
-    storm_lma_big = st.StormLMA.from_lma_files([csv_big_flashes,
-                                                csv_big_flashes_2],
-                                               ['08/27/2015', '08/28/2015'])
+    storm_lma_big = st.StormLMA.from_lma_files([lma_big,
+                                                lma_big_2],
+                                               dates)
     print("Saving big flash number counts to CSV...")
     storm_lma_big.save_flash_number_count(csv_big_source_count)
 
-if not (os.path.isfile(lma_csv_big_matched_flashes)) or \
-   not (os.path.isfile(ods_csv_big_matched_flashes)) or \
-   not (os.path.isfile(csv_duplicate_flashes)):
+if not (os.path.isfile(lma_big_matched)) or \
+   not (os.path.isfile(ods_big_matched)) or \
+   not (os.path.isfile(csv_big_matched_duplicates)):
     print("Loading the big flashes from CSV...")
     # Read in the information
-    storm_lma = st.StormLMA.from_lma_files([csv_big_flashes,
-                                            csv_big_flashes_2],
-                                           ['08/27/2015', '08/28/2015'])
-    storm_ods = st.StormODS.from_ods_file(ods_file)
+    storm_lma = st.StormLMA.from_lma_files([lma_big,
+                                            lma_big_2],
+                                           dates)
+    storm_ods = st.StormODS.from_csv_file(ods_all)
 
     print("Matching the LMA flashes to the ODS entries...")
     # Match the LMA flash numbers with the ODS entries
     result, dups = storm_ods.get_analyzed_flash_numbers(storm_lma,
                                                         verbose=True,
                                                         return_duplicates=True)
+
+    dups = dups.reset_index()
+    dups.drop_duplicates('duplicates', inplace=True)
+    dups = dups['duplicates']
+    print("Total duplicate/multiple flashes: ", len(dups))
 
     # Get the matched DataFrames
     print("Getting the matches...")
@@ -122,12 +158,119 @@ if not (os.path.isfile(lma_csv_big_matched_flashes)) or \
     # Save to CSV
     print("Saving matches to CSV...")
     print("  Saving LMA...")
-    lma_matched.to_csv(lma_csv_big_matched_flashes, index=False)
+    s1 = lma_matched[dates[0]]
+    s2 = lma_matched[dates[1]]
+
+    s1.to_csv(lma_big_matched, index=False)
+    s2.to_csv(lma_big_matched_2, index=False)
+
     print("  Saving ODS...")
-    ods_matched.to_csv(ods_csv_big_matched_flashes, index=False)
+    ods_matched.to_csv(ods_big_matched, index=False)
 
     print("Saving the duplicate flash number list...")
-    dups.to_csv(csv_duplicate_flashes)
+    dups.to_csv(csv_big_matched_duplicates)
+
+
+def split_flashes():
+    try:
+        storm_lma = st.StormLMA.from_lma_files([lma_big_lessdups,
+                                                lma_big_lessdups_2],
+                                               dates)
+
+    except OSError:
+        storm_lma = st.StormLMA.from_lma_files([lma_big,
+                                                lma_big_2],
+                                               dates)
+
+    try:
+        duplicates = st.pd.read_csv(temp_duplicates,
+                                    names=['index', 'flash-number'])
+    except OSError:
+        duplicates = st.pd.read_csv(csv_big_matched_duplicates,
+                                    names=['index', 'flash-number'])
+
+    storm = storm_lma.copy()
+    dups = duplicates['flash-number'].unique()
+
+    for num in range(len(dups)):
+        print("Flash {0}: {1} out of {2}".format(dups[num],
+                                                 num + 1, len(dups)))
+
+        p = storm.get_flash_plotter_from_number(dups[num])
+        p.set_coloring('charge')
+
+        p.plot_plan()
+        p.ax_plan.set_title("Flash {0} out of {1}".format(num + 1,
+                                                          len(dups)))
+        st.df.plt.show()
+
+        default = "n"
+        response = input("Split into flashes? [y/N]")
+
+        if response.lower() != "y":
+            response = default
+
+        if response == "y":
+            print("  Flash number: ", dups[num])
+            print("  x lims: ", p.ax_plan.get_xlim())
+            print("  y lims: ", p.ax_plan.get_ylim())
+
+            # Get plot limits
+            xlims = p.ax_plan.get_xlim()
+            ylims = p.ax_plan.get_ylim()
+
+            # Get the maximum flash number of storm
+            new_number = storm.storm['flash-number'].max() + 10
+
+            # Get the sources for the current flash number
+            data = storm.storm[storm.storm['flash-number'] == dups[num]]
+
+            # Sort out the new flashes using the plot limits. results holds
+            # the DateTimeIndex for the sources inside the plot limits, and
+            # rest hold all other sources in the data DataFrame
+            results = []
+            rest = []
+
+            for index, row in data.iterrows():
+                if xlims[0] < row['x(m)'] < xlims[1]:
+                    if ylims[0] < row['y(m)'] < ylims[1]:
+                        results.append(index)
+                    else:
+                        rest.append(index)
+                else:
+                    rest.append(index)
+
+            # Set new flash numbers for both sets of sources
+            data.set_value(results, 'flash-number', new_number)
+            data.set_value(rest, 'flash-number', new_number + 10)
+
+            # Combine with the master DataFrame and remove the entries
+            # with the old flash number from the master DataFrame
+            final = st.pd.concat([storm.storm, data])
+            storm.storm = final[final['flash-number'] != dups[num]]
+
+            # Save out results to allow for resume
+            s = st.pd.Series(dups[num + 1:], name="Duplicates")
+            s.to_csv(temp_duplicates)
+            storm.save_to_csv(lma_big_lessdups)
+
+        else:
+            # Save out results to allow for resume
+            s = st.pd.Series(dups[num + 1:], name="Duplicates")
+            s.to_csv(temp_duplicates)
+
+
+# split_flashes()
+
+
+
+
+
+
+
+
+
+
 
 # # File names and analysis flags for .ods files
 # sort_flashes = False
@@ -157,16 +300,16 @@ if not (os.path.isfile(lma_csv_big_matched_flashes)) or \
 #         if not(os.path.isfile(pickle_file)):
 #             if not(os.path.isfile(file_name)):
 #                 get_flash_numbers = True
-#                 storm_ods = st.StormODS.from_ods_file(original_csv)
+#                 storm_ods = st.StormODS.from_csv_file(original_csv)
 #
 #             else:
-#                 storm_ods = st.StormODS.from_ods_file(file_name)
+#                 storm_ods = st.StormODS.from_csv_file(file_name)
 #
 #         else:
 #             storm_ods = st.StormODS()
 #             storm_ods.from_pickle(pickle_file)
 #     else:
-#         storm_ods = st.StormODS.from_ods_file(file_name)
+#         storm_ods = st.StormODS.from_csv_file(file_name)
 #
 # else:
 #     storm_ods = st.StormODS()
