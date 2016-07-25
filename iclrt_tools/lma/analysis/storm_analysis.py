@@ -2037,7 +2037,7 @@ class StormODS(Storm):
         self.nldn.loc[:, 'ODS_type'] = series
 
     @classmethod
-    def from_ods_file(cls, file):
+    def from_csv_file(cls, file):
         """ Initialize the object from files and dates """
 
         storm = cls._parse_ods_file(file)
@@ -2147,7 +2147,8 @@ class StormODS(Storm):
                     elif len(new_list) > 1:
                         multiple += 1
                         number_list = tuple(new_list)
-
+                        for n in new_list:
+                            duplicate_list.append(n)
                         ### Comment out if you plan on not ignoring these!!!
                         number_list = np.nan
                         ###
@@ -2170,8 +2171,11 @@ class StormODS(Storm):
                                                              empty, multiple,
                                                              duplicate))
 
-        # Make a Series from the duplicated flashes and save as CSV
+        # Make a Series from the duplicated flashes
         duplicate_series = pd.Series(duplicate_list, name='duplicates')
+        duplicate_series = duplicate_series.reset_index(inplace=False)
+        duplicate_series.drop_duplicates('duplicates', inplace=True)
+        duplicate_series = duplicate_series['duplicates']
 
         # Make a Series from the flash-numbers with the time as the index
         series = pd.Series(analyzed_flashes['flash-number'],
@@ -2946,7 +2950,7 @@ class Cell(object):
         return self.lma.get_flash_plotter_from_number(numbers)
 
     @classmethod
-    def from_ods_file(cls, file):
+    def from_csv_file(cls, file):
         """ Initialize the object from files and dates """
 
         data = cls._parse_ods_file(file)
