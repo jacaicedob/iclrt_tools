@@ -2077,7 +2077,8 @@ class StormODS(Storm):
         self.__dict__.update(tmp_dict)
 
     def get_analyzed_flash_numbers(self, storm_lma, verbose=False,
-                                   return_duplicates=False):
+                                   return_duplicates=False, stations=6,
+                                   chi2=1):
         """
         Get the LMA flash number that corresponds to the analyzed flashes
         in the .ods file.
@@ -2103,8 +2104,8 @@ class StormODS(Storm):
         dt = datetime.timedelta(microseconds=2e4)  # 20 msec
 
         storm_lma = storm_lma.copy()
-        storm_lma.filter_stations(6, inplace=True)
-        storm_lma.filter_chi_squared(1, inplace=True)
+        storm_lma.filter_stations(stations, inplace=True)
+        storm_lma.filter_chi_squared(chi2, inplace=True)
 
         # Limit the storm_ods times to the storm times
         start_ind = storm_lma.storm.index.min()
