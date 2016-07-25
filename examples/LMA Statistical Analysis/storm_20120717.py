@@ -153,88 +153,88 @@ if not (os.path.isfile(lma_csv_big_matched_flashes)) or \
     print("Saving the duplicate flash number list...")
     dups.to_csv(csv_big_duplicate_flashes)
 
-try:
-    storm_lma = st.StormLMA.from_lma_files([lma_csv_big_lessdups], dates)
-
-except OSError:
-    storm_lma = st.StormLMA.from_lma_files([csv_big_flashes], dates)
-
-try:
-    duplicates = st.pd.read_csv(temp_duplicates,
-                                names=['index', 'flash-number'])
-except OSError:
-    duplicates = st.pd.read_csv(csv_big_duplicate_flashes,
-                                names=['index', 'flash-number'])
-
-storm = storm_lma.copy()
-dups = duplicates['flash-number'].unique()
-
-for num in range(len(dups)):
-    print("Flash {0}: {1} out of {2}".format(dups[num],
-                                             num + 1, len(dups)))
-
-    p = storm.get_flash_plotter_from_number(dups[num])
-    p.set_coloring('charge')
-
-    p.plot_plan()
-    p.ax_plan.set_title("Flash {0} out of {1}".format(num + 1,
-                                                      len(dups)))
-    st.df.plt.show()
-
-    default = "n"
-    response = input("Split into flashes? [y/N]")
-
-    if response.lower() != "y":
-        response = default
-
-    if response == "y":
-        print("  Flash number: ", dups[num])
-        print("  x lims: ", p.ax_plan.get_xlim())
-        print("  y lims: ", p.ax_plan.get_ylim())
-
-        # Get plot limits
-        xlims = p.ax_plan.get_xlim()
-        ylims = p.ax_plan.get_ylim()
-
-        # Get the maximum flash number of storm
-        new_number = storm.storm['flash-number'].max() + 10
-
-        # Get the sources for the current flash number
-        data = storm.storm[storm.storm['flash-number'] == dups[num]]
-
-        # Sort out the new flashes using the plot limits. results holds
-        # the DateTimeIndex for the sources inside the plot limits, and
-        # rest hold all other sources in the data DataFrame
-        results = []
-        rest = []
-
-        for index, row in data.iterrows():
-            if xlims[0] < row['x(m)'] < xlims[1]:
-                if ylims[0] < row['y(m)'] < ylims[1]:
-                    results.append(index)
-                else:
-                    rest.append(index)
-            else:
-                rest.append(index)
-
-        # Set new flash numbers for both sets of sources
-        data.set_value(results, 'flash-number', new_number)
-        data.set_value(rest, 'flash-number', new_number + 10)
-
-        # Combine with the master DataFrame and remove the entries
-        # with the old flash number from the master DataFrame
-        final = st.pd.concat([storm.storm, data])
-        storm.storm = final[final['flash-number'] != dups[num]]
-
-        # Save out results to allow for resume
-        s = st.pd.Series(dups[num+1:], name="Duplicates")
-        s.to_csv(temp_duplicates)
-        storm.save_to_csv(lma_csv_big_lessdups)
-
-    else:
-        # Save out results to allow for resume
-        s = st.pd.Series(dups[num + 1:], name="Duplicates")
-        s.to_csv(temp_duplicates)
+# try:
+#     storm_lma = st.StormLMA.from_lma_files([lma_csv_big_lessdups], dates)
+#
+# except OSError:
+#     storm_lma = st.StormLMA.from_lma_files([csv_big_flashes], dates)
+#
+# try:
+#     duplicates = st.pd.read_csv(temp_duplicates,
+#                                 names=['index', 'flash-number'])
+# except OSError:
+#     duplicates = st.pd.read_csv(csv_big_duplicate_flashes,
+#                                 names=['index', 'flash-number'])
+#
+# storm = storm_lma.copy()
+# dups = duplicates['flash-number'].unique()
+#
+# for num in range(len(dups)):
+#     print("Flash {0}: {1} out of {2}".format(dups[num],
+#                                              num + 1, len(dups)))
+#
+#     p = storm.get_flash_plotter_from_number(dups[num])
+#     p.set_coloring('charge')
+#
+#     p.plot_plan()
+#     p.ax_plan.set_title("Flash {0} out of {1}".format(num + 1,
+#                                                       len(dups)))
+#     st.df.plt.show()
+#
+#     default = "n"
+#     response = input("Split into flashes? [y/N]")
+#
+#     if response.lower() != "y":
+#         response = default
+#
+#     if response == "y":
+#         print("  Flash number: ", dups[num])
+#         print("  x lims: ", p.ax_plan.get_xlim())
+#         print("  y lims: ", p.ax_plan.get_ylim())
+#
+#         # Get plot limits
+#         xlims = p.ax_plan.get_xlim()
+#         ylims = p.ax_plan.get_ylim()
+#
+#         # Get the maximum flash number of storm
+#         new_number = storm.storm['flash-number'].max() + 10
+#
+#         # Get the sources for the current flash number
+#         data = storm.storm[storm.storm['flash-number'] == dups[num]]
+#
+#         # Sort out the new flashes using the plot limits. results holds
+#         # the DateTimeIndex for the sources inside the plot limits, and
+#         # rest hold all other sources in the data DataFrame
+#         results = []
+#         rest = []
+#
+#         for index, row in data.iterrows():
+#             if xlims[0] < row['x(m)'] < xlims[1]:
+#                 if ylims[0] < row['y(m)'] < ylims[1]:
+#                     results.append(index)
+#                 else:
+#                     rest.append(index)
+#             else:
+#                 rest.append(index)
+#
+#         # Set new flash numbers for both sets of sources
+#         data.set_value(results, 'flash-number', new_number)
+#         data.set_value(rest, 'flash-number', new_number + 10)
+#
+#         # Combine with the master DataFrame and remove the entries
+#         # with the old flash number from the master DataFrame
+#         final = st.pd.concat([storm.storm, data])
+#         storm.storm = final[final['flash-number'] != dups[num]]
+#
+#         # Save out results to allow for resume
+#         s = st.pd.Series(dups[num+1:], name="Duplicates")
+#         s.to_csv(temp_duplicates)
+#         storm.save_to_csv(lma_csv_big_lessdups)
+#
+#     else:
+#         # Save out results to allow for resume
+#         s = st.pd.Series(dups[num + 1:], name="Duplicates")
+#         s.to_csv(temp_duplicates)
 
 if not (os.path.isfile(lma_csv_big_lessdups_matched)) or \
         not (os.path.isfile(ods_csv_big_lessdups_matched)) or \
