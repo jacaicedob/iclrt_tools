@@ -400,11 +400,11 @@ class StormLMA(Storm):
     def copy(self):
         return StormLMA(self.storm.copy())
 
-    def filtered_stations(self, num_stations=6, inplace=True):
+    def filter_stations(self, num_stations=6, inplace=True):
         # Filter data by number of stations.
         # The default filtereding is 6 or more stations.
 
-        storm = self.storm
+        storm = self.storm.copy()
         storm = storm[storm['#-of-stations-contributed'] >= num_stations]
 
         if inplace:
@@ -412,12 +412,38 @@ class StormLMA(Storm):
         else:
             return storm
 
-    def filtered_chi_squared(self, chi_sq=5, inplace=True):
+    def filter_chi_squared(self, chi_sq=5, inplace=True):
         # Filter data by chi^2 value.
         # The default filtereding is a chi^2 <= 5.
 
-        storm = self.storm
+        storm = self.storm.copy()
         storm = storm[storm['reduced-chi^2'] <= chi_sq]
+
+        if inplace:
+            self.storm = storm
+        else:
+            return storm
+
+    def filter_x(self, lims=[-50e3, 50e3], inplace=True):
+        # Filter data by x value.
+        # The default filtering is between -50 and 50 km.
+
+        storm = self.storm.copy()
+        storm = storm[storm['x(m)'] >= lims[0]]
+        storm = storm[storm['x(m)'] <= lims[1]]
+
+        if inplace:
+            self.storm = storm
+        else:
+            return storm
+
+    def filter_y(self, lims=[-50e3, 50e3], inplace=True):
+        # Filter data by y value.
+        # The default filtering is between -50 and 50 km.
+
+        storm = self.storm.copy()
+        storm = storm[storm['y(m)'] >= lims[0]]
+        storm = storm[storm['y(m)'] <= lims[1]]
 
         if inplace:
             self.storm = storm
@@ -430,8 +456,8 @@ class StormLMA(Storm):
 
         storm = cls._parse_lma_files(files, dates)
         storm = cls(storm)
-        storm.filtered_stations(num_stations)
-        storm.filtered_chi_squared(chi_sq)
+        storm.filter_stations(num_stations)
+        storm.filter_chi_squared(chi_sq)
 
         return storm
 
@@ -2077,8 +2103,8 @@ class StormODS(Storm):
         dt = datetime.timedelta(microseconds=2e4)  # 20 msec
 
         storm_lma = storm_lma.copy()
-        storm_lma.filtered_stations(6, inplace=True)
-        storm_lma.filtered_chi_squared(1, inplace=True)
+        storm_lma.filter_stations(6, inplace=True)
+        storm_lma.filter_chi_squared(1, inplace=True)
 
         # Limit the storm_ods times to the storm times
         start_ind = storm_lma.storm.index.min()
@@ -2147,8 +2173,11 @@ class StormODS(Storm):
                     elif len(new_list) > 1:
                         multiple += 1
                         number_list = tuple(new_list)
-                        for n in new_list:
-                            duplicate_list.append(n)
+
+                        # Don't know how to handle multiples yet.
+                        # should I put them in a dataframe with Datetime
+                        # index and tuple?
+
                         ### Comment out if you plan on not ignoring these!!!
                         number_list = np.nan
                         ###
@@ -2539,8 +2568,8 @@ class Analysis(object):
             stations = 6
             chi = 5
 
-            storm = StormLMA(self.lma.filtered_stations(stations, inplace=False))
-            storm.filtered_chi_squared(chi, inplace=True)
+            storm = StormLMA(self.lma.filter_stations(stations, inplace=False))
+            storm.filter_chi_squared(chi, inplace=True)
 
             number = unique[index]
             # print(number, type(number))
@@ -2569,8 +2598,8 @@ class Analysis(object):
             stations = 6
             chi = 1
 
-            storm = StormLMA(self.lma.filtered_stations(stations, inplace=False))
-            storm.filtered_chi_squared(chi, inplace=True)
+            storm = StormLMA(self.lma.filter_stations(stations, inplace=False))
+            storm.filter_chi_squared(chi, inplace=True)
 
             flash = storm.get_sources_from_flash_number(number)
             flash = flash[flash['charge'] != 0]
@@ -2590,8 +2619,8 @@ class Analysis(object):
             # stations = 7
             # chi = 5
             #
-            # storm = StormLMA(self.lma.filtered_stations(stations, inplace=False))
-            # storm.filtered_chi_squared(chi, inplace=True)
+            # storm = StormLMA(self.lma.filter_stations(stations, inplace=False))
+            # storm.filter_chi_squared(chi, inplace=True)
             #
             # flash = storm.get_sources_from_flash_number(number)
             # flash = flash[flash['charge'] != 0]
@@ -2611,8 +2640,8 @@ class Analysis(object):
             # stations = 7
             # chi = 1
             #
-            # storm = StormLMA(self.lma.filtered_stations(stations, inplace=False))
-            # storm.filtered_chi_squared(chi, inplace=True)
+            # storm = StormLMA(self.lma.filter_stations(stations, inplace=False))
+            # storm.filter_chi_squared(chi, inplace=True)
             #
             # flash = storm.get_sources_from_flash_number(number)
             # flash = flash[flash['charge'] != 0]
@@ -2673,8 +2702,8 @@ class Analysis(object):
             stations = 6
             chi = 1
 
-            storm = StormLMA(self.lma.filtered_stations(stations, inplace=False))
-            storm.filtered_chi_squared(chi, inplace=True)
+            storm = StormLMA(self.lma.filter_stations(stations, inplace=False))
+            storm.filter_chi_squared(chi, inplace=True)
 
             number = unique[index]
 
