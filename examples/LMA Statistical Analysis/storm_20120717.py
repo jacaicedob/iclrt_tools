@@ -160,6 +160,7 @@ if not (os.path.isfile(lma_big_matched)) or \
 
 
 def split_flashes():
+    print("Starting split-flashes routine...")
     try:
         storm_lma = st.StormLMA.from_lma_files([lma_big_lessdups], dates)
 
@@ -246,9 +247,9 @@ def split_flashes():
 split_flashes()
 
 if not (os.path.isfile(lma_big_lessdups_matched)) or \
-        not (os.path.isfile(ods_big_lessdups_matched)) or \
-        not (os.path.isfile(ods_big_lessdups_matched_2)) or \
-        not (os.path.isfile(csv_big_lessdups_matched_duplicates)):
+   not (os.path.isfile(ods_big_lessdups_matched)) or \
+   not (os.path.isfile(ods_big_lessdups_matched_2)) or \
+   not (os.path.isfile(csv_big_lessdups_matched_duplicates)):
     print("Loading the big flashes from CSV...")
     # Read in the information
     storm_lma = st.StormLMA.from_lma_files([lma_big_lessdups], dates)

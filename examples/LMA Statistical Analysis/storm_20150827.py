@@ -260,14 +260,51 @@ def split_flashes():
             s.to_csv(temp_duplicates)
 
 
-# split_flashes()
+split_flashes()
 
+if not (os.path.isfile(lma_big_lessdups_matched)) or \
+   not (os.path.isfile(ods_big_lessdups_matched)) or \
+   not (os.path.isfile(csv_big_lessdups_matched_duplicates)):
+    print("Loading the big flashes from CSV...")
+    # Read in the information
+    storm_lma = st.StormLMA.from_lma_files([lma_big,
+                                            lma_big_2],
+                                           dates)
+    storm_ods = st.StormODS.from_csv_file(ods_all)
 
+    print("Matching the LMA flashes to the ODS entries...")
+    # Match the LMA flash numbers with the ODS entries
+    result, dups = storm_ods.get_analyzed_flash_numbers(storm_lma,
+                                                        verbose=True,
+                                                        return_duplicates=True)
 
+    dups = dups.reset_index()
+    dups.drop_duplicates('duplicates', inplace=True)
+    dups = dups['duplicates']
+    print("Total duplicate/multiple flashes: ", len(dups))
 
+    # Get the matched DataFrames
+    print("Getting the matches...")
+    ods_matched = result[~st.pd.isnull(result['flash-number'])]
+    numbers = ods_matched['flash-number'].unique()
+    print("Number of matched flash numbers:", len(numbers))
 
+    lma_matched = storm_lma.get_sources_from_flash_number(numbers)
 
+    # Save to CSV
+    print("Saving matches to CSV...")
+    print("  Saving LMA...")
+    s1 = lma_matched[dates[0]]
+    s2 = lma_matched[dates[1]]
 
+    s1.to_csv(lma_big_lessdups_matched, index=False)
+    s2.to_csv(lma_big_lessdups_matched_2, index=False)
+
+    print("  Saving ODS...")
+    ods_matched.to_csv(ods_big_matched, index=False)
+
+    print("Saving the duplicate flash number list...")
+    dups.to_csv(csv_big_lessdups_matched_duplicates)
 
 
 
