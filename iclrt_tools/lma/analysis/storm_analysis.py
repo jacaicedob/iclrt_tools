@@ -556,7 +556,7 @@ class StormLMA(Storm):
 
         return subset
 
-    def get_flash_plotter_from_number(self, flash_number=None):
+    def get_flash_plotter_from_number(self, flash_number=None, temp_dir='.'):
         """
         Get the LMA sources for flash_number.
 
@@ -564,6 +564,8 @@ class StormLMA(Storm):
         ----------
             flash_number: int, float, or list (optional)
                 Flash number to get.
+            temp_dir: str (optional)
+                Directory to save the temporary generated files
 
         Returns
         -------
@@ -579,7 +581,7 @@ class StormLMA(Storm):
         data_str = '*** data ***'
 
         # Temporary file to store the LMA sources of a single flash
-        temp_file = './temp.dat'
+        temp_file = temp_dir + '/temp.dat'
 
         if type(flash_number) == np.int64 or type(flash_number) == int:
             subset = self.storm[self.storm['flash-number'] == flash_number]
