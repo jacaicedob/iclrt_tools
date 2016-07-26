@@ -194,6 +194,8 @@ def split_flashes():
 
         p = storm.get_flash_plotter_from_number(dups[num])
         p.set_coloring('charge')
+        p.filter_num_stations(7)
+        p.filter_rc2(1)
 
         p.plot_plan()
         p.ax_plan.set_title("Flash {0} out of {1}".format(num + 1,
@@ -256,7 +258,43 @@ def split_flashes():
             s = st.pd.Series(dups[num + 1:], name="Duplicates")
             s.to_csv(temp_duplicates)
 
+
+def plot_big_flashes(storm_big, nums, save_dir):
+    print("Plotting and saving big flashes:")
+    # Start loop
+    print("- Starting loop:")
+    for i in range(len(nums)):
+        print("  - Flash {0}: {1} of {2}".format(nums[i], i+1,
+                                                 len(nums)))
+
+        p = storm_big.get_flash_plotter_from_number(nums[i])
+        p.filter_num_stations(6)
+        p.filter_rc2(1)
+        p.set_coloring('charge')
+
+        p.plot_all()
+        p.ax_all_alt_t.set_title("Flash {0}".format(nums[i]))
+
+        save_file = save_dir + '/flash_{0}.png'.format(nums[i])
+        p.fig_all.savefig(save_file, dpi=300, format='png')
+        st.df.plt.close()
+
+# Read in data
+print("- Loading data for all big flashes...")
+storm_big = st.StormLMA.from_lma_files([lma_big], dates)
+
+# Get all unique flash numbers
+print("- Getting all unique flash numbers")
+nums = storm_big.storm['flash-number'].unique()
+
+# Define save directory
+save_dir = path + '/Pandas/Figures'
+
+plot_big_flashes(storm_big, nums, save_dir)
 sys.exit(1)
+
+
+
 split_flashes()
 
 if not (os.path.isfile(lma_big_lessdups_matched)) or \

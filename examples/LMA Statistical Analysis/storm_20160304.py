@@ -236,6 +236,39 @@ def split_flashes():
             s = st.pd.Series(dups[num + 1:], name="Duplicates")
             s.to_csv(temp_duplicates)
 
+
+def plot_big_flashes():
+    print("Plotting and saving big flashes:")
+    # Read in data
+    print("- Loading data for all big flashes...")
+    storm_big = st.StormLMA.from_lma_files([lma_big], dates)
+
+    # Get all unique flash numbers
+    print("- Getting all unique flash numbers")
+    nums = storm_big.storm['flash-number'].unique()
+
+    # Define save directory
+    save_dir = path + '/Pandas/Figures'
+
+    # Start loop
+    print("- Starting loop:")
+    for i in range(len(nums)):
+        print("  - Flash {0}: {1} of {2}".format(nums[i], i+1,
+                                                 len(nums)))
+
+        p = storm_big.get_flash_plotter_from_number(nums[i])
+        p.filter_num_stations(6)
+        p.filter_rc2(1)
+        p.set_coloring('charge')
+
+        p.plot_all()
+        p.ax_all_alt_t.set_title("Flash {0}".format(nums[i]))
+
+        save_file = save_dir + '/flash_{0}.png'.format(nums[i])
+        p.fig_all.savefig(save_file, dpi=300, format='png')
+        st.df.plt.close()
+
+plot_big_flashes()
 sys.exit(1)
 split_flashes()
 
@@ -249,8 +282,8 @@ if not (os.path.isfile(lma_big_lessdups_matched)) or \
     storm_lma.filter_x(lims=[-50e3, 50e3], inplace=True)
     storm_lma.filter_y(lims=[-50e3, 50e3], inplace=True)
 
-    storm_ods = st.StormODS.from_ods_all(ods_all[0])
-    storm_ods_2 = st.StormODS.from_ods_all(ods_all[1])
+    storm_ods = st.StormODS.from_csv_file(ods_all[0])
+    storm_ods_2 = st.StormODS.from_csv_file(ods_all[1])
 
     print("Matching the LMA flashes to the ODS entries...")
     # Match the LMA flash numbers with the ODS entries
