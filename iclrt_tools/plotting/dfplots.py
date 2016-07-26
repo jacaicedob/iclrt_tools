@@ -3109,7 +3109,7 @@ class LMAPlotter(object):
 
     def plot_all(self):
         # Setup figure and axes
-        self.fig_all = plt.figure()
+        self.fig_all = plt.figure(figsize=(12, 12))
         self.gs = GridSpec(5, 4)
         self.gs.update(hspace=.5)
 
@@ -3124,7 +3124,7 @@ class LMAPlotter(object):
         NS_label = 'South - North (km)'
         hist_label = '# Sources'
         t0_string = datetime.datetime.strftime(self.plot_data['t'][0],
-                                               "%H:%M:%S:%f")
+                                               "%H:%M:%S.%f")
         time_label = 'Time after {0} (ms)'.format(t0_string)
 
         self.ax_all_alt_t.set_ylabel(alt_label)
@@ -3187,34 +3187,50 @@ class LMAPlotter(object):
         # self.ax_all_alt_t.set_xlim([self.plot_data['t'][0],
         #                             self.plot_data['t'][-1]])
 
-        self.ax_all_alt_t.set_ylim([0, np.max(self.plot_data['z']*1e-3) +
+        self.ax_all_alt_t.set_ylim([np.min(self.plot_data['z']*1e-3) -
+                                    np.std(self.plot_data['z']*1e-3),
+                                    np.max(self.plot_data['z']*1e-3) +
                                     np.std(self.plot_data['z']*1e-3)])
 
         # Altitude vs. NS projection subplot
         self.scat_all_NS = self.ax_all_NS.scatter(self.plot_data['z']*1E-3,
                                  self.plot_data['y']*1E-3, marker=marker,
                                  c=colors, cmap=cmap, s=s, lw=lw, norm=norm)
-        self.ax_all_NS.set_xlim([0, np.max(self.plot_data['z']*1e-3)])
-        self.ax_all_NS.set_ylim([np.min(self.plot_data['y'])*1e-3,
-                                 np.max(self.plot_data['y']*1e-3)])
+        self.ax_all_NS.set_xlim([np.min(self.plot_data['z']*1e-3) -
+                                 np.std(self.plot_data['z']*1e-3),
+                                 np.max(self.plot_data['z']*1e-3) +
+                                 np.std(self.plot_data['z']*1e-3)])
+        self.ax_all_NS.set_ylim([np.min(self.plot_data['y'])*1e-3 -
+                                 np.std(self.plot_data['y']*1e-3),
+                                 np.max(self.plot_data['y']*1e-3) +
+                                 np.std(self.plot_data['y']*1e-3)])
 
         # Altitude vs. EW projection subplot
         self.scat_all_EW = self.ax_all_EW.scatter(self.plot_data['x']*1E-3,
                                  self.plot_data['z']*1E-3, marker=marker,
                                  c=colors, cmap=cmap, s=s, lw=lw, norm=norm)
-        self.ax_all_EW.set_ylim([0, np.max(self.plot_data['z']*1e-3)])
-        self.ax_all_EW.set_xlim([np.min(self.plot_data['x'])*1e-3,
-                                 np.max(self.plot_data['x']*1e-3)])
+        self.ax_all_EW.set_ylim([np.min(self.plot_data['z']*1e-3) -
+                                 np.std(self.plot_data['z']*1e-3),
+                                 np.max(self.plot_data['z']*1e-3) +
+                                 np.std(self.plot_data['z']*1e-3)])
+        self.ax_all_EW.set_xlim([np.min(self.plot_data['x'])*1e-3 -
+                                 np.std(self.plot_data['x'] * 1e-3),
+                                 np.max(self.plot_data['x']*1e-3) +
+                                 np.std(self.plot_data['x'] * 1e-3)])
 
         # Altitude vs. plan projection subplot
         self.scat_all_plan = self.ax_all_plan.scatter(self.plot_data['x']*1E-3,
                              self.plot_data['y']*1E-3, marker=marker,
                              c=colors, cmap=cmap, s=s, lw=lw, norm=norm)
 
-        self.ax_all_plan.set_xlim([np.min(self.plot_data['x'])*1e-3,
-                                   np.max(self.plot_data['x']*1e-3)])
-        self.ax_all_plan.set_ylim([np.min(self.plot_data['y'])*1e-3,
-                                   np.max(self.plot_data['y']*1e-3)])
+        self.ax_all_plan.set_xlim([np.min(self.plot_data['x'])*1e-3 -
+                                   np.std(self.plot_data['x'] * 1e-3),
+                                   np.max(self.plot_data['x']*1e-3) +
+                                   np.std(self.plot_data['x'] * 1e-3)])
+        self.ax_all_plan.set_ylim([np.min(self.plot_data['y'])*1e-3 -
+                                   np.std(self.plot_data['y']*1e-3),
+                                   np.max(self.plot_data['y']*1e-3) +
+                                   np.std(self.plot_data['y']*1e-3)])
 
         # Altitude histogram subplot
         hist, bin_centers, num_pts = self.alt_histogram()
@@ -3226,7 +3242,10 @@ class LMAPlotter(object):
         #                       verticalalignment='center')
 
         self.ax_all_hist.xaxis.set_major_formatter(mpl.ticker.NullFormatter())
-        self.ax_all_hist.set_ylim([0, np.max(self.plot_data['z']*1e-3)])
+        self.ax_all_hist.set_ylim([np.min(self.plot_data['z']*1e-3) -
+                                   np.std(self.plot_data['z']*1e-3),
+                                   np.max(self.plot_data['z']*1e-3) +
+                                   np.std(self.plot_data['z']*1e-3)])
 
     def measure_area(self, ax):
         mpl.rcParams['keymap.zoom'] = 'o'
