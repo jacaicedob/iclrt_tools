@@ -208,6 +208,11 @@ class StormLMA(Storm):
     def _parse_lma_files(files, dates):
         """ Parse the LMA .csv files to generate the DataFrame. """
 
+        try:
+            ref = datetime.datetime.strptime(dates[0], '%m/%d/%y')
+        except ValueError:
+            ref = datetime.datetime.strptime(dates[0], '%m/%d/%Y')
+
         pds = []
 
         # Read in the files
@@ -229,6 +234,13 @@ class StormLMA(Storm):
                 p.insert(0, 'DateTime', series)
                 p['DateTime'] = pd.to_datetime(p['DateTime'])
 
+                # Replace the values of the seconds of day column
+                # to allow for storms to span multiple days
+                series = [(entry - ref).total_seconds() for entry in
+                          p['DateTime']]
+                p.drop('time(UT-sec-of-day)', axis=1, inplace=True)
+                p.insert(1, 'time(UT-sec-of-day)', series)
+
             else:
                 try:
                     date = datetime.datetime.strptime(dates[0], '%m/%d/%y')
@@ -240,6 +252,13 @@ class StormLMA(Storm):
 
                 p.insert(0, 'DateTime', series)
                 p['DateTime'] = pd.to_datetime(p['DateTime'])
+
+                # Replace the values of the seconds of day column
+                # to allow for storms to span multiple days
+                series = [(entry - ref).total_seconds() for entry in
+                          p['DateTime']]
+                p.drop('time(UT-sec-of-day)', axis=1, inplace=True)
+                p.insert(1, 'time(UT-sec-of-day)', series)
 
         # Remove all flash-numbers that are == -1
         for i in range(len(pds)):
