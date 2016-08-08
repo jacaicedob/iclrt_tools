@@ -223,19 +223,8 @@ def split_flashes():
             s.to_csv(temp_duplicates)
 
 
-def plot_big_flashes():
+def plot_big_flashes(storm_big, nums, save_dir):
     print("Plotting and saving big flashes:")
-    # Read in data
-    print("- Loading data for all big flashes...")
-    storm_big = st.StormLMA.from_lma_files([lma_big], dates)
-
-    # Get all unique flash numbers
-    print("- Getting all unique flash numbers")
-    nums = storm_big.storm['flash-number'].unique()
-
-    # Define save directory
-    save_dir = path + '/Pandas/Figures'
-
     # Start loop
     print("- Starting loop:")
     for i in range(len(nums)):
@@ -247,6 +236,10 @@ def plot_big_flashes():
         p.filter_rc2(1)
         p.set_coloring('charge')
 
+        if len(p.plot_data['t']) < 1:
+            print("       * No data for Flash {0}".format(nums[i]))
+            continue
+
         p.plot_all()
         p.ax_all_alt_t.set_title("Flash {0}".format(nums[i]))
 
@@ -254,7 +247,22 @@ def plot_big_flashes():
         p.fig_all.savefig(save_file, dpi=300, format='png')
         st.df.plt.close()
 
-plot_big_flashes()
+# Read in data
+print("- Loading data for all big flashes...")
+storm_big = st.StormLMA.from_lma_files([lma_big], dates)
+
+# Get all unique flash numbers
+print("- Getting all unique flash numbers")
+# nums = storm_big.storm['flash-number'].unique()
+
+nums = st.pd.read_csv(path + '/Pandas/Figures/FirstRun_reanalyze.csv')
+nums = nums['flash-number'].unique()
+
+# Define save directory
+# save_dir = path + '/Pandas/Figures'
+save_dir = path + '/Pandas/Figures/FirstRun/AnalyzeAgain'
+
+plot_big_flashes(storm_big, nums, save_dir)
 sys.exit(1)
 split_flashes()
 
