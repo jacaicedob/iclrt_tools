@@ -9,8 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-import JaimePackages.oscilloscopes.yoko850 as yk
-import JaimePackages.plotting.dfplots as df
+import iclrt_tools.oscilloscopes.yoko850 as yk
+import iclrt_tools.plotting.dfplots as df
 
 
 fileName = ["/home/jaime/Documents/My Papers/Ongoing/Current Reflections"

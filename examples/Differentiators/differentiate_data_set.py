@@ -2,11 +2,9 @@
 
 # Add personal packages directory to path
 import sys
-sys.path.append('/home/jaime/Documents/Python Code')
-
-import JaimePackages.differentiators.differentiate_waveform as diff
-import JaimePackages.plotting.dfplots as df
-import JaimePackages.filters.filters as filters
+import iclrt_tools.differentiators.differentiate_waveform as diff
+import iclrt_tools.plotting.dfplots as df
+import iclrt_tools.filters.filters as filters
 import pickle
 import matplotlib.pyplot as plt
 import os

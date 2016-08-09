@@ -11,8 +11,8 @@ sys.path.append('/home/jaime/Documents/Python Code/Models/CurrentWaves/')
 sys.path.append('/home/jaime/Documents/Python Code/Scopes/Yokogawa/')
 sys.path.append('/home/jaime/Documents/Python Code/Scopes/LeCroy/')
 
-import CurrentFit as cf
-import dfplots as df
+import iclrt_tools.models.current_fit.current_fit as cf
+import iclrt_tools.plotting.dfplots as df
 
 import os
 import datetime
@@ -24,7 +24,7 @@ import sys
 import pickle
 import scipy
 
-import CurrentWaves as cw
+import iclrt_tools.models.current_waves.current_waves as cw
 
 ### Absolute constants
 c = 3.0E8                     # Speed of light (m/s)

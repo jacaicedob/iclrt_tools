@@ -11,7 +11,7 @@ import numpy as np
 from matplotlib import cm
 import operator
 
-import dfplots as df
+import iclrt_tools.plotting.dfplots as df
 
 def moving_average(y, n=5):
     weights = np.repeat(1.0, n)/n

@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 import math
 from scipy.io import savemat as svmat
 
-import JaimePackages.oscilloscopes.yoko850 as yk
-import JaimePackages.plotting.dfplots as df
+import iclrt_tools.oscilloscopes.yoko850 as yk
+import iclrt_tools.plotting.dfplots as df
 
 filename = "/media/jaime/ICLRTArray/2015Data/082715/Scope24/UF1543_IIHI"
 # filename = "/media/jaime/ICLRTArray/2015Data/082715/Scope24/UF1542_IIHI"

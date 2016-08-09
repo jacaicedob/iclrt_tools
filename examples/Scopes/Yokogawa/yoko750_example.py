@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-import JaimePackages.oscilloscopes.yoko750 as yk
+import iclrt_tools.oscilloscopes.yoko750 as yk
 
 
 #~ fileName = "/Volumes/OSX2/Users/jaime/My Papers/Current Reflections/UF 09-20 061809/Waveforms/Scope24/D0001"

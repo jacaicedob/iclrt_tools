@@ -8,7 +8,7 @@ sys.path.append('/home/jaime/Documents/Python Code')
 import numpy as np
 import matplotlib.pyplot as plt
 
-import JaimePackages.plotting.dfplots as df
+import iclrt_tools.plotting.dfplots as df
 
 ### Regular dfplots
 fig = plt.figure(figsize=(8,6))

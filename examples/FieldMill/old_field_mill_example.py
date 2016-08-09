@@ -2,12 +2,11 @@
 
 # Add personal packages directory to path
 import sys
-sys.path.append('/home/jaime/Documents/Python Code')
 
 # Import all other modules
 import datetime
 
-import JaimePackages.field_mill.field_mill as fm
+import iclrt_tools.field_mill.field_mill as fm
 
 # Variables
 

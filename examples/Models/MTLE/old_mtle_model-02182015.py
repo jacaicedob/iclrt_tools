@@ -14,8 +14,8 @@ This implementation uses the multiprocessing module.
 execfile('/home/jaime/ICLRT/My Papers/Current Reflections/Models/MTL/No Reflections/mtl_model.py')
 
 """
-import CurrentFit as cf
-import dfplots as df
+import iclrt_tools.models.current_fit.current_fit as cf
+import iclrt_tools.plotting.dfplots as df
 
 import os
 import datetime
@@ -23,7 +23,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
 
-import CurrentWaves as cw
+import iclrt_tools.models.current_waves.current_waves as cw
 
 """
 Function definitions

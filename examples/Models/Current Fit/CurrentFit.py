@@ -2,7 +2,6 @@
 
 # Add personal packages directory to path
 import sys
-sys.path.append('/home/jaime/Documents/Python Code')
 
 # Import other packages
 import numpy as np
@@ -12,9 +11,9 @@ import operator
 import pickle
 import xml.etree.ElementTree as ET
 
-import JaimePackages.plotting.dfplots as df
-import JaimePackages.oscilloscopes.yoko850 as yk
-import JaimePackages.models.current_fit.current_fit as cf
+import iclrt_tools.plotting.dfplots as df
+import iclrt_tools.oscilloscopes.yoko850 as yk
+import iclrt_tools.models.current_fit.current_fit as cf
 
 
 ### Setup file information and read the file

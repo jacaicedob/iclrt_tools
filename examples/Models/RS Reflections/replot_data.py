@@ -10,7 +10,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
-import JaimePackages.plotting.dfplots as df
+import iclrt_tools.plotting.dfplots as df
 
 color_cycle = ['#5DA5DA', '#FAA43A', '#60BD68', '#F17CB0', '#B2912F', '#B276B2', '#DECF3F', '#F15854', '#4D4D4D']
 color_cycle_alt = ['#B276B2', '#FAA43A', '#60BD68', '#F17CB0', '#B2912F',  '#DECF3F', '#F15854', '#4D4D4D', '#5DA5DA']

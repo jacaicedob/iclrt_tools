@@ -9,8 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-import JaimePackages.plotting.dfplots as df
-import JaimePackages.oscilloscopes.yoko750 as yk
+import iclrt_tools.plotting.dfplots as df
+import iclrt_tools.oscilloscopes.yoko750 as yk
 
 fileName = "/home/jaime/Documents/My Papers/Dropped/Recoil " \
            "Streamers/Data/081713/Scope25/D0001"

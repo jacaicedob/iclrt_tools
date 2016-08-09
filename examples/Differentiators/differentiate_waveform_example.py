@@ -2,18 +2,17 @@
 
 # Add personal packages directory to path
 import sys
-sys.path.append('/home/jaime/Documents/Python Code')
 
 # Import other modules
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-import JaimePackages.plotting.dfplots as df
-import JaimePackages.oscilloscopes.lecroy as lc
-import JaimePackages.oscilloscopes.yoko750 as yk750
-import JaimePackages.oscilloscopes.yoko850 as yk850
-import JaimePackages.differentiators.differentiate_waveform as diff
+import iclrt_tools.plotting.dfplots as df
+import iclrt_tools.oscilloscopes.lecroy as lc
+import iclrt_tools.oscilloscopes.yoko750 as yk750
+import iclrt_tools.oscilloscopes.yoko850 as yk850
+import iclrt_tools.differentiators.differentiate_waveform as diff
 
 dataFile = "/home/jaime/Documents/My Papers/Ongoing/Current Reflections/" \
            "Raw Data/081713/Scope18/C4AC00001.trc"

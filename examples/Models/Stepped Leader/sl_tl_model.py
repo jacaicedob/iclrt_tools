@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from multiprocessing import Pool
 from scipy import integrate  
 
-import CurrentWaves as cw
+import iclrt_tools.models.current_waves.current_waves as cw
 
 """
 Function definitions

@@ -26,8 +26,8 @@ sys.path.append('/home/jaime/Documents/Python Code/Scopes/Yokogawa/')
 sys.path.append('/home/jaime/Documents/Python Code/Scopes/LeCroy/')
 
 
-import CurrentFit as cf
-import dfplots as df
+import iclrt_tools.models.current_fit.current_fit as cf
+import iclrt_tools.plotting.dfplots as df
 
 import os
 import datetime
@@ -38,7 +38,7 @@ from multiprocessing import Pool
 import sys
 import pickle
 
-import CurrentWaves as cw
+import iclrt_tools.models.current_waves.current_waves as cw
 
 """
 Function definitions

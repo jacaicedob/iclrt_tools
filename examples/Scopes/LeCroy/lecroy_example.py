@@ -9,9 +9,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import LinearLocator
 
-import JaimePackages.plotting.dfplots as df
-import JaimePackages.oscilloscopes.lecroy as lc
-import JaimePackages.timing.timing as timing
+import iclrt_tools.plotting.dfplots as df
+import iclrt_tools.oscilloscopes.lecroy as lc
+import iclrt_tools.timing.timing as timing
 
 file_name = "./C4AC00001.trc"
 

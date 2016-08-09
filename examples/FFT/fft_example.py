@@ -1,14 +1,12 @@
 #!/usr/bin/env python
 
 import sys
-sys.path.append('/home/jaime/Documents/Python Code')
-
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 
-import JaimePackages.plotting.dfplots as df
-import JaimePackages.fourier_analysis.fourier_analysis as fourier
+import iclrt_tools.plotting.dfplots as df
+import iclrt_tools.fourier_analysis.fourier_analysis as fourier
 
 """
 Get waveform

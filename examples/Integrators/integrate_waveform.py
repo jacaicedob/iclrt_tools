@@ -1,14 +1,10 @@
 #!/usr/bin/env python
 
 import sys
-sys.path.append('/home/jaime/Documents/Python Code/Pyplot/dfplots/')
-sys.path.append('/home/jaime/Documents/Python Code/Scopes/Yokogawa/')
-sys.path.append('/home/jaime/Documents/Python Code/Scopes/LeCroy/')
-
-import dfplots as df
-import lecroy as lc
-import Yoko750 as yk750
-import Yoko850 as yk850
+import iclrt_tools.plotting.dfplots as df
+import iclrt_tools.oscilloscopes.lecroy as lc
+import iclrt_tools.oscilloscopes.yoko750 as yk750
+import iclrt_tools.oscilloscopes.yoko850 as yk850
 
 import numpy as np
 import matplotlib as mpl
