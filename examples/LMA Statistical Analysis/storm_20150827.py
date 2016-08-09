@@ -12,25 +12,28 @@ path = '/home/jaime/Documents/ResearchTopics/Publications/' \
 # All Flashes
 ods_all = path + '/ods/LMA Analysis 08272015.csv'
 lma_all = path + '/Pandas/Storm_20150827_pandas_all_lma.csv'
-lma_all_2 = path + '/Pandas/Storm_20150828_pandas_all_lma.csv'
 csv_all_source_count = path + \
                        '/Pandas/Storm_20150827_pandas_all_lma_source_count' \
                        '.csv'
 
 # Big Flashes
 lma_big = path + '/Pandas/Storm_20150827_pandas_big_lma.csv'
-lma_big_2 = path + '/Pandas/Storm_20150828_pandas_big_lma.csv'
 csv_big_source_count = path + \
                        '/Pandas/Storm_20150827_pandas_big_lma_source_count' \
                        '.csv'
+
+lma_big_pre_final = path + '/Pandas/Storm_20150827_pandas_big_pre_final_lma.csv'
+csv_big_pre_final_source_count = path + '/Pandas/Storm_20150827_pandas_big_' \
+                                 'pre_final_lma_source_count.csv'
+
+lma_big_final = path + '/Pandas/Storm_20150827_pandas_big_final_lma.csv'
+csv_big_final_source_count = path + '/Pandas/Storm_20150827_pandas_big_final' \
+                                    '_lma_source_count.csv'
 
 # ODS-LMA Matched Big Flashes
 lma_big_matched = path + \
                   '/Pandas/Storm_20150827_pandas_big_matched_lma' \
                   '.csv'
-lma_big_matched_2 = path + \
-                    '/Pandas/Storm_20150828_pandas_big_matched_lma' \
-                    '.csv'
 ods_big_matched = path + \
                   '/Pandas/Storm_20150827_pandas_big_matched_ods' \
                   '.csv'
@@ -46,15 +49,11 @@ temp_duplicates = path + '/Pandas/temp_dups.csv'
 lma_big_lessdups = path + \
                    '/Pandas/Storm_20150827_pandas_big_lessduplicates_lma' \
                    '.csv'
-lma_big_lessdups_2 = path + \
-                     '/Pandas/Storm_20150828_pandas_big_lessduplicates' \
-                     '_lma.csv'
+
 
 # ODS-LMA Matched Flashes After Splitting duplicates
 lma_big_lessdups_matched = path + '/Pandas/Storm_20150827_pandas_big_' \
                            'lessduplicates_matched_lma.csv'
-lma_big_lessdups_matched_2 = path + '/Pandas/Storm_20150828_pandas_big_' \
-                             'lessduplicates_matched_lma.csv'
 ods_big_lessdups_matched = path + '/Pandas/Storm_20150827_pandas_big_' \
                            'lessduplicates_matched_ods.csv'
 csv_big_lessdups_matched_duplicates = path + '/Pandas/Storm_20150827_pandas_' \
@@ -70,98 +69,40 @@ storm_lma_big = None
 # storm_lma_2 = None
 # storm_lma_big_2 = None
 
-if not(os.path.isfile(lma_all)):
-    # Read in the individual files and save them out to a CSV file
-    xlma_files = [path + '/xlma/ChargeAnalysis-1of2.exported.csv',
-                  path + '/xlma/ChargeAnalysis-2of2.exported.csv']
-
-    print("Reading all xlma files...")
-    storm_lma = st.StormLMA.from_lma_files(xlma_files, dates)
-    print("Converting coordinates to meters...")
-    storm_lma.convert_latlon_to_m(verbose=True)
-    print("Saving xlma all to CSV...")
-    storm_lma.save_to_csv(lma_all)
-    print("Saving all flash number counts to CSV...")
-    storm_lma.save_flash_number_count(csv_all_source_count)
-
-if not(os.path.isfile(lma_big)):
-    if storm_lma is None:
-        print("Loading all flashes from CSV...")
-        # Read in the information
-        storm_lma = st.StormLMA.from_lma_files([lma_all], [dates[0]])
-
-    print("Saving big flashes to CSV...")
-    storm_lma.save_flashes_by_size('big', lma_big)
-    print("Saving big flash number counts to CSV...")
-    storm_lma_big.save_flash_number_count(csv_big_source_count)
-
-if not(os.path.isfile(csv_all_source_count)):
-    print("Loading all flashes from CSV...")
-    storm_lma = st.StormLMA.from_lma_files([lma_all], [dates[0]])
-    print("Saving all flash number counts to CSV...")
-    storm_lma.save_flash_number_count(csv_all_source_count)
-
-if not(os.path.isfile(csv_big_source_count)):
-    print("Loading the big flashes from CSV...")
-    storm_lma_big = st.StormLMA.from_lma_files([lma_big], [dates[0]])
-    print("Saving big flash number counts to CSV...")
-    storm_lma_big.save_flash_number_count(csv_big_source_count)
-
-
 # if not(os.path.isfile(lma_all)):
 #     # Read in the individual files and save them out to a CSV file
-#     xlma_files = [path + '/xlma/ChargeAnalysis-1of2.exported.csv']
+#     xlma_files = [path + '/xlma/ChargeAnalysis-1of2.exported.csv',
+#                   path + '/xlma/ChargeAnalysis-2of2.exported.csv']
 #
-#     print("Reading all xlma files 08/27/2015...")
-#     storm_lma = st.StormLMA.from_lma_files(xlma_files, [dates[0]])
+#     print("Reading all xlma files...")
+#     storm_lma = st.StormLMA.from_lma_files(xlma_files, dates)
 #     print("Converting coordinates to meters...")
 #     storm_lma.convert_latlon_to_m(verbose=True)
-#     print("Saving xlma all to CSV 08/27/2015...")
+#     print("Saving xlma all to CSV...")
 #     storm_lma.save_to_csv(lma_all)
-
-# if not(os.path.isfile(lma_all_2)):
-#     # Read in the individual files and save them out to a CSV file
-#     xlma_files = [path + '/xlma/ChargeAnalysis-2of2.exported.csv']
+#     print("Saving all flash number counts to CSV...")
+#     storm_lma.save_flash_number_count(csv_all_source_count)
 #
-#     print("Reading all xlma files 08/28/2015...")
-#     storm_lma_2 = st.StormLMA.from_lma_files(xlma_files, [dates[1]])
-#     print("Converting coordinates to meters...")
-#     storm_lma_2.convert_latlon_to_m(verbose=True)
-#     print("Saving xlma all to CSV 08/28/2015...")
-#     storm_lma_2.save_to_csv(lma_all_2)
-
 # if not(os.path.isfile(lma_big)):
 #     if storm_lma is None:
-#         print("Loading all flashes from CSV 08/27/2015...")
+#         print("Loading all flashes from CSV...")
 #         # Read in the information
-#         storm_lma = st.StormLMA.from_lma_files([lma_all],
-#                                                [dates[0]])
+#         storm_lma = st.StormLMA.from_lma_files([lma_all], [dates[0]])
 #
-#     print("Saving big flashes to CSV  08/27/2015...")
+#     print("Saving big flashes to CSV...")
 #     storm_lma.save_flashes_by_size('big', lma_big)
-
-# if not(os.path.isfile(lma_big_2)):
-#     if storm_lma_2 is None:
-#         print("Loading all flashes from CSV 08/28/2015...")
-#         # Read in the information
-#         storm_lma_2 = st.StormLMA.from_lma_files([lma_all_2],
-#                                                  [dates[1]])
+#     print("Saving big flash number counts to CSV...")
+#     storm_lma_big.save_flash_number_count(csv_big_source_count)
 #
-#     print("Saving big flashes to CSV  08/28/2015...")
-#     storm_lma_2.save_flashes_by_size('big', lma_big_2)
-
 # if not(os.path.isfile(csv_all_source_count)):
 #     print("Loading all flashes from CSV...")
-#     storm_lma = st.StormLMA.from_lma_files([lma_all, lma_all_2],
-#                                            dates)
+#     storm_lma = st.StormLMA.from_lma_files([lma_all], [dates[0]])
 #     print("Saving all flash number counts to CSV...")
 #     storm_lma.save_flash_number_count(csv_all_source_count)
 #
 # if not(os.path.isfile(csv_big_source_count)):
 #     print("Loading the big flashes from CSV...")
-#     storm_lma_big = st.StormLMA.from_lma_files([lma_big,
-#                                                 lma_big_2],
-#                                                dates)
+#     storm_lma_big = st.StormLMA.from_lma_files([lma_big], [dates[0]])
 #     print("Saving big flash number counts to CSV...")
 #     storm_lma_big.save_flash_number_count(csv_big_source_count)
 
@@ -333,7 +274,8 @@ def plot_big_flashes(storm_big, nums, save_dir):
 # Read in data
 # sys.exit(1)
 print("- Loading data for all big flashes...")
-storm_big = st.StormLMA.from_lma_files([lma_big], [dates[0]])
+# storm_big = st.StormLMA.from_lma_files([lma_big], [dates[0]])
+storm_big = st.StormLMA.from_lma_files([lma_big_final], [dates[0]])
 
 # Get all unique flash numbers
 print("- Getting all unique flash numbers")
@@ -346,7 +288,7 @@ nums = storm_big.storm['flash-number'].unique()
 
 # Define save directory
 # save_dir = path + '/Pandas/Figures'
-save_dir = path + '/Pandas/Figures/SecondRun/All'
+save_dir = path + '/Pandas/Figures/ThirdRun/All'
 
 plot_big_flashes(storm_big, nums, save_dir)
 sys.exit(1)
