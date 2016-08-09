@@ -249,13 +249,23 @@ storm_lma_big = None
 
 def plot_big_flashes(storm_big, nums, save_dir):
     print("Plotting and saving big flashes:")
+    print("- Removing flash numbers already plotted...")
+    series = st.pd.Series(nums, name='flash-number')
+    series = series.reset_index()
+
+    files = [s[6:-4] for s in os.listdir(save_dir)]
+    for f in files:
+        series = series[series['flash-number'] != int(f)]
+
+    nums = series['flash-number'].unique()
+
     # Start loop
     print("- Starting loop:")
     for i in range(len(nums)):
         print("  - Flash {0}: {1} of {2}".format(nums[i], i+1,
                                                  len(nums)))
 
-        if nums[i] == 56240:
+        if nums[i] == 56240 or nums[i] == 56340 or nums[i] == 56400:
             print('       * Skipping {0}...'.format(nums[i]))
             continue
 
@@ -268,7 +278,12 @@ def plot_big_flashes(storm_big, nums, save_dir):
             print("       * No data for Flash {0}".format(nums[i]))
             continue
 
-        p.plot_all()
+        try:
+            p.plot_all()
+        except ValueError:
+            print('       * Skipping {0}...'.format(nums[i]))
+            continue
+
         p.ax_all_alt_t.set_title("Flash {0}".format(nums[i]))
 
         save_file = save_dir + '/flash_{0}.png'.format(nums[i])
