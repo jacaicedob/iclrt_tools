@@ -2840,7 +2840,8 @@ class LMAPlotter(object):
         if mn_y < min_y:
             min_y = mn_y
 
-        max_y = max_y + (max_y - min_y)*.1
+        max_y += (max_y - min_y) * .1
+        min_y -= (max_y - min_y) * .1
 
         max_x = -np.inf
         min_x = np.inf
@@ -2854,8 +2855,8 @@ class LMAPlotter(object):
         if mn_x < min_x:
             min_x = mn_x
 
-        max_x = max_x + (max_x - min_x)*.1
-        min_x = min_x - (max_x - min_x)*.1
+        max_x += (max_x - min_x)*.1
+        min_x -= (max_x - min_x)*.1
 
         # Set plot's limits
         self.ax_plan.set_ylim(min_y, max_y)
