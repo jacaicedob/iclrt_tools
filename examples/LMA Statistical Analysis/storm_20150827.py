@@ -81,6 +81,8 @@ if not(os.path.isfile(lma_all)):
     storm_lma.convert_latlon_to_m(verbose=True)
     print("Saving xlma all to CSV...")
     storm_lma.save_to_csv(lma_all)
+    print("Saving all flash number counts to CSV...")
+    storm_lma.save_flash_number_count(csv_all_source_count)
 
 if not(os.path.isfile(lma_big)):
     if storm_lma is None:
@@ -90,6 +92,8 @@ if not(os.path.isfile(lma_big)):
 
     print("Saving big flashes to CSV...")
     storm_lma.save_flashes_by_size('big', lma_big)
+    print("Saving big flash number counts to CSV...")
+    storm_lma_big.save_flash_number_count(csv_big_source_count)
 
 if not(os.path.isfile(csv_all_source_count)):
     print("Loading all flashes from CSV...")
@@ -327,6 +331,7 @@ def plot_big_flashes(storm_big, nums, save_dir):
         st.df.plt.close()
 
 # Read in data
+# sys.exit(1)
 print("- Loading data for all big flashes...")
 storm_big = st.StormLMA.from_lma_files([lma_big], [dates[0]])
 
@@ -341,7 +346,7 @@ nums = storm_big.storm['flash-number'].unique()
 
 # Define save directory
 # save_dir = path + '/Pandas/Figures'
-save_dir = path + '/Pandas/Figures/Test'
+save_dir = path + '/Pandas/Figures/SecondRun/All'
 
 plot_big_flashes(storm_big, nums, save_dir)
 sys.exit(1)
