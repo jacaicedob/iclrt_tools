@@ -2008,14 +2008,20 @@ class LMAPlotter(object):
         # Update all other variables
         self.update_data()
 
-    def filter_time(self, tlims):
+    def filter_time(self, tlims, day_offset=0):
         """
         Filters the data to only show the points that are within the specified
         time limits tlims.
 
-        :param time: a list with the time limits as strings in the format
-                     HH:MM:SS.SSSSSS
-        :return:
+        Parameters:
+        ----------
+        time: list
+            A list with the time limits as strings in the format
+            HH:MM:SS.SSSSSS
+
+        day_offset: int (optional)
+            Add N days (86400 seconds/day) to the total_seconds() to
+            allow storms to span multiple days.
         """
         # Convert the time limits to timedelta objects
         t0 = datetime.datetime.strptime(tlims[0], '%H:%M:%S.%f')
@@ -2023,10 +2029,14 @@ class LMAPlotter(object):
                                  seconds=t0.second,
                                  microseconds=t0.microsecond)
 
+        dt0 += day_offset * datetime.timedelta(seconds=86400)
+
         t1 = datetime.datetime.strptime(tlims[1], '%H:%M:%S.%f')
         dt1 = datetime.timedelta(hours=t1.hour, minutes=t1.minute,
                                  seconds=t1.second,
                                  microseconds=t1.microsecond)
+
+        dt1 += day_offset * datetime.timedelta(seconds=86400)
 
         # Filter the data
         self.filtered_data = [s for s in self.filtered_data if
