@@ -2375,14 +2375,14 @@ class LMAPlotter(object):
         if lims is None:
             if np.min(self.plot_data['z']) < 1e3:
                 self.ax_alt_t.set_ylim([0,
-                                            np.max(self.plot_data['z'] * 1e-3) +
-                                            np.std(self.plot_data['z'] * 1e-3)])
+                                        np.max(self.plot_data['z'] * 1e-3) +
+                                        np.std(self.plot_data['z'] * 1e-3)])
 
             else:
                 self.ax_alt_t.set_ylim([np.min(self.plot_data['z']*1e-3) -
-                                            np.std(self.plot_data['z']*1e-3),
-                                            np.max(self.plot_data['z']*1e-3) +
-                                            np.std(self.plot_data['z']*1e-3)])
+                                        np.std(self.plot_data['z']*1e-3),
+                                        np.max(self.plot_data['z']*1e-3) +
+                                        np.std(self.plot_data['z']*1e-3)])
         else:
             self.ax_alt_t.set_ylim(lims)
 
