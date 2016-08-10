@@ -54,60 +54,60 @@ dates = ['04/02/2016']
 storm_lma = None
 storm_lma_big = None
 
-if not(os.path.isfile(lma_all)):
-    # Read in the individual files and save them out to a CSV file
-    xlma_files = [path + '/xlma/ChargeAnalysis_20160402_0930.exported.csv',
-                  path + '/xlma/ChargeAnalysis_20160402_0940.exported.csv',
-                  path + '/xlma/ChargeAnalysis_20160402_0950.exported.csv',
-                  path + '/xlma/ChargeAnalysis_20160402_1000.exported.csv',
-                  path + '/xlma/ChargeAnalysis_20160402_1010.exported.csv',
-                  path + '/xlma/ChargeAnalysis_20160402_1020.exported.csv',
-                  path + '/xlma/ChargeAnalysis_20160402_1030.exported.csv',
-                  path + '/xlma/ChargeAnalysis_20160402_1040.exported.csv',
-                  path + '/xlma/ChargeAnalysis_20160402_1050.exported.csv',
-                  path + '/xlma/ChargeAnalysis_20160402_1100.exported.csv',
-                  path + '/xlma/ChargeAnalysis_20160402_1110.exported.csv',
-                  path + '/xlma/ChargeAnalysis_20160402_1120.exported.csv',
-                  path + '/xlma/ChargeAnalysis_20160402_1130.exported.csv',
-                  path + '/xlma/ChargeAnalysis_20160402_1140.exported.csv',
-                  path + '/xlma/ChargeAnalysis_20160402_1150.exported.csv',
-                  path + '/xlma/ChargeAnalysis_20160402_1200.exported.csv',
-                  path + '/xlma/ChargeAnalysis_20160402_1210.exported.csv',
-                  path + '/xlma/ChargeAnalysis_20160402_1220.exported.csv',
-                  path + '/xlma/ChargeAnalysis_20160402_1230.exported.csv',
-                  path + '/xlma/ChargeAnalysis_20160402_1240.exported.csv']
-
-    print("Reading all xlma files...")
-    storm_lma = st.StormLMA.from_lma_files(xlma_files, dates)
-    print("Converting coordinates to meters...")
-    storm_lma.convert_latlon_to_m(verbose=True)
-    print("Saving xlma all to CSV...")
-    storm_lma.save_to_csv(lma_all)
-
-if not (os.path.isfile(lma_big)):
-    if storm_lma is None:
-        print("Loading all flashes from CSV...")
-        storm_lma = st.StormLMA.from_lma_files([lma_all], dates)
-
-    print("Saving big flashes to CSV...")
-    storm_lma.save_flashes_by_size('big', lma_big)
-
-if not (os.path.isfile(csv_all_source_count)):
-    if storm_lma is None:
-        print("Loading all flashes from CSV...")
-        storm_lma = st.StormLMA.from_lma_files([lma_all], dates)
-
-    print("Saving all flash number counts to CSV...")
-    storm_lma.save_flash_number_count(csv_all_source_count)
-
-if not (os.path.isfile(csv_big_source_count)):
-    if storm_lma_big is None:
-        print("Loading the big flashes from CSV...")
-        storm_lma_big = st.StormLMA.from_lma_files([lma_big],
-                                                   dates)
-
-    print("Saving big flash number counts to CSV...")
-    storm_lma_big.save_flash_number_count(csv_big_source_count)
+# if not(os.path.isfile(lma_all)):
+#     # Read in the individual files and save them out to a CSV file
+#     xlma_files = [path + '/xlma/ChargeAnalysis_20160402_0930.exported.csv',
+#                   path + '/xlma/ChargeAnalysis_20160402_0940.exported.csv',
+#                   path + '/xlma/ChargeAnalysis_20160402_0950.exported.csv',
+#                   path + '/xlma/ChargeAnalysis_20160402_1000.exported.csv',
+#                   path + '/xlma/ChargeAnalysis_20160402_1010.exported.csv',
+#                   path + '/xlma/ChargeAnalysis_20160402_1020.exported.csv',
+#                   path + '/xlma/ChargeAnalysis_20160402_1030.exported.csv',
+#                   path + '/xlma/ChargeAnalysis_20160402_1040.exported.csv',
+#                   path + '/xlma/ChargeAnalysis_20160402_1050.exported.csv',
+#                   path + '/xlma/ChargeAnalysis_20160402_1100.exported.csv',
+#                   path + '/xlma/ChargeAnalysis_20160402_1110.exported.csv',
+#                   path + '/xlma/ChargeAnalysis_20160402_1120.exported.csv',
+#                   path + '/xlma/ChargeAnalysis_20160402_1130.exported.csv',
+#                   path + '/xlma/ChargeAnalysis_20160402_1140.exported.csv',
+#                   path + '/xlma/ChargeAnalysis_20160402_1150.exported.csv',
+#                   path + '/xlma/ChargeAnalysis_20160402_1200.exported.csv',
+#                   path + '/xlma/ChargeAnalysis_20160402_1210.exported.csv',
+#                   path + '/xlma/ChargeAnalysis_20160402_1220.exported.csv',
+#                   path + '/xlma/ChargeAnalysis_20160402_1230.exported.csv',
+#                   path + '/xlma/ChargeAnalysis_20160402_1240.exported.csv']
+#
+#     print("Reading all xlma files...")
+#     storm_lma = st.StormLMA.from_lma_files(xlma_files, dates)
+#     print("Converting coordinates to meters...")
+#     storm_lma.convert_latlon_to_m(verbose=True)
+#     print("Saving xlma all to CSV...")
+#     storm_lma.save_to_csv(lma_all)
+#
+# if not (os.path.isfile(lma_big)):
+#     if storm_lma is None:
+#         print("Loading all flashes from CSV...")
+#         storm_lma = st.StormLMA.from_lma_files([lma_all], dates)
+#
+#     print("Saving big flashes to CSV...")
+#     storm_lma.save_flashes_by_size('big', lma_big)
+#
+# if not (os.path.isfile(csv_all_source_count)):
+#     if storm_lma is None:
+#         print("Loading all flashes from CSV...")
+#         storm_lma = st.StormLMA.from_lma_files([lma_all], dates)
+#
+#     print("Saving all flash number counts to CSV...")
+#     storm_lma.save_flash_number_count(csv_all_source_count)
+#
+# if not (os.path.isfile(csv_big_source_count)):
+#     if storm_lma_big is None:
+#         print("Loading the big flashes from CSV...")
+#         storm_lma_big = st.StormLMA.from_lma_files([lma_big],
+#                                                    dates)
+#
+#     print("Saving big flash number counts to CSV...")
+#     storm_lma_big.save_flash_number_count(csv_big_source_count)
 
 # if not (os.path.isfile(lma_big_matched)) or \
 #    not (os.path.isfile(ods_big_matched)) or \
@@ -235,6 +235,16 @@ def split_flashes():
 
 def plot_big_flashes(storm_big, nums, save_dir):
     print("Plotting and saving big flashes:")
+    print("- Removing flash numbers already plotted...")
+    series = st.pd.Series(nums, name='flash-number')
+    series = series.reset_index()
+
+    files = [s[6:-4] for s in os.listdir(save_dir)]
+    for f in files:
+        series = series[series['flash-number'] != int(f)]
+
+    nums = series['flash-number'].unique()
+
     # Start loop
     print("- Starting loop:")
     for i in range(len(nums)):
@@ -250,7 +260,12 @@ def plot_big_flashes(storm_big, nums, save_dir):
             print("       * No data for Flash {0}".format(nums[i]))
             continue
 
-        p.plot_all()
+        try:
+            p.plot_all()
+        except ValueError:
+            print('       * Skipping {0}...'.format(nums[i]))
+            continue
+
         p.ax_all_alt_t.set_title("Flash {0}".format(nums[i]))
 
         save_file = save_dir + '/flash_{0}.png'.format(nums[i])
