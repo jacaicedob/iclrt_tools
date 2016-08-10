@@ -307,7 +307,7 @@ nums = storm_big.storm['flash-number'].unique()
 
 # Define save directory
 # save_dir = path + '/Pandas/Figures'
-save_dir = path + '/Pandas/Figures/ThirdRun/All'
+save_dir = path + '/Pandas/Figures/FinalRun/All'
 
 plot_big_flashes(storm_big, nums, save_dir)
 sys.exit(1)
