@@ -2340,7 +2340,7 @@ class LMAPlotter(object):
 
         return temp_x, temp_y, temp_t, temp_charge
 
-    def plot_alt_t(self, lims=(0, 20e3), ax=None):
+    def plot_alt_t(self, lims=None, ax=None):
         self.alt_t_x_stack = []
         self.alt_t_y_stack = []
 
@@ -2372,7 +2372,20 @@ class LMAPlotter(object):
         self.ax_alt_t.set_ylabel('Altitude (km)')
         self.ax_alt_t.set_xlabel('Time (s)')
 
-        self.ax_alt_t.set_ylim(lims)
+        if lims is None:
+            if np.min(self.plot_data['z']) < 1e3:
+                self.ax_alt_t.set_ylim([0,
+                                            np.max(self.plot_data['z'] * 1e-3) +
+                                            np.std(self.plot_data['z'] * 1e-3)])
+
+            else:
+                self.ax_alt_t.set_ylim([np.min(self.plot_data['z']*1e-3) -
+                                            np.std(self.plot_data['z']*1e-3),
+                                            np.max(self.plot_data['z']*1e-3) +
+                                            np.std(self.plot_data['z']*1e-3)])
+        else:
+            self.ax_alt_t.set_ylim(lims)
+
         self.ax_alt_t.set_xlim([self.plot_data['t'][0],
                                 self.plot_data['t'][-1]])
 
@@ -3198,10 +3211,16 @@ class LMAPlotter(object):
         # self.ax_all_alt_t.set_xlim([self.plot_data['t'][0],
         #                             self.plot_data['t'][-1]])
 
-        self.ax_all_alt_t.set_ylim([np.min(self.plot_data['z']*1e-3) -
-                                    np.std(self.plot_data['z']*1e-3),
-                                    np.max(self.plot_data['z']*1e-3) +
-                                    np.std(self.plot_data['z']*1e-3)])
+        if np.min(self.plot_data['z']) < 1e3:
+            self.ax_all_alt_t.set_ylim([0,
+                                        np.max(self.plot_data['z'] * 1e-3) +
+                                        np.std(self.plot_data['z'] * 1e-3)])
+
+        else:
+            self.ax_all_alt_t.set_ylim([np.min(self.plot_data['z']*1e-3) -
+                                        np.std(self.plot_data['z']*1e-3),
+                                        np.max(self.plot_data['z']*1e-3) +
+                                        np.std(self.plot_data['z']*1e-3)])
 
         # Altitude vs. NS projection subplot
         self.scat_all_NS = self.ax_all_NS.scatter(self.plot_data['z']*1E-3,
