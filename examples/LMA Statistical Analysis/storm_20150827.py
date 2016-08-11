@@ -265,10 +265,6 @@ def plot_big_flashes(storm_big, nums, save_dir):
         print("  - Flash {0}: {1} of {2}".format(nums[i], i+1,
                                                  len(nums)))
 
-        if nums[i] == 56240 or nums[i] == 56340 or nums[i] == 56400:
-            print('       * Skipping {0}...'.format(nums[i]))
-            continue
-
         p = storm_big.get_flash_plotter_from_number(nums[i])
         p.filter_num_stations(6)
         p.filter_rc2(1)
@@ -306,8 +302,8 @@ nums = storm_big.storm['flash-number'].unique()
 # nums = nums['flash-number'].unique()
 
 # Define save directory
-# save_dir = path + '/Pandas/Figures'
-save_dir = path + '/Pandas/Figures/FinalRun/All'
+save_dir = path + '/Pandas/Figures'
+# save_dir = path + '/Pandas/Figures/FinalRun/All'
 
 plot_big_flashes(storm_big, nums, save_dir)
 sys.exit(1)
