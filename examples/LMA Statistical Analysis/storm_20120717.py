@@ -171,100 +171,110 @@ storm_lma_big = None
 #     dups.to_csv(csv_big_matched_duplicates)
 
 
-def split_flashes():
-    print("Starting split-flashes routine...")
-    try:
-        storm_lma = st.StormLMA.from_lma_files([lma_big_lessdups], dates)
-
-    except OSError:
-        storm_lma = st.StormLMA.from_lma_files([lma_big], dates)
-
-    try:
-        duplicates = st.pd.read_csv(temp_duplicates,
-                                    names=['index', 'flash-number'])
-    except OSError:
-        duplicates = st.pd.read_csv(csv_big_matched_duplicates,
-                                    names=['index', 'flash-number'])
-
-    storm_lma.filter_x(lims=[-50e3, 50e3], inplace=True)
-    storm_lma.filter_y(lims=[-50e3, 50e3], inplace=True)
-
-    storm = storm_lma.copy()
-    dups = duplicates['flash-number'].unique()
-
-    for num in range(len(dups)):
-        print("Flash {0}: {1} out of {2}".format(dups[num],
-                                                 num + 1, len(dups)))
-
-        p = storm.get_flash_plotter_from_number(dups[num])
-        p.set_coloring('charge')
-        p.filter_num_stations(7)
-        p.filter_rc2(1)
-
-        p.plot_plan()
-        p.ax_plan.set_title("Flash {0} out of {1}".format(num + 1,
-                                                          len(dups)))
-        st.df.plt.show()
-
-        default = "n"
-        response = input("Split into flashes? [y/N]")
-
-        if response.lower() != "y":
-            response = default
-
-        if response == "y":
-            print("  Flash number: ", dups[num])
-            print("  x lims: ", p.ax_plan.get_xlim())
-            print("  y lims: ", p.ax_plan.get_ylim())
-
-            # Get plot limits
-            xlims = p.ax_plan.get_xlim()
-            ylims = p.ax_plan.get_ylim()
-
-            # Get the maximum flash number of storm
-            new_number = storm.storm['flash-number'].max() + 10
-            print(new_number)
-
-            # Get the sources for the current flash number
-            data = storm.storm[storm.storm['flash-number'] == dups[num]]
-
-            # Sort out the new flashes using the plot limits. results holds
-            # the DateTimeIndex for the sources inside the plot limits, and
-            # rest hold all other sources in the data DataFrame
-            results = []
-            rest = []
-
-            for index, row in data.iterrows():
-                if xlims[0] < row['x(m)'] < xlims[1]:
-                    if ylims[0] < row['y(m)'] < ylims[1]:
-                        results.append(index)
-                    else:
-                        rest.append(index)
-                else:
-                    rest.append(index)
-
-            # Set new flash numbers for both sets of sources
-            data.set_value(results, 'flash-number', new_number)
-            data.set_value(rest, 'flash-number', new_number + 10)
-
-            # Combine with the master DataFrame and remove the entries
-            # with the old flash number from the master DataFrame
-            final = st.pd.concat([storm.storm, data])
-            storm.storm = final[final['flash-number'] != dups[num]]
-
-            # Save out results to allow for resume
-            s = st.pd.Series(dups[num+1:], name="Duplicates")
-            s.to_csv(temp_duplicates)
-            storm.save_to_csv(lma_big_lessdups)
-
-        else:
-            # Save out results to allow for resume
-            s = st.pd.Series(dups[num + 1:], name="Duplicates")
-            s.to_csv(temp_duplicates)
+# def split_flashes():
+#     print("Starting split-flashes routine...")
+#     try:
+#         storm_lma = st.StormLMA.from_lma_files([lma_big_lessdups], dates)
+#
+#     except OSError:
+#         storm_lma = st.StormLMA.from_lma_files([lma_big], dates)
+#
+#     try:
+#         duplicates = st.pd.read_csv(temp_duplicates,
+#                                     names=['index', 'flash-number'])
+#     except OSError:
+#         duplicates = st.pd.read_csv(csv_big_matched_duplicates,
+#                                     names=['index', 'flash-number'])
+#
+#     storm_lma.filter_x(lims=[-50e3, 50e3], inplace=True)
+#     storm_lma.filter_y(lims=[-50e3, 50e3], inplace=True)
+#
+#     storm = storm_lma.copy()
+#     dups = duplicates['flash-number'].unique()
+#
+#     for num in range(len(dups)):
+#         print("Flash {0}: {1} out of {2}".format(dups[num],
+#                                                  num + 1, len(dups)))
+#
+#         p = storm.get_flash_plotter_from_number(dups[num])
+#         p.set_coloring('charge')
+#         p.filter_num_stations(7)
+#         p.filter_rc2(1)
+#
+#         p.plot_plan()
+#         p.ax_plan.set_title("Flash {0} out of {1}".format(num + 1,
+#                                                           len(dups)))
+#         st.df.plt.show()
+#
+#         default = "n"
+#         response = input("Split into flashes? [y/N]")
+#
+#         if response.lower() != "y":
+#             response = default
+#
+#         if response == "y":
+#             print("  Flash number: ", dups[num])
+#             print("  x lims: ", p.ax_plan.get_xlim())
+#             print("  y lims: ", p.ax_plan.get_ylim())
+#
+#             # Get plot limits
+#             xlims = p.ax_plan.get_xlim()
+#             ylims = p.ax_plan.get_ylim()
+#
+#             # Get the maximum flash number of storm
+#             new_number = storm.storm['flash-number'].max() + 10
+#             print(new_number)
+#
+#             # Get the sources for the current flash number
+#             data = storm.storm[storm.storm['flash-number'] == dups[num]]
+#
+#             # Sort out the new flashes using the plot limits. results holds
+#             # the DateTimeIndex for the sources inside the plot limits, and
+#             # rest hold all other sources in the data DataFrame
+#             results = []
+#             rest = []
+#
+#             for index, row in data.iterrows():
+#                 if xlims[0] < row['x(m)'] < xlims[1]:
+#                     if ylims[0] < row['y(m)'] < ylims[1]:
+#                         results.append(index)
+#                     else:
+#                         rest.append(index)
+#                 else:
+#                     rest.append(index)
+#
+#             # Set new flash numbers for both sets of sources
+#             data.set_value(results, 'flash-number', new_number)
+#             data.set_value(rest, 'flash-number', new_number + 10)
+#
+#             # Combine with the master DataFrame and remove the entries
+#             # with the old flash number from the master DataFrame
+#             final = st.pd.concat([storm.storm, data])
+#             storm.storm = final[final['flash-number'] != dups[num]]
+#
+#             # Save out results to allow for resume
+#             s = st.pd.Series(dups[num+1:], name="Duplicates")
+#             s.to_csv(temp_duplicates)
+#             storm.save_to_csv(lma_big_lessdups)
+#
+#         else:
+#             # Save out results to allow for resume
+#             s = st.pd.Series(dups[num + 1:], name="Duplicates")
+#             s.to_csv(temp_duplicates)
 
 
 def plot_big_flashes(storm_big, nums, save_dir):
     print("Plotting and saving big flashes:")
+    print("- Removing flash numbers already plotted...")
+    series = st.pd.Series(nums, name='flash-number')
+    series = series.reset_index()
+
+    files = [s[6:-4] for s in os.listdir(save_dir)]
+    for f in files:
+        series = series[series['flash-number'] != int(f)]
+
+    nums = series['flash-number'].unique()
+
     # Start loop
     print("- Starting loop:")
     for i in range(len(nums)):
@@ -281,7 +291,12 @@ def plot_big_flashes(storm_big, nums, save_dir):
             print("       * No data for Flash {0}".format(nums[i]))
             continue
 
-        p.plot_all()
+        try:
+            p.plot_all()
+        except ValueError:
+            print('       * Skipping {0}...'.format(nums[i]))
+            continue
+            
         p.ax_all_alt_t.set_title("Flash {0}".format(nums[i]))
 
         save_file = save_dir + '/flash_{0}.png'.format(nums[i])
