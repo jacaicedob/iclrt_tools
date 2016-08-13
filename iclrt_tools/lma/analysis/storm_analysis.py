@@ -2689,7 +2689,7 @@ class Analysis(object):
         area_61 = np.array(area_61) * 1e-6
         # area_75 = np.array(area_75) * 1e-6
         # area_71 = np.array(area_71) * 1e-6
-        area_mean = np.array(area_mean) * 1e-6
+        # area_mean = np.array(area_mean) * 1e-6
 
         result = dict()
         result['flash-number'] = unique
