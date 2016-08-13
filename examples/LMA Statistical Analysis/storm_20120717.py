@@ -296,7 +296,7 @@ def plot_big_flashes(storm_big, nums, save_dir):
         except ValueError:
             print('       * Skipping {0}...'.format(nums[i]))
             continue
-            
+
         p.ax_all_alt_t.set_title("Flash {0}".format(nums[i]))
 
         save_file = save_dir + '/flash_{0}.png'.format(nums[i])
@@ -316,7 +316,7 @@ nums = storm_big.storm['flash-number'].unique()
 # nums = nums['flash-number'].unique()
 
 # Define save directory
-save_dir = path + '/Pandas/Figures/FinalRun/All'
+save_dir = path + '/Pandas/Figures'
 # save_dir = path + '/Pandas/Figures/FirstRun/AnalyzeAgain'
 
 plot_big_flashes(storm_big, nums, save_dir)
