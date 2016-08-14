@@ -2706,8 +2706,21 @@ class LMAPlotter(object):
                                                   marker='.',
                                                   c=c, s=30, lw=0)
 
-        self.ax_plan.set_xlim(xlims)
-        self.ax_plan.set_ylim(ylims)
+        if xlims == None:
+            self.ax_plan.set_xlim([np.min(self.plot_data['x']) -
+                                   np.std(self.plot_data['x']),
+                                   np.max(self.plot_data['x']) +
+                                   np.std(self.plot_data['x'])])
+        else:
+            self.ax_plan.set_xlim(xlims)
+
+        if ylims == None:
+            self.ax_plan.set_ylim([np.min(self.plot_data['y']) -
+                                   np.std(self.plot_data['y']),
+                                   np.max(self.plot_data['y']) +
+                                   np.std(self.plot_data['y'])])
+        else:
+            self.ax_plan.set_ylim(ylims)
 
         self.ax_plan.set_ylabel('South - North')
         self.ax_plan.set_xlabel('West - East')
