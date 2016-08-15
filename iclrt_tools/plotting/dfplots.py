@@ -1490,7 +1490,7 @@ class RadarPlotter(object):
         self.display = pyart.graph.RadarDisplay(self.radar, self.shift)
 
     def plot_ppi(self, field='reflectivity', sweep=0, fig=None, ax=None,
-                 start_coord=None):
+                 start_coord=None, contours=False):
         """
         Plot PPI (wrapper function).
 
@@ -1504,6 +1504,10 @@ class RadarPlotter(object):
             Desired figure to use.
         ax: matplotlib.Axes, optional
             Desired axis to use.
+        start_cood: bool, optional
+
+        contours: bool,optional
+            Draw contours around data values
 
         """
 
@@ -1544,6 +1548,33 @@ class RadarPlotter(object):
                                       colorbar_label=label,
                                       axislabels_flag=False,
                                       cmap=cmap, gatefilter=self.gatefilter)
+
+                if contours:
+                    # Get radar data
+                    data = self.radar.get_field(sweep, field)
+
+                    # Get x,y,z for data
+                    x, y, z = self.radar.get_gate_x_y_z(sweep, edges=False)
+
+                    # Convert to meters
+                    x /= 1000.
+                    y /= 1000.
+                    z /= 1000.
+
+                    ax = plt.gca()
+
+                    if field == 'reflectivity':
+                        levels = np.arange(vmin, vmax, 5)
+                        contours = ax.contour(x, y, data, levels,
+                                               linewidths=1.5,
+                                               colors='k', linestyle='solid',
+                                               antialiased=True)
+                        plt.clabel(contours, levels, fmt='%r', inline=True)
+
+                    else:
+                        ax.contour(x, y, data, linewidths=1.5,
+                                   colors='k', linestyle='solid',
+                                   antialiased=True)
 
                 # ax = plt.gca()
                 # print(start_coord[0]*1e-3, start_coord[1]*1e-3)
