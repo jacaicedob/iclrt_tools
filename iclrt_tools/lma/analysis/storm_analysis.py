@@ -383,10 +383,6 @@ class StormLMA(Storm):
         print('Total Iterations: {0}'.format(total))
         start = datetime.datetime.now()
         for i in nldn.index:
-            # # Ignore the times in the file that are outside the range of
-            # # the analyzed storm.
-            # if not (self.storm.index.min() <= i <= self.storm.index.max()):
-            #     continue
 
             for flash_number in numbers:
                 count += 1
@@ -415,6 +411,72 @@ class StormLMA(Storm):
                 len(self.nldn_detections['flash-number'])))
         print('Correlated detection efficiency: {0}'.format(
             len(self.nldn_detections['flash-number']) / len(numbers)))
+
+    def calculate_flash_areas(self, stations=6, rc2=1, verbose=False):
+        """
+        Calculate the flash areas of all flashes.
+
+        Parameters
+        ----------
+        stations: int, optional
+            Minimum number of stations that contribute to each source
+            solution. Used to filter the LMA data before performing the area
+            calculation.
+        rc2: int, optional
+            Maximum chi squared value of each source solution.
+            Used to filter the LMA data before performing the area calculation.
+
+        Returns
+        -------
+        data: Pandas DataFrame
+            DataFrame containing the areas for all flash numbers in
+            self.storm and indexed by flash number. The column name for the
+            flash areas is 'Area(m^2)'.
+            Other data included are 'StartTime(UTC)'.
+        """
+
+        storm = self.copy()
+        numbers = storm.storm['flash-number'].unique()
+        storm.filter_stations(stations, inplace=True)
+        storm.filter_chi_squared(rc2)
+
+        results = dict()
+        results['flash-number'] = []
+        results['StartTime(UTC)'] = []
+        results['Area(m^2)'] = []
+
+        if verbose:
+            pbar = tqdm.tqdm(total=len(numbers))
+
+        for i in range(len(numbers)):
+            flash = storm.get_sources_from_flash_number(numbers[i])
+
+            x = flash['x(m)'].get_values()
+            y = flash['y(m)'].get_values()
+
+            f = np.vstack((x, y)).T
+
+            hull = scipy.spatial.ConvexHull(f)
+            verts = f[hull.vertices].tolist()
+            verts.append(f[hull.vertices[0]])
+
+            lines = np.hstack([verts, np.roll(verts, -1, axis=0)])
+            area = (0.5 * abs(sum(x1 * y2 - x2 * y1 for
+                                  x1, y1, x2, y2 in lines)))
+
+            results['flash-number'].append(numbers[i])
+            results['Area(m^2)'].append(area)
+            results['StartTime(UTC)'].append(flash.index.min())
+
+            if verbose:
+                pbar.update(1)
+                # print("- Flash {0:03d} ({1:03d} of {2}):"
+                #       "{3} m^2".format(numbers[i], i + 1, len(numbers), area))
+
+        data = pd.DataFrame(results)
+        data.set_index('flash-number', inplace=True)
+
+        return data
 
     def copy(self):
         return StormLMA(self.storm.copy())
