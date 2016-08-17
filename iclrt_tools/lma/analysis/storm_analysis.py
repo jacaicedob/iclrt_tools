@@ -714,10 +714,11 @@ class StormLMA(Storm):
             p : LMAPlotter
                 Plotter object.
         """
+        storm = self.storm.set_index('DateTime')
 
         # Generate the header contents for the temporary .dat file
         # that will contain the LMA sources for one flash.
-        d = datetime.datetime.strftime(self.storm.index[0], '%m/%d/%Y')
+        d = datetime.datetime.strftime(storm.index[0], '%m/%d/%Y')
         date = 'Data start time: {0}'.format(d)
         center = 'Coordinate center (lat,lon,alt): 29.9429917 -82.0332305 0.00'
         data_str = '*** data ***'
@@ -726,16 +727,16 @@ class StormLMA(Storm):
         temp_file = temp_dir + '/temp.dat'
 
         if type(flash_number) == np.int64 or type(flash_number) == int:
-            subset = self.storm[self.storm['flash-number'] == flash_number]
+            subset = storm[storm['flash-number'] == flash_number]
         else:
             temp = []
             for n in flash_number:
                 if type(n) is tuple or type(n) is list:
                     for m in n:
-                        temp.append(self.storm[self.storm['flash-number'] == m])
+                        temp.append(storm[storm['flash-number'] == m])
 
                 else:
-                    temp.append(self.storm[self.storm['flash-number'] == n])
+                    temp.append(storm[storm['flash-number'] == n])
 
             subset = pd.concat(temp)
 
