@@ -281,11 +281,13 @@ class StormLMA(Storm):
         else:
             storm = pds[0]
 
-        # _ = storm.pop('#-of-stations-contributed')
-        # _ = storm.pop('reduced-chi^2')
-        # _ = storm.pop('time(UT-sec-of-day)')
+        # Sort the data frame by time
         storm.set_index('DateTime', inplace=True)
         storm.sort_index(inplace=True)
+
+        # Reset the index
+        storm.reset_index(inplace=True)
+
         return storm
 
     def analyze_pos_neg_charge(self):
@@ -317,9 +319,10 @@ class StormLMA(Storm):
 
     def analyze_subset(self, start, end, plot=True):
         """ Analyze the data between start and end. """
+        storm = self.storm.set_index('DataTime')
 
         # Analyze a subset of the entire self.storm
-        subset = self.storm.loc[start:end]
+        subset = storm.loc[start:end]
         # print(subset.index)
 
         subset = Storm(subset)
@@ -338,6 +341,7 @@ class StormLMA(Storm):
             File path to the NLDN file.
 
         """
+        storm = self.storm.set_index('DateTime')
 
         # Read in file
         nldn = pd.read_csv(nldn_file, sep=' ',
@@ -359,8 +363,8 @@ class StormLMA(Storm):
         _ = nldn.pop('Dummy')
 
         # Limit the NLDN times to the storm times
-        start_ind = self.storm.index.min()
-        end_ind = self.storm.index.max()
+        start_ind = storm.index.min()
+        end_ind = storm.index.max()
         nldn = nldn.loc[start_ind:end_ind]
 
         # Setup the container for the results data
@@ -373,7 +377,7 @@ class StormLMA(Storm):
         self.nldn_detections['Mult'] = []
         self.nldn_detections['kA'] = []
 
-        temp = self.storm[self.storm['charge'] != 0]
+        temp = storm[storm['charge'] != 0]
         numbers = temp['flash-number'].unique()
 
         # Start the computation of detected NLDN flashes
@@ -386,7 +390,7 @@ class StormLMA(Storm):
 
             for flash_number in numbers:
                 count += 1
-                flash = self.storm[self.storm['flash-number'] == flash_number]
+                flash = storm[storm['flash-number'] == flash_number]
 
                 if flash.index.min() <= i <= flash.index.max():
                     self.nldn_detections['flash-number'].append(flash_number)
@@ -435,7 +439,7 @@ class StormLMA(Storm):
             Other data included are 'StartTime(UTC)'.
         """
 
-        storm = self.copy()
+        storm = self.storm.set_index('DateTime')
         numbers = storm.storm['flash-number'].unique()
         storm.filter_stations(stations, inplace=True)
         storm.filter_chi_squared(rc2)
@@ -497,19 +501,20 @@ class StormLMA(Storm):
             rate ('FlashRate(/min)') as flashes per minute. It has no
             particular index (0 to N-1).
         """
+        storm = self.storm.set_index('DateTime')
 
         t_interval = datetime.timedelta(minutes=interval)
-        t_start = self.storm.index.min()
+        t_start = storm.index.min()
         t_end = t_start + t_interval
 
-        temp_storm = self.storm.copy()
+        temp_storm = storm.copy()
 
         results = dict()
         results['StartTime(UTC)'] = []
         results['EndTime(UTC)'] = []
         results['FlashRate(/min)'] = []
 
-        while t_start < self.storm.index.max():
+        while t_start < storm.index.max():
             temp = temp_storm[temp_storm.index < t_end]
             temp = temp[temp.index >= t_start]
 
@@ -788,8 +793,9 @@ class StormLMA(Storm):
             p : LMAPlotter
                 Plotter object.
         """
+        storm = self.storm.set_index('DateTime')
 
-        subset = self.storm.loc[start:end]
+        subset = storm.loc[start:end]
 
         # Count the number of sources corresponding to each flash
         # number in the subset
@@ -800,7 +806,7 @@ class StormLMA(Storm):
 
         # Generate the header contents for the temporary .dat file
         # that will contain the LMA sources for one flash.
-        d = datetime.datetime.strftime(self.storm.index[0], '%m/%d/%Y')
+        d = datetime.datetime.strftime(storm.index[0], '%m/%d/%Y')
         date = 'Data start time: {0}'.format(d)
         center = 'Coordinate center (lat,lon,alt): 29.9429917 -82.0332305 0.00'
         data_str = '*** data ***'
@@ -808,7 +814,7 @@ class StormLMA(Storm):
         # Temporary file to store the LMA sources of a single flash
         temp_file = './temp.dat'
 
-        subset = self.storm[self.storm['flash-number'] == number]
+        subset = storm[storm['flash-number'] == number]
         subset.reset_index(inplace=True)
 
         # Open the temporary LMA .dat file and write the header.
@@ -861,9 +867,10 @@ class StormLMA(Storm):
                 Plotter object.
         """
 
+        storm = self.storm.set_index('DateTime')
         # Generate the header contents for the temporary .dat file
         # that will contain the LMA sources for one flash.
-        d = datetime.datetime.strftime(self.storm.index[0], '%m/%d/%Y')
+        d = datetime.datetime.strftime(storm.index[0], '%m/%d/%Y')
         date = 'Data start time: {0}'.format(d)
         center = 'Coordinate center (lat,lon,alt): 29.9429917 -82.0332305 0.00'
         data_str = '*** data ***'
@@ -872,7 +879,7 @@ class StormLMA(Storm):
         temp_file = './temp.dat'
 
         if type(flash_number) == np.int64 or type(flash_number) == int:
-            subset = self.storm[self.storm['flash-number'] == flash_number]
+            subset = storm[storm['flash-number'] == flash_number]
             subset.sort_index(inplace=True)
             subset = subset.iloc[0:number_of_sources]
 
@@ -881,11 +888,11 @@ class StormLMA(Storm):
             for n in flash_number:
                 if type(n) is tuple or type(n) is list:
                     for m in n:
-                        f = self.storm[self.storm['flash-number'] == m]
+                        f = storm[storm['flash-number'] == m]
                         f.sort_index(inplace=True)
                         f = f.iloc[0:number_of_sources]
                 else:
-                    f = self.storm[self.storm['flash-number'] == n]
+                    f = storm[storm['flash-number'] == n]
                     f.sort_index(inplace=True)
                     f = f.iloc[0:number_of_sources]
 
@@ -949,7 +956,7 @@ class StormLMA(Storm):
 
         """
 
-        storm = self.copy()
+        storm = self.storm.set_index('DateTime')
         numbers = storm.storm['flash-number'].unique()
         storm.filter_stations(stations, inplace=True)
         storm.filter_chi_squared(rc2)
@@ -1060,13 +1067,15 @@ class StormLMA(Storm):
                 File used to save the area results.
 
         """
+        storm = self.storm.set_index('DateTime')
+
         if file_name is None:
             file = './test.csv'
         else:
             file = file_name
 
         # Get all charge classified sources
-        all_charge = self.storm[self.storm['charge'] != 0]
+        all_charge = storm[storm['charge'] != 0]
 
         # Get all the flash numbers in the data
         numbers = all_charge['flash-number'].unique()
@@ -1074,7 +1083,7 @@ class StormLMA(Storm):
 
         # Generate the header contents for the temporary .dat file
         # that will contain the LMA sources for one flash.
-        d = datetime.datetime.strftime(self.storm.index[0], '%m/%d/%Y')
+        d = datetime.datetime.strftime(storm.index[0], '%m/%d/%Y')
         date = 'Data start time: {0}'.format(d)
         center = 'Coordinate center (lat,lon,alt): 29.9429917 -82.0332305 0.00'
         data_str = '*** data ***'
@@ -1107,7 +1116,7 @@ class StormLMA(Storm):
 
                 # Select all the sources (classified and unclassified) for each
                 # flash number.
-                flash = self.storm[self.storm['flash-number'] == flash_number]
+                flash = storm[storm['flash-number'] == flash_number]
                 flash.reset_index(inplace=True)
 
                 # Open the temporary LMA .dat file and write the header.
@@ -1341,7 +1350,10 @@ class StormLMA(Storm):
             positive_charge, negative_charge, other = self.get_charge_regions()
         else:
             positive_charge, negative_charge, _ = self.get_charge_regions()
-    
+
+        positive_charge = positive_charge.set_index('DateTime')
+        negative_charge = negative_charge.set_index('DateTime')
+
         start_time = positive_charge.index.min()
         end_time = start_time + t_increment
 
@@ -1360,6 +1372,7 @@ class StormLMA(Storm):
             subset_neg_charge = negative_charge.loc[start_time:end_time]
 
             if include_all:
+                other = other.set_index('DateTime')
                 subset_other = other[start_time:end_time]
 
             try:
@@ -1448,12 +1461,15 @@ class StormLMA(Storm):
                 Axes instance
 
         """
+        storm = self.storm.set_index('DateTime')
 
         # Plot both charge regions and histogram at a certain
         # interval (in minutes).
         t_increment = datetime.timedelta(seconds=interval * 60)
 
         positive_charge, negative_charge, _ = self.get_charge_regions()
+        positive_charge = positive_charge.set_index('DateTime')
+        negative_charge = negative_charge.set_index('DateTime')
 
         start_time = positive_charge.index.min()
         if negative_charge.index.min() < start_time:
@@ -1478,9 +1494,12 @@ class StormLMA(Storm):
             ind_end = datetime.datetime.strftime(end_time,
                                                  '%Y-%m-%d %H:%M:%S.%f')
 
-            subset = self.storm.loc[start_time:end_time]
+            subset = storm.loc[start_time:end_time]
             subset_pos_charge = subset[subset['charge'] == 3]
             subset_neg_charge = subset[subset['charge'] == -3]
+
+            subset_pos_charge = subset_pos_charge.set_index('DateTime')
+            subset_neg_charge = subset_neg_charge.set_index('DateTime')
 
             if not subset.empty:
                 t_peaks.append(ind_start)
@@ -1590,6 +1609,9 @@ class StormLMA(Storm):
         if sep_charges:
             # Get different charge regions
             pos, neg, other = self.get_charge_regions()
+            pos = pos.set_index('DateTime')
+            neg = neg.set_index('DateTime')
+            other = other.set_index('DateTime')
 
             # Calculate histogram
             pos_hist, pos_bin, _ = self._calculate_histogram(pos, 'P(dBW)',
@@ -1618,7 +1640,8 @@ class StormLMA(Storm):
             hist_dict['other'] = {'hist': other_hist, 'bins': other_bin}
 
         else:
-            hist, bins, _ = self._calculate_histogram(self.storm, 'P(dBW)',
+            storm = self.storm.set_index('DateTime')
+            hist, bins, _ = self._calculate_histogram(storm, 'P(dBW)',
                                                       **histargs)
             indices = np.where(hist == 0, [False], [True])
             hist = hist[indices]
@@ -1630,19 +1653,20 @@ class StormLMA(Storm):
 
     def print_storm_summary(self, charge=None, flash_types=None):
         """ Print the summary of the storm. """
+        storm = self.storm.set_index('DateTime')
 
         s = "\nLMA File: Charge {0}".format(charge.upper())
         print(s)
         print('-' * len(s))
 
         if charge is None:
-            storm = self.storm
+            storm = storm
         elif charge == 'positive':
-            storm = self.storm[self.storm['charge'] == 3]
+            storm = storm[storm['charge'] == 3]
         elif charge == 'negative':
-            storm = self.storm[self.storm['charge'] == -3]
+            storm = storm[storm['charge'] == -3]
         elif charge == 'other':
-            storm = self.storm[self.storm['charge'] == 0]
+            storm = storm[storm['charge'] == 0]
 
         # Get rid of unwanted columns
         storm.pop('time(UT-sec-of-day)')
@@ -1671,7 +1695,8 @@ class StormLMA(Storm):
 
     def save_to_csv(self, file_name):
         """ Save entire StormLMA object to a CSV. """
-        self.storm.to_csv(file_name, index=False)
+        storm = self.storm.set_index('DateTime')
+        storm.to_csv(file_name, index=False)
 
     def save_to_pickle(self, file_name):
         """ Save entire StormLMA object to a pickle. """
@@ -1707,7 +1732,8 @@ class StormLMA(Storm):
             self.convert_latlon_to_m(verbose=True)
 
         # Remove all the entries that are Nan and sort the indices
-        storm = self.storm.dropna(subset=['flash-number'])
+        storm = self.storm.set_index('DateTime')
+        storm = storm.dropna(subset=['flash-number'])
         storm.sort_index(inplace=True)
 
         # If xlims, ylims, or cell_names is a constant, duplicate that value
@@ -1786,9 +1812,11 @@ class StormLMA(Storm):
         results.sort_index(inplace=True)
 
         if inplace:
-            self.storm.loc[:, 'Cell'] = results
+            storm = self.storm.set_index('DateTime')
+            storm.loc[:, 'Cell'] = results
+            self.storm = storm
         else:
-            temp = self.storm.copy()
+            temp = self.storm.set_index('DateTime')
             temp.loc[:, 'Cell'] = results
             return temp
 
@@ -1812,7 +1840,8 @@ class StormLMA(Storm):
             self.convert_latlon_to_m(verbose=True)
 
         # Remove all the entries that are Nan and sort the indices
-        storm = self.storm.dropna(subset=['flash-number'])
+        storm = self.storm.set_index('DateTime')
+        storm = storm.dropna(subset=['flash-number'])
         storm.sort_index(inplace=True)
 
         print("Total number of sources before cell sorting: ",
@@ -1908,14 +1937,16 @@ class StormLMA(Storm):
         results.sort_index(inplace=True)
 
         if inplace:
-            self.storm.loc[:, 'Cell'] = results
+            storm = self.storm.set_index('DateTime')
+            storm.loc[:, 'Cell'] = results
 
             print("Total number of assigned sources:",
-                  len(self.storm.dropna(subset=['Cell']).index))
+                  len(storm.dropna(subset=['Cell']).index))
             print("Total number of assigned flashes:",
-                  len(self.storm.dropna(subset=['Cell'])['flash-number'].unique()))
+                  len(storm.dropna(subset=['Cell'])['flash-number'].unique()))
+            self.storm = storm
         else:
-            temp = self.storm.copy()
+            temp = self.storm.set_index('DateTime')
             temp.loc[:, 'Cell'] = results
 
             print("Total number of assigned sources:",
