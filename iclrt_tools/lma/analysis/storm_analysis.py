@@ -478,6 +478,62 @@ class StormLMA(Storm):
 
         return data
 
+    def calculate_flash_rates(self, interval=1, verbose=True):
+        """
+        Calculate flash rate (flashes/min) for data.
+
+        Parameters
+        ----------
+        interval: int, optional
+            Time interval in minutes over which calculate flash rates.
+        verbose: bool, optional
+            Print progress.
+
+        Returns
+        -------
+        data: Pandas DataFrame
+            DataFrame containing the interval start time ('StartTime(UTC)')
+            and the interval end time ('EndTime(UTC)') as well as the flash
+            rate ('FlashRate(/min)') as flashes per minute. It has no
+            particular index (0 to N-1).
+        """
+
+        t_interval = datetime.timedelta(minutes=interval)
+        t_start = self.storm.index.min()
+        t_end = t_start + t_interval
+
+        temp_storm = self.storm.copy()
+
+        results = dict()
+        results['StartTime(UTC)'] = []
+        results['EndTime(UTC)'] = []
+        results['FlashRate(/min)'] = []
+
+        while t_start < self.storm.index.max():
+            temp = temp_storm[temp_storm.index < t_end]
+            temp = temp[temp.index >= t_start]
+
+            temp = temp['flash-number'].unique()
+
+            rate = (len(temp) / t_interval.total_seconds()) * 60
+            results['FlashRate(/min)'] = rate
+            results['StartTime(UTC)'] = t_start
+            results['EndTime(UTC)'] = t_end
+
+            if verbose:
+                start = datetime.datetime.strftime(t_start, '%H:%M:%S.%f')[:-4]
+                end = datetime.datetime.strftime(t_end, '%H:%M:%S.%f')[:-4]
+                print('{0} -- {1} UTC = {2:0.2f} '
+                      '/min ({3} flashes total)'.format(start, end, rate,
+                                                        len(temp)))
+
+            t_start = t_end
+            t_end += t_interval
+
+        data = pd.DataFrame(results)
+
+        return data
+
     def copy(self):
         return StormLMA(self.storm.copy())
 
@@ -869,6 +925,73 @@ class StormLMA(Storm):
             os.remove(temp_file)
 
         return p
+
+    def get_initiation_heights(self, num_sources=1, stations=6, rc2=1,
+                               verbose=True):
+        """
+
+        Parameters
+        ----------
+        num_sources: int, optional
+            Number of sources over which to take the average height and
+            report it as the flash initiation height.
+        stations: int, optional
+            Minimum number of stations that contribute to each source
+            solution. Used to filter the LMA data before performing the
+            calculation.
+        rc2: int, optional
+            Maximum chi squared value of each source solution.
+            Used to filter the LMA data before performing the calculation.
+
+
+        Returns
+        -------
+
+        """
+
+        storm = self.copy()
+        numbers = storm.storm['flash-number'].unique()
+        storm.filter_stations(stations, inplace=True)
+        storm.filter_chi_squared(rc2)
+
+        results = dict()
+        results['flash-number'] = []
+        results['StartTime(UTC)'] = []
+
+        if num_sources != 1:
+            key = 'InitiationHeightAvg{0:02d}(m)'.format(num_sources)
+        else:
+            key = 'InitiationHeight(m)'
+
+        results[key] = []
+
+        if verbose:
+            pbar = tqdm.tqdm(total=len(numbers))
+
+        for i in range(len(numbers)):
+            flash = storm.get_sources_from_flash_number(numbers[i])
+            init_h = flash['alt(m)'][:num_sources].mean()
+
+            results['flash-number'].append(numbers[i])
+            results['StartTime(UTC)'].append(flash.index.min())
+
+            if num_sources != 1:
+                key = 'InitiationHeightAvg{0:02d}(m)'.format(num_sources)
+            else:
+                key = 'InitiationHeight(m)'
+
+            results[key].append(init_h)
+
+            if verbose:
+                pbar.update(1)
+                # print("- Flash {0:03d} ({1:03d} of {2}):"
+                #       "{3} m".format(numbers[i], i + 1, len(numbers),
+                #
+
+        data = pd.DataFrame(results)
+        data.set_index('flash-number', inplace=True)
+
+        return data
 
     def get_flash_number_count(self):
         """ Return the count for all flash numbers in the file. """
