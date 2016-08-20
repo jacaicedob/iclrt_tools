@@ -24,28 +24,8 @@ lma_big_final = path + '/Pandas/Storm_20160402_pandas_big_final_lma.csv'
 csv_big_final_source_count = path + '/Pandas/Storm_20160402_pandas_big_final' \
                              '_lma_source_count.csv'
 
-# ODS-LMA Matched Big Flashes
-lma_big_matched = path + '/Pandas/Storm_20160402_pandas_big_matched_lma.csv'
-ods_big_matched = path + '/Pandas/Storm_20160402_pandas_big_matched_ods.csv'
-
-csv_big_matched_duplicates = path + '/Pandas/Storm_20160402_pandas_big_' \
-                             'matched_duplicates.csv'
-
 # Needed to split duplicates
 temp_duplicates = path + '/Pandas/temp_dups.csv'
-
-# Flashes After Splitting duplicates
-lma_big_lessdups = path + \
-                   '/Pandas/Storm_20160402_pandas_big_lessduplicates_lma' \
-                   '.csv'
-
-# ODS-LMA Matched Flashes After Splitting duplicates
-lma_big_lessdups_matched = path + '/Pandas/Storm_20160402_pandas_big_' \
-                           'lessduplicates_matched_lma.csv'
-ods_big_lessdups_matched = path + '/Pandas/Storm_20160402_pandas_big_' \
-                           'lessduplicates_matched_ods.csv'
-csv_big_lessdups_matched_duplicates = path + '/Pandas/Storm_20160402_pandas_big_' \
-                              'lessduplicates_matched_duplicates.csv'
 
 # Dates
 dates = ['04/02/2016']
@@ -54,96 +34,60 @@ dates = ['04/02/2016']
 storm_lma = None
 storm_lma_big = None
 
-# if not(os.path.isfile(lma_all)):
-#     # Read in the individual files and save them out to a CSV file
-#     xlma_files = [path + '/xlma/ChargeAnalysis_20160402_0930.exported.csv',
-#                   path + '/xlma/ChargeAnalysis_20160402_0940.exported.csv',
-#                   path + '/xlma/ChargeAnalysis_20160402_0950.exported.csv',
-#                   path + '/xlma/ChargeAnalysis_20160402_1000.exported.csv',
-#                   path + '/xlma/ChargeAnalysis_20160402_1010.exported.csv',
-#                   path + '/xlma/ChargeAnalysis_20160402_1020.exported.csv',
-#                   path + '/xlma/ChargeAnalysis_20160402_1030.exported.csv',
-#                   path + '/xlma/ChargeAnalysis_20160402_1040.exported.csv',
-#                   path + '/xlma/ChargeAnalysis_20160402_1050.exported.csv',
-#                   path + '/xlma/ChargeAnalysis_20160402_1100.exported.csv',
-#                   path + '/xlma/ChargeAnalysis_20160402_1110.exported.csv',
-#                   path + '/xlma/ChargeAnalysis_20160402_1120.exported.csv',
-#                   path + '/xlma/ChargeAnalysis_20160402_1130.exported.csv',
-#                   path + '/xlma/ChargeAnalysis_20160402_1140.exported.csv',
-#                   path + '/xlma/ChargeAnalysis_20160402_1150.exported.csv',
-#                   path + '/xlma/ChargeAnalysis_20160402_1200.exported.csv',
-#                   path + '/xlma/ChargeAnalysis_20160402_1210.exported.csv',
-#                   path + '/xlma/ChargeAnalysis_20160402_1220.exported.csv',
-#                   path + '/xlma/ChargeAnalysis_20160402_1230.exported.csv',
-#                   path + '/xlma/ChargeAnalysis_20160402_1240.exported.csv']
-#
-#     print("Reading all xlma files...")
-#     storm_lma = st.StormLMA.from_lma_files(xlma_files, dates)
-#     print("Converting coordinates to meters...")
-#     storm_lma.convert_latlon_to_m(verbose=True)
-#     print("Saving xlma all to CSV...")
-#     storm_lma.save_to_csv(lma_all)
-#
-# if not (os.path.isfile(lma_big)):
-#     if storm_lma is None:
-#         print("Loading all flashes from CSV...")
-#         storm_lma = st.StormLMA.from_lma_files([lma_all], dates)
-#
-#     print("Saving big flashes to CSV...")
-#     storm_lma.save_flashes_by_size('big', lma_big)
-#
-# if not (os.path.isfile(csv_all_source_count)):
-#     if storm_lma is None:
-#         print("Loading all flashes from CSV...")
-#         storm_lma = st.StormLMA.from_lma_files([lma_all], dates)
-#
-#     print("Saving all flash number counts to CSV...")
-#     storm_lma.save_flash_number_count(csv_all_source_count)
-#
-# if not (os.path.isfile(csv_big_source_count)):
-#     if storm_lma_big is None:
-#         print("Loading the big flashes from CSV...")
-#         storm_lma_big = st.StormLMA.from_lma_files([lma_big],
-#                                                    dates)
-#
-#     print("Saving big flash number counts to CSV...")
-#     storm_lma_big.save_flash_number_count(csv_big_source_count)
+if not(os.path.isfile(lma_all)):
+    # Read in the individual files and save them out to a CSV file
+    xlma_files = [path + '/xlma/ChargeAnalysis_20160402_0930.exported.csv',
+                  path + '/xlma/ChargeAnalysis_20160402_0940.exported.csv',
+                  path + '/xlma/ChargeAnalysis_20160402_0950.exported.csv',
+                  path + '/xlma/ChargeAnalysis_20160402_1000.exported.csv',
+                  path + '/xlma/ChargeAnalysis_20160402_1010.exported.csv',
+                  path + '/xlma/ChargeAnalysis_20160402_1020.exported.csv',
+                  path + '/xlma/ChargeAnalysis_20160402_1030.exported.csv',
+                  path + '/xlma/ChargeAnalysis_20160402_1040.exported.csv',
+                  path + '/xlma/ChargeAnalysis_20160402_1050.exported.csv',
+                  path + '/xlma/ChargeAnalysis_20160402_1100.exported.csv',
+                  path + '/xlma/ChargeAnalysis_20160402_1110.exported.csv',
+                  path + '/xlma/ChargeAnalysis_20160402_1120.exported.csv',
+                  path + '/xlma/ChargeAnalysis_20160402_1130.exported.csv',
+                  path + '/xlma/ChargeAnalysis_20160402_1140.exported.csv',
+                  path + '/xlma/ChargeAnalysis_20160402_1150.exported.csv',
+                  path + '/xlma/ChargeAnalysis_20160402_1200.exported.csv',
+                  path + '/xlma/ChargeAnalysis_20160402_1210.exported.csv',
+                  path + '/xlma/ChargeAnalysis_20160402_1220.exported.csv',
+                  path + '/xlma/ChargeAnalysis_20160402_1230.exported.csv',
+                  path + '/xlma/ChargeAnalysis_20160402_1240.exported.csv']
 
-# if not (os.path.isfile(lma_big_matched)) or \
-#    not (os.path.isfile(ods_big_matched)) or \
-#    not (os.path.isfile(csv_big_matched_duplicates)):
-#     print("Loading the big flashes from CSV...")
-#     # Read in the information
-#     storm_lma = st.StormLMA.from_lma_files([lma_big], dates)
-#     storm_lma.filter_x(lims=[-50e3, 50e3], inplace=True)
-#     storm_lma.filter_y(lims=[-50e3, 50e3], inplace=True)
-#
-#     storm_ods = st.StormODS.from_csv_file(ods_all)
-#
-#     print("Matching the LMA flashes to the ODS entries...")
-#     # Match the LMA flash numbers with the ODS entries
-#     result, dups = storm_ods.get_analyzed_flash_numbers(storm_lma,
-#                                                         verbose=True,
-#                                                         return_duplicates=True)
-#     dups = dups.reset_index()
-#     dups.drop_duplicates('duplicates', inplace=True)
-#     dups = dups['duplicates']
-#     print("Total duplicate/multiple flashes: ", len(dups))
-#
-#     # Get the matched DataFrames
-#     print("Getting the matches...")
-#     ods_matched = result[~st.pd.isnull(result['flash-number'])]
-#     numbers = ods_matched['flash-number'].unique()
-#     print("Number of matched flash numbers:", len(numbers))
-#
-#     lma_matched = storm_lma.get_sources_from_flash_number(numbers)
-#
-#     # Save to CSV
-#     print("Saving matches to CSV...")
-#     lma_matched.to_csv(lma_big_matched, index=False)
-#     ods_matched.to_csv(ods_big_matched, index=False)
-#     print("Saving the duplicate flash number list...")
-#     dups.to_csv(csv_big_matched_duplicates)
+    print("Reading all xlma files...")
+    storm_lma = st.StormLMA.from_lma_files(xlma_files, dates)
+    print("Converting coordinates to meters...")
+    storm_lma.convert_latlon_to_m(verbose=True)
+    print("Saving xlma all to CSV...")
+    storm_lma.save_to_csv(lma_all)
+
+if not (os.path.isfile(lma_big)):
+    if storm_lma is None:
+        print("Loading all flashes from CSV...")
+        storm_lma = st.StormLMA.from_lma_files([lma_all], dates)
+
+    print("Saving big flashes to CSV...")
+    storm_lma.save_flashes_by_size('big', lma_big)
+
+if not (os.path.isfile(csv_all_source_count)):
+    if storm_lma is None:
+        print("Loading all flashes from CSV...")
+        storm_lma = st.StormLMA.from_lma_files([lma_all], dates)
+
+    print("Saving all flash number counts to CSV...")
+    storm_lma.save_flash_number_count(csv_all_source_count)
+
+if not (os.path.isfile(csv_big_source_count)):
+    if storm_lma_big is None:
+        print("Loading the big flashes from CSV...")
+        storm_lma_big = st.StormLMA.from_lma_files([lma_big],
+                                                   dates)
+
+    print("Saving big flash number counts to CSV...")
+    storm_lma_big.save_flash_number_count(csv_big_source_count)
 
 
 def split_flashes():
