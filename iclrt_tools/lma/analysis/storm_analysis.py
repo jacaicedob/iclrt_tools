@@ -505,6 +505,7 @@ class StormLMA(Storm):
         """
 
         storm = self.storm.set_index('DateTime')
+        storm = StormLMA(storm)
         numbers = storm.storm['flash-number'].unique()
         storm.filter_stations(stations, inplace=True)
         storm.filter_chi_squared(rc2)
@@ -543,7 +544,7 @@ class StormLMA(Storm):
                 #       "{3} m^2".format(numbers[i], i + 1, len(numbers), area))
 
         data = pd.DataFrame(results)
-        data.set_index('flash-number', inplace=True)
+        # data.set_index('flash-number', inplace=True)
 
         return data
 
