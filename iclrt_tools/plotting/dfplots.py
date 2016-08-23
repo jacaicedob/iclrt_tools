@@ -1489,6 +1489,78 @@ class RadarPlotter(object):
 
         self.display = pyart.graph.RadarDisplay(self.radar, self.shift)
 
+    def plot_ppi_contours(self, field='reflectivity', sweep=0,
+                          ax=None):
+        if field in self.fields:
+            if sweep <= self.radar.nsweeps:
+                if self.display is None:
+                    self.setup_display()
+
+                if field == 'reflectivity':
+                    vmin = -25
+                    vmax = 75
+                    label = 'Reflectivity (dBZ)'
+                    cmap = pyart.graph.cm.NWSRef
+                elif field == 'differential_reflectivity':
+                    vmin = -7.9
+                    vmax = 7.9
+                    label = 'Diff. Reflectivity'
+                    cmap = None
+                elif field == 'cross_correlation_ratio':
+                    vmin = 0.2
+                    vmax = 1.05
+                    label = 'Cross Corr. Ratio'
+                    cmap = None
+                elif field == 'differential_phase':
+                    vmin = 0
+                    vmax = 180
+                    label = 'Diff. Phase (degrees)'
+                    cmap = None
+                else:
+                    vmin = None
+                    vmax = None
+                    label = None
+                    cmap = None
+
+        if ax is None:
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+        else:
+            ax = ax
+            fig = ax.get_figure()
+
+        # Get radar data
+        data = self.radar.get_field(sweep, field)
+
+        # Get x,y,z for data
+        x, y, z = self.radar.get_gate_x_y_z(sweep, edges=False)
+
+        # Add shift, if any
+        x += self.shift[0]
+        y += self.shift[1]
+
+        # Convert to km
+        x /= 1000.
+        y /= 1000.
+        z /= 1000.
+
+        if field == 'reflectivity':
+            levels = np.arange(vmin, vmax, 10)
+            norm = mpl.colors.Normalize(vmin, vmax)
+            colors = tuple([cmap(norm(value)) for value in levels])
+            contours = ax.contour(x, y, data, levels,
+                                  linewidths=1.5,
+                                  fontsize=16,
+                                  inline_spacing=10,
+                                  colors=colors, linestyle='solid',
+                                  antialiased=True)
+            plt.clabel(contours, levels, fmt='%r', inline=True)
+
+        else:
+            ax.contour(x, y, data, linewidths=1.5,
+                       colors='k', linestyle='solid',
+                       antialiased=True)
+
     def plot_ppi(self, field='reflectivity', sweep=0, fig=None, ax=None,
                  start_coord=None, contours=False):
         """
@@ -1548,33 +1620,6 @@ class RadarPlotter(object):
                                       colorbar_label=label,
                                       axislabels_flag=False,
                                       cmap=cmap, gatefilter=self.gatefilter)
-
-                if contours:
-                    # Get radar data
-                    data = self.radar.get_field(sweep, field)
-
-                    # Get x,y,z for data
-                    x, y, z = self.radar.get_gate_x_y_z(sweep, edges=False)
-
-                    # Convert to meters
-                    x /= 1000.
-                    y /= 1000.
-                    z /= 1000.
-
-                    ax = plt.gca()
-
-                    if field == 'reflectivity':
-                        levels = np.arange(vmin, vmax, 5)
-                        contours = ax.contour(x, y, data, levels,
-                                               linewidths=1.5,
-                                               colors='k', linestyle='solid',
-                                               antialiased=True)
-                        plt.clabel(contours, levels, fmt='%r', inline=True)
-
-                    else:
-                        ax.contour(x, y, data, linewidths=1.5,
-                                   colors='k', linestyle='solid',
-                                   antialiased=True)
 
                 # ax = plt.gca()
                 # print(start_coord[0]*1e-3, start_coord[1]*1e-3)
