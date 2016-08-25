@@ -2477,7 +2477,7 @@ class LMAPlotter(object):
         else:
             self.ax_alt_t.set_ylim(lims)
 
-        self.ax_alt_t.set_xlim([-5, time[-1] + 5])
+        self.ax_alt_t.set_xlim([-15, time[-1] + 15])
         # self.ax_alt_t.set_xlim([self.plot_data['t'][0],
         #                         self.plot_data['t'][-1]])
         # self.ax_alt_t.xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
@@ -3300,7 +3300,7 @@ class LMAPlotter(object):
         # self.ax_all_alt_t.set_xticklabels(maj_t)
         # self.ax_all_alt_t.set_xticklabels(min_t, minor=True)
 
-        self.ax_all_alt_t.set_xlim([-5, time[-1] + 5])
+        self.ax_all_alt_t.set_xlim([-15, time[-1] + 15])
         # self.ax_all_alt_t.set_xticks(ticks)
 
         # self.ax_all_alt_t.set_xticks(maj_t)
