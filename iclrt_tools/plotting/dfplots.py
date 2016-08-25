@@ -2306,23 +2306,31 @@ class LMAPlotter(object):
         # min_ticks = list(time[time % 2.5 == 0])
 
         # Get total time span in time array in ms
-        tend = (time[-1] - time[0]).total_seconds()
-        tend *= 1E3
-        # Major ticks will occur every 10 ms, minor ticks every 5 ms
-        dt_maj = 10
-        dt_min = 5
+        # tend = (time[-1] - time[0]).total_seconds()
+        # tend *= 1E3
+        # # Major ticks will occur every 10 ms, minor ticks every 5 ms
+        # dt_maj = 10
+        # dt_min = 5
+        #
+        # # Empty lists to hold ticks
+        # maj_ticks = []
+        # min_ticks = []
+        #
+        # for i in range(int(tend)):
+        #     if i % dt_maj == 0:
+        #         maj_ticks.append(str(i))
+        #     elif i % dt_min == 0:
+        #         min_ticks.append(str(i))
+        #
+        # return maj_ticks, min_ticks
 
-        # Empty lists to hold ticks
-        maj_ticks = []
-        min_ticks = []
+        tspan = time[-1]
+        num_ticks = 10.
+        dt = tspan / num_ticks
 
-        for i in range(int(tend)):
-            if i % dt_maj == 0:
-                maj_ticks.append(str(i))
-            elif i % dt_min == 0:
-                min_ticks.append(str(i))
+        xticks = np.arange(0, tspan + dt, dt)
+        return xticks
 
-        return maj_ticks, min_ticks
 
     def get_plot_data(self, x, y, x_old, x_new, y_old, y_new):
         """
@@ -2439,14 +2447,21 @@ class LMAPlotter(object):
             bounds = [-3, -1, 0, 1, 3]
             norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
 
-        self.scat_alt_t = self.ax_alt_t.scatter(self.plot_data['t'],
+        time = self.plot_data['t'] - self.plot_data['t'][0]
+        for i in range(len(time)):
+            time[i] = float(time[i].total_seconds()) * 1e3
+
+        self.scat_alt_t = self.ax_alt_t.scatter(time,
                                                 self.plot_data['z']*1E-3,
                                                 marker='.', c=colors,
                                                 cmap=cmap, norm=norm,
                                                 s=30, lw=0)
 
+        t0_string = datetime.datetime.strftime(self.plot_data['t'][0],
+                                               "%H:%M:%S.%f")
+        time_label = 'Time after {0} (ms)'.format(t0_string)
+        self.ax_alt_t.set_xlabel(time_label)
         self.ax_alt_t.set_ylabel('Altitude (km)')
-        self.ax_alt_t.set_xlabel('Time (s)')
 
         if lims is None:
             if np.min(self.plot_data['z']) < 1e3:
@@ -2462,16 +2477,15 @@ class LMAPlotter(object):
         else:
             self.ax_alt_t.set_ylim(lims)
 
-        self.ax_alt_t.set_xlim([self.plot_data['t'][0],
-                                self.plot_data['t'][-1]])
-
-        self.ax_alt_t.xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
-        self.ax_alt_t.xaxis.set_minor_formatter(
-                              mpl.ticker.FuncFormatter(self.date_format_minor))
-
-        self.ax_alt_t.xaxis.set_major_locator(mpl.ticker.LinearLocator(5))
-        self.ax_alt_t.xaxis.set_major_formatter(
-                              mpl.ticker.FuncFormatter(self.date_format_major))
+        self.ax_alt_t.set_xlim([-5, time[-1] + 5])
+        # self.ax_alt_t.set_xlim([self.plot_data['t'][0],
+        #                         self.plot_data['t'][-1]])
+        # self.ax_alt_t.xaxis.set_minor_locator(mpl.ticker.AutoMinorLocator(2))
+        # self.ax_alt_t.xaxis.set_minor_formatter(
+        #                       mpl.ticker.FuncFormatter(self.date_format_minor))
+        # self.ax_alt_t.xaxis.set_major_locator(mpl.ticker.LinearLocator(5))
+        # self.ax_alt_t.xaxis.set_major_formatter(
+        #                       mpl.ticker.FuncFormatter(self.date_format_major))
 
         # for label in self.ax_alt_t.xaxis.get_ticklabels(minor=True):
         #     label.set_rotation(30)
@@ -3270,6 +3284,8 @@ class LMAPlotter(object):
         for i in range(len(time)):
             time[i] = float(time[i].total_seconds())*1e3
 
+        # ticks = self.get_date_format_major(time)
+
         self.scat_all_alt_t = self.ax_all_alt_t.scatter(
                                 time,
                                 self.plot_data['z']*1E-3,
@@ -3277,15 +3293,15 @@ class LMAPlotter(object):
                                 cmap=cmap, s=s, lw=lw,
                                 norm=norm)
 
-        maj_t, min_t = self.get_date_format_major(self.plot_data['t'])
+        # maj_t, min_t = self.get_date_format_major(self.plot_data['t'])
 
-        max_maj = max(maj_t)
-        max_min = max(min_t)
+        # max_maj = max(maj_t)
+        # max_min = max(min_t)
+        # self.ax_all_alt_t.set_xticklabels(maj_t)
+        # self.ax_all_alt_t.set_xticklabels(min_t, minor=True)
 
-        # xlims = [-50, max(max_maj, max_min)+50]
-
-        self.ax_all_alt_t.set_xticklabels(maj_t)
-        self.ax_all_alt_t.set_xticklabels(min_t, minor=True)
+        self.ax_all_alt_t.set_xlim([-5, time[-1] + 5])
+        # self.ax_all_alt_t.set_xticks(ticks)
 
         # self.ax_all_alt_t.set_xticks(maj_t)
         # self.ax_all_alt_t.set_xticks(min_t, minor=True)
