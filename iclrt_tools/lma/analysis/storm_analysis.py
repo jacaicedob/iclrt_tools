@@ -276,7 +276,10 @@ class StormLMA(Storm):
         try:
             ref = datetime.datetime.strptime(dates[0], '%m/%d/%y')
         except ValueError:
-            ref = datetime.datetime.strptime(dates[0], '%m/%d/%Y')
+            try:
+                ref = datetime.datetime.strptime(dates[0], '%Y-%m-%d')
+            except ValueError:
+                ref = datetime.datetime.strptime(dates[0], '%m/%d/%Y')
 
         pds = []
 
@@ -291,7 +294,10 @@ class StormLMA(Storm):
                 try:
                     date = datetime.datetime.strptime(dates[i], '%m/%d/%y')
                 except ValueError:
-                    date = datetime.datetime.strptime(dates[i], '%m/%d/%Y')
+                    try:
+                        date = datetime.datetime.strptime(dates[i], '%Y-%m-%d')
+                    except ValueError:
+                        date = datetime.datetime.strptime(dates[i], '%m/%d/%Y')
 
                 series = [date + datetime.timedelta(seconds=entry) for entry
                           in p['time(UT-sec-of-day)']]
@@ -310,7 +316,10 @@ class StormLMA(Storm):
                 try:
                     date = datetime.datetime.strptime(dates[0], '%m/%d/%y')
                 except ValueError:
-                    date = datetime.datetime.strptime(dates[0], '%m/%d/%Y')
+                    try:
+                        date = datetime.datetime.strptime(dates[0], '%Y-%m-%d')
+                    except ValueError:
+                        date = datetime.datetime.strptime(dates[0], '%m/%d/%Y')
 
                 series = [date + datetime.timedelta(seconds=entry) for entry
                           in p['time(UT-sec-of-day)']]
