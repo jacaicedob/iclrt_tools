@@ -1428,12 +1428,19 @@ class RadarPlotter(object):
     ICLRT_center = (29.9429917, -82.0332305)  # lat, lon of ICLRT
     ICLRT_azimuth = 208.3  # Azimuth in degrees from KJAX radar
 
-    def __init__(self, file_name, shift=None):
+    def __init__(self, file_name, shift=None, EET=False):
         """ Initialize the object. """
 
         self.file_name = file_name
         try:
-            self.radar = pyart.io.read(self.file_name)
+            if EET:
+                self.radar = pyart.io.read(self.file_name, file_field_names=True)
+                field = self.radar.fields[135]['data'] * 0.3048
+                self.radar.add_field_like(135, 'echo_tops', field)
+
+            else:
+                self.radar = pyart.io.read(self.file_name)
+                self.fields = self.radar.fields.keys()
         except TypeError:
             self.radar = pyart.io.read_nexrad_archive(self.file_name)
 
@@ -1516,6 +1523,7 @@ class RadarPlotter(object):
                     vmax = 180
                     label = 'Diff. Phase (degrees)'
                     cmap = None
+
                 else:
                     vmin = None
                     vmax = None
@@ -1608,6 +1616,11 @@ class RadarPlotter(object):
                     vmax = 180
                     label = 'Diff. Phase (degrees)'
                     cmap = None
+                elif field == 'echo_tops':
+                    vmin = 0
+                    vmax = 20
+                    label = 'Echo Tops (km)'
+                    cmap = pyart.graph.cm.NWSRef
                 else:
                     vmin = None
                     vmax = None
