@@ -1523,7 +1523,11 @@ class RadarPlotter(object):
                     vmax = 180
                     label = 'Diff. Phase (degrees)'
                     cmap = None
-
+                elif field == 'echo_tops':
+                    vmin = 0
+                    vmax = 20
+                    label = 'Echo Tops (km)'
+                    cmap = pyart.graph.cm.NWSRef
                 else:
                     vmin = None
                     vmax = None
@@ -1552,22 +1556,22 @@ class RadarPlotter(object):
         y /= 1000.
         z /= 1000.
 
-        if field == 'reflectivity':
-            levels = np.arange(vmin, vmax, 10)
-            norm = mpl.colors.Normalize(vmin, vmax)
-            colors = tuple([cmap(norm(value)) for value in levels])
-            contours = ax.contour(x, y, data, levels,
-                                  linewidths=1.5,
-                                  fontsize=16,
-                                  inline_spacing=10,
-                                  colors=colors, linestyle='solid',
-                                  antialiased=True)
-            plt.clabel(contours, levels, fmt='%r', inline=True)
+        # if field == 'reflectivity':
+        levels = np.arange(vmin, vmax, 10)
+        norm = mpl.colors.Normalize(vmin, vmax)
+        colors = tuple([cmap(norm(value)) for value in levels])
+        contours = ax.contour(x, y, data, levels,
+                              linewidths=1.5,
+                              fontsize=16,
+                              inline_spacing=10,
+                              colors=colors, linestyle='solid',
+                              antialiased=True)
+        plt.clabel(contours, levels, fmt='%r', inline=True)
 
-        else:
-            ax.contour(x, y, data, linewidths=1.5,
-                       colors='k', linestyle='solid',
-                       antialiased=True)
+        # else:
+        #     ax.contour(x, y, data, linewidths=1.5,
+        #                colors='k', linestyle='solid',
+        #                antialiased=True)
 
     def plot_ppi(self, field='reflectivity', sweep=0, fig=None, ax=None,
                  start_coord=None, contours=False):
