@@ -458,6 +458,7 @@ class StormLMA(Storm):
         results['flash-number'] = []
         results['StartTime(UTC)'] = []
         results['Area(m^2)'] = []
+        results['Flash Type'] = []
 
         if verbose:
             pbar = tqdm.tqdm(total=len(numbers))
@@ -481,6 +482,10 @@ class StormLMA(Storm):
             results['flash-number'].append(numbers[i])
             results['Area(m^2)'].append(area)
             results['StartTime(UTC)'].append(flash.index.min())
+
+            flash = self.storm[self.storm['flash-number'] == numbers[i]]
+            flash = flash.iloc[0]
+            results['Flash Type'].append(flash['Flash Type'])
 
             if verbose:
                 pbar.update(1)
@@ -1329,6 +1334,92 @@ class StormLMA(Storm):
 
         if hist:
             return fig, ax, ax2
+        else:
+            return fig, ax
+
+    def plot_all_charge_regions_plan(self, hist=True, show_plot=False,
+                                     include_all=False, alpha=0.01):
+        """
+        Plot both charge regions together in plan view. The source histograms
+        can also be plotted. The default is to not show the plot.
+
+        Parameters
+        ----------
+            hist: bool (optional)
+                Boolean flag to show the histogram in the plot
+            show_plot: bool (optional)
+                Boolean flag to show the plot
+            include_all: bool (optional)
+                Boolean flag to include unclassified sources.
+
+        Returns
+        -------
+            fig: matplotlib.Figure
+                Figure instance of plot
+            ax: matplotlib.Axes
+                Axis instance of plot
+            ax2: matplotlib.Axes
+                Axis instance of histogram (only when hist is True)
+
+        """
+
+        if include_all:
+            positive_charge, negative_charge, other = self.get_charge_regions()
+        else:
+            positive_charge, negative_charge, _ = self.get_charge_regions()
+
+        fig, ax = plt.subplots(1, 1)
+
+        if not positive_charge.empty:
+            x = positive_charge['x(m)']*1e-3
+            y = positive_charge['y(m)']*1e-3
+            ax.scatter(x, y, marker='o', c='r', lw=0,
+                       alpha=alpha)
+
+        if not negative_charge.empty:
+            x = negative_charge['x(m)'] * 1e-3
+            y = negative_charge['y(m)'] * 1e-3
+            ax.scatter(x, y, marker='o', c='b', lw=0,
+                       alpha=alpha)
+
+        if include_all:
+            x = other['x(m)'] * 1e-3
+            y = other['y(m)'] * 1e-3
+            ax.scatter(x, y, marker='o', c='g', lw=0,
+                       alpha=0.01)
+
+        plt.gca().minorticks_on()
+        plt.gca().grid(True, which='both')
+        # plt.axes().set_aspect('equal', 'box')
+
+        if hist:
+            fig2, ax2 = plt.subplots(1, 1)
+            pos = positive_charge['alt(m)'] * 1e-3
+            neg = negative_charge['alt(m)'] * 1e-3
+            ax2.hist(pos, orientation='horizontal',
+                     color='r', alpha=0.5, bins=20,
+                     lw=0)
+            ax2.hist(neg, orientation='horizontal',
+                     color='b', alpha=0.5, bins=20,
+                     lw=0)
+            # ax2.set_title('Altitude Histogram')
+            # ax2.set_xlabel('Number of sources')
+
+        # ax.set_title('Sources')
+        # ax.set_xlabel('West-East(km)')
+        # ax.set_ylabel('South-North (km)')
+
+        plt.gca().minorticks_on()
+        plt.gca().grid(True, which='both')
+
+        ax.set_ylim([-50, 50])
+        ax.set_xlim([-50, 50])
+
+        if show_plot:
+            plt.show()
+
+        if hist:
+            return (fig, fig2), (ax, ax2)
         else:
             return fig, ax
 
