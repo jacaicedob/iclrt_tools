@@ -8,9 +8,9 @@ import os
 
 # sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Storm 08-27-2015/Figures/')
 # sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/LightningEvolution/Storm-03-04-2016/Figures/')
-sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/LightningEvolution/Storm-07-17-2012/Figures/')
+# sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/LightningEvolution/Storm-07-17-2012/Figures/')
 # sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/Lightning Evolution/Possible Storms/Storm 02-24-2016/Figures/')
-# sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/LightningEvolution/Storm-03-25-2016/Figures')
+sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/LightningEvolution/Storm-03-25-2016/Figures')
 # sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/LightningEvolution/PossibleStorms/Storm-03-26-2016/Figures')
 # sys.path.append('/home/jaime/Documents/ResearchTopics/Publications/LightningEvolution/Storm-04-02-2016/Figures')
 
