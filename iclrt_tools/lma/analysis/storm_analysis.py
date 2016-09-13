@@ -471,13 +471,16 @@ class StormLMA(Storm):
 
             f = np.vstack((x, y)).T
 
-            hull = scipy.spatial.ConvexHull(f)
-            verts = f[hull.vertices].tolist()
-            verts.append(f[hull.vertices[0]])
+            try:
+                hull = scipy.spatial.ConvexHull(f)
+                verts = f[hull.vertices].tolist()
+                verts.append(f[hull.vertices[0]])
 
-            lines = np.hstack([verts, np.roll(verts, -1, axis=0)])
-            area = (0.5 * abs(sum(x1 * y2 - x2 * y1 for
-                                  x1, y1, x2, y2 in lines)))
+                lines = np.hstack([verts, np.roll(verts, -1, axis=0)])
+                area = (0.5 * abs(sum(x1 * y2 - x2 * y1 for
+                                      x1, y1, x2, y2 in lines)))
+            except scipy.spatial.qhull.QhullError:
+                area = np.nan
 
             results['flash-number'].append(numbers[i])
             results['Area(m^2)'].append(area)
@@ -1412,8 +1415,11 @@ class StormLMA(Storm):
         plt.gca().minorticks_on()
         plt.gca().grid(True, which='both')
 
-        ax.set_ylim([-50, 50])
-        ax.set_xlim([-50, 50])
+        # ax.set_ylim([-50, 50])
+        # ax.set_xlim([-50, 50])
+
+        ax.set_ylim([-35, 35])
+        ax.set_xlim([-35, 35])
 
         if show_plot:
             plt.show()
