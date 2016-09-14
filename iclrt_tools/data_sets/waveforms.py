@@ -76,15 +76,15 @@ class Waveform(object):
 
     def read_lecroy(self, wantOffset=False):
         lecroy = lc.lecroy_data(self.file_name)
-        lecroy.get_seg_time()
-        lecroy.get_segment(self.trace_number, self.cal_factor)
+        # lecroy.get_seg_time()
+        data = lecroy.get_segment(self.trace_number, self.cal_factor)
 
         if wantOffset:
-            offset = np.average(lecroy.data[0:int(len(lecroy.data)/5)])
-            lecroy.data -= offset
+            offset = np.average(data.data[0:int(len(data.data)/5)])
+            data.data -= offset
 
-        self.data = lecroy.data
-        self.dataTime = lecroy.dataTime
+        self.data = data.data
+        self.dataTime = data.dataTime
 
     def get_data(self, lims=[5E-6, 295E-6], wantOffset=False):
         if "yoko" in self.scope_type.lower():
