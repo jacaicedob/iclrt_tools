@@ -410,8 +410,7 @@ class StormLMA(Storm):
                     self.nldn_detections['Mult'].append(nldn.loc[i]['Mult'])
                     self.nldn_detections['kA'].append(nldn.loc[i]['kA'])
 
-                print('Analyzing... {0:0.2f}%'.format(count / total * 100),
-                      end='\r')
+                print('Analyzing... {0:0.2f}%'.format(count / total * 100), end='\r')
         # print()
         end = datetime.datetime.now()
         print('Analisis time: {0}\n'.format(end - start))
@@ -1428,6 +1427,89 @@ class StormLMA(Storm):
             return (fig, fig2), (ax, ax2)
         else:
             return fig, ax
+
+    def plot_all_charge_regions_proj(self, show_plot=False,
+                                     include_all=False, alpha=0.01):
+        """
+        Plot both charge regions together in EW and NS projections. The default is to not show the plot.
+
+        Parameters
+        ----------
+            show_plot: bool (optional)
+                Boolean flag to show the plot
+            include_all: bool (optional)
+                Boolean flag to include unclassified sources.
+
+        Returns
+        -------
+            fig: matplotlib.Figure
+                Figure instance of NS plot
+            ax: matplotlib.Axes
+                Axis instance of NS plot
+            fig2: matplotlib.Figure
+                Figure instance of EW plot
+            ax2: matplotlib.Axes
+                Axis instance of EW plot.
+
+        """
+
+        if include_all:
+            positive_charge, negative_charge, other = self.get_charge_regions()
+        else:
+            positive_charge, negative_charge, _ = self.get_charge_regions()
+
+        # NS plot
+        fig, ax = plt.subplots(1, 1)
+
+        if not positive_charge.empty:
+            x = positive_charge['y(m)']*1e-3
+            y = positive_charge['alt(m)']*1e-3
+            ax.scatter(x, y, marker='o', c='r', lw=0,
+                       alpha=alpha)
+
+        if not negative_charge.empty:
+            x = negative_charge['y(m)'] * 1e-3
+            y = negative_charge['alt(m)'] * 1e-3
+            ax.scatter(x, y, marker='o', c='b', lw=0,
+                       alpha=alpha)
+
+        if include_all:
+            x = other['y(m)'] * 1e-3
+            y = other['alt(m)'] * 1e-3
+            ax.scatter(x, y, marker='o', c='g', lw=0,
+                       alpha=0.01)
+
+        plt.gca().minorticks_on()
+        plt.gca().grid(True, which='both')
+
+        # EW plot
+        fig2, ax2 = plt.subplots(1, 1)
+
+        if not positive_charge.empty:
+            x = positive_charge['x(m)'] * 1e-3
+            y = positive_charge['alt(m)'] * 1e-3
+            ax2.scatter(x, y, marker='o', c='r', lw=0,
+                       alpha=alpha)
+
+        if not negative_charge.empty:
+            x = negative_charge['x(m)'] * 1e-3
+            y = negative_charge['alt(m)'] * 1e-3
+            ax2.scatter(x, y, marker='o', c='b', lw=0,
+                       alpha=alpha)
+
+        if include_all:
+            x = other['x(m)'] * 1e-3
+            y = other['alt(m)'] * 1e-3
+            ax2.scatter(x, y, marker='o', c='g', lw=0,
+                       alpha=0.01)
+
+        plt.gca().minorticks_on()
+        plt.gca().grid(True, which='both')
+
+        if show_plot:
+            plt.show()
+
+        return (fig, fig2), (ax, ax2)
 
     def plot_interval_sources(self, interval=5, hist=True,
                               savefigs=False, path='./', include_all=True):
