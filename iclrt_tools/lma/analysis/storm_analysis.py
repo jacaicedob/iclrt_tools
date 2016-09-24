@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib import dates
+import matplotlib.ticker as ticker
 import datetime
 import numpy as np
 import pickle
@@ -298,6 +299,9 @@ class StormLMA(Storm):
         storm.reset_index(inplace=True)
 
         return storm
+
+    def format_date(self, x, pos=None):
+        return mpl.dates.num2date(x).strftime('%H%M%S')
 
     def analyze_pos_neg_charge(self):
         """ Analyze the positive and negative sources. """
@@ -1179,7 +1183,7 @@ class StormLMA(Storm):
             os.remove(temp_file)
 
     def plot_charge_region(self, charge='positive', hist=True,
-                           show_plot=False, include_all=False):
+                           show_plot=False, include_all=False, alpha=0.1):
         """
         Plot the LMA sources of a charge region. The histogram can be plotted
         also.
@@ -1209,11 +1213,11 @@ class StormLMA(Storm):
             positive_charge, negative_charge, _ = self.get_charge_regions()
     
         if charge == 'positive':
-            charge = positive_charge
+            data = positive_charge
         elif charge == 'negative':
-            charge = negative_charge
+            data = negative_charge
         else:
-            charge = other
+            data = other
     
         # Plot the sources and histogram
         if hist:
@@ -1221,10 +1225,10 @@ class StormLMA(Storm):
         else:
             fig, ax = plt.subplots(1, 1, figsize=(12, 6))
     
-        if charge['charge'].unique() == 3:
+        if data['charge'].unique() == 3:
             color = 'r'
             title = 'Positive Charge Sources'
-        elif charge['charge'].unique() == -3:
+        elif data['charge'].unique() == -3:
             color = 'b'
             title = 'Negative Charge Sources'
         else:
@@ -1235,9 +1239,18 @@ class StormLMA(Storm):
             other.plot(y='alt(m)', style='.', c='g', lw=0, alpha=0.01,
                        ax=ax, legend=False)
 
-        charge.plot(y='alt(m)', style='.', c=color, lw=0, alpha=0.01,
-                    ax=ax, legend=False)
-    
+        if 'DateTime' in data.columns:
+            data.set_index('DateTime', inplace=True)
+
+        x = data.index.to_pydatetime()
+        y = data['alt(m)']
+        # charge.plot(y='alt(m)', style='.', c=color, lw=0, alpha=alpha,
+        #             ax=ax, legend=False)
+        ax.scatter(x, y, c=color, alpha=alpha)
+        ax.set_xlim([x.min(), x.max()])
+        ax.xaxis.set_major_formatter(ticker.FuncFormatter(self.format_date))
+        fig.autofmt_xdate()
+
         if hist:
             charge['alt(m)'].hist(ax=ax2, orientation='horizontal',
                                   color=color, alpha=0.5, bins=1000, lw=0)
@@ -1250,7 +1263,7 @@ class StormLMA(Storm):
         ax.set_ylabel('Altitude (m)')
     
         ax.grid(True)
-        ax.set_ylim([0, 16e3])
+        # ax.set_ylim([0, 16e3])
 
         if show_plot:
             plt.show()
@@ -1299,7 +1312,7 @@ class StormLMA(Storm):
 
         if include_all:
             other.plot(y='alt(m)', style='.', c='g', lw=0,
-                       alpha=alpha, ax=ax, legend=False)
+                       alpha=0.01, ax=ax, legend=False)
 
         if not positive_charge.empty:
             positive_charge.plot(y='alt(m)', style='.', c='r', lw=0,
@@ -1404,12 +1417,12 @@ class StormLMA(Storm):
             ax2.hist(neg, orientation='horizontal',
                      color='b', alpha=0.5, bins=20,
                      lw=0)
-            # ax2.set_title('Altitude Histogram')
-            # ax2.set_xlabel('Number of sources')
+            ax2.set_title('Altitude Histogram')
+            ax2.set_xlabel('Number of sources')
 
-        # ax.set_title('Sources')
-        # ax.set_xlabel('West-East(km)')
-        # ax.set_ylabel('South-North (km)')
+        ax.set_title('Sources')
+        ax.set_xlabel('West-East(km)')
+        ax.set_ylabel('South-North (km)')
 
         plt.gca().minorticks_on()
         plt.gca().grid(True, which='both')
@@ -1417,8 +1430,8 @@ class StormLMA(Storm):
         # ax.set_ylim([-50, 50])
         # ax.set_xlim([-50, 50])
 
-        ax.set_ylim([-35, 35])
-        ax.set_xlim([-35, 35])
+        # ax.set_ylim([-35, 35])
+        # ax.set_xlim([-35, 35])
 
         if show_plot:
             plt.show()
