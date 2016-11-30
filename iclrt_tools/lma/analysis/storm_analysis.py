@@ -301,7 +301,7 @@ class StormLMA(Storm):
         return storm
 
     def format_date(self, x, pos=None):
-        return mpl.dates.num2date(x).strftime('%H%M%S')
+        return mpl.dates.num2date(x).strftime('%H%M')
 
     def analyze_pos_neg_charge(self):
         """ Analyze the positive and negative sources. """
@@ -1243,7 +1243,7 @@ class StormLMA(Storm):
             data.set_index('DateTime', inplace=True)
 
         x = data.index.to_pydatetime()
-        y = data['alt(m)']
+        y = data['alt(m)'] * 1e-3
         # charge.plot(y='alt(m)', style='.', c=color, lw=0, alpha=alpha,
         #             ax=ax, legend=False)
         ax.scatter(x, y, c=color, alpha=alpha)
@@ -1310,17 +1310,83 @@ class StormLMA(Storm):
         else:
             fig, ax = plt.subplots(1, 1, figsize=(12, 6))
 
+        xmin = self.storm['DateTime'].max() + datetime.timedelta(days=100)
+        xmax = self.storm['DateTime'].min() - datetime.timedelta(days=100)
+
         if include_all:
-            other.plot(y='alt(m)', style='.', c='g', lw=0,
-                       alpha=0.01, ax=ax, legend=False)
+            if not other.empty:
+                # other.plot(y='alt(m)', style='.', c='g', lw=0,
+                #            alpha=0.01, ax=ax, legend=False)
+                if 'DateTime' in other.columns:
+                    other.set_index('DateTime', inplace=True)
+                x = other.index.to_pydatetime()
+                y = other['alt(m)'] * 1e-3
+                ax.scatter(x, y, c='g', alpha=alpha, lw=0, edgecolors='none')
+
+                if xmin > x.min():
+                    xmin = x.min()
+
+                if xmax < x.max():
+                    xmax = x.max()
 
         if not positive_charge.empty:
-            positive_charge.plot(y='alt(m)', style='.', c='r', lw=0,
-                                 alpha=alpha, ax=ax, legend=False)
+            # positive_charge.plot(y='alt(m)', style='.', c='r', lw=0,
+            #                      alpha=alpha, ax=ax, legend=False)
+            if 'DateTime' in positive_charge.columns:
+                positive_charge.set_index('DateTime', inplace=True)
+            x = positive_charge.index.to_pydatetime()
+            y = positive_charge['alt(m)'] * 1e-3
+            ax.scatter(x, y, c='r', alpha=alpha, lw=0, edgecolors='none')
+
+            if xmin > x.min():
+                xmin = x.min()
+
+            if xmax < x.max():
+                xmax = x.max()
+
         if not negative_charge.empty:
-            negative_charge.plot(y='alt(m)', style='.', c='b', lw=0,
-                                 alpha=alpha, ax=ax, legend=False)
-    
+            # negative_charge.plot(y='alt(m)', style='.', c='b', lw=0,
+            #                      alpha=alpha, ax=ax, legend=False)
+            if 'DateTime' in negative_charge.columns:
+                negative_charge.set_index('DateTime', inplace=True)
+            x = negative_charge.index.to_pydatetime()
+            y = negative_charge['alt(m)'] * 1e-3
+            ax.scatter(x, y, c='b', alpha=alpha, lw=0, edgecolors='none')
+
+            if xmin > x.min():
+                xmin = x.min()
+
+            if xmax < x.max():
+                xmax = x.max()
+
+        ymax = ax.get_ylim()[1]
+
+        # Get the lowest time index and round to the nearest fifth minute before
+        t_start = xmin
+        t_start -= datetime.timedelta(minutes=t_start.minute % 5,
+                                      seconds=t_start.second,
+                                      microseconds=t_start.microsecond)
+
+        # Get the maximum time index and round to the nearest fifth minute after
+        t_end = xmax
+
+        if t_end.minute >= 2.5:
+            t_end += datetime.timedelta(minutes=2.5)
+        else:
+            t_end += datetime.timedelta(minutes=5)
+
+        t_end -= datetime.timedelta(minutes=t_end.minute % 5,
+                                    seconds=t_end.second,
+                                    microseconds=t_end.microsecond)
+
+        xmin = t_start
+        xmax = t_end
+
+        ax.set_xlim([xmin, xmax])
+        ax.set_ylim([0, ymax])
+        ax.xaxis.set_major_formatter(ticker.FuncFormatter(self.format_date))
+        fig.autofmt_xdate()
+
         # xlims = ax.get_xlim()
         # ax.plot([xlims[0], xlims[1]],
         #         [subset_pos_charge.mean(), subset_pos_charge.mean()],
@@ -1328,7 +1394,7 @@ class StormLMA(Storm):
         # ax.plot([xlims[0], xlims[1]],
         #         [subset_neg_charge.mean(), subset_neg_charge.mean()],
         #         'g')
-    
+
         if hist:
             positive_charge['alt(m)'].hist(ax=ax2, orientation='horizontal',
                                            color='r', alpha=0.5, bins=1000, lw=0)
@@ -1342,7 +1408,7 @@ class StormLMA(Storm):
         ax.set_ylabel('Altitude (m)')
     
         ax.grid(True)
-        ax.set_ylim([0, 16e3])
+        # ax.set_ylim([0, 16e3])
 
         if show_plot:
             plt.show()
@@ -1401,7 +1467,7 @@ class StormLMA(Storm):
             x = other['x(m)'] * 1e-3
             y = other['y(m)'] * 1e-3
             ax.scatter(x, y, marker='o', c='g', lw=0,
-                       alpha=0.01)
+                       alpha=0.1*alpha)
 
         plt.gca().minorticks_on()
         plt.gca().grid(True, which='both')
