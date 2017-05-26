@@ -1,4 +1,5 @@
 import numpy as np
+import pyart
 # import geopy as gp
 
 class Location(object):
@@ -90,6 +91,13 @@ class Location(object):
         z = (nu * (1 - e2) + self.alt) * np.sin(self.latr)
 
         return x, y, z
+
+    def xy_coords(self, origin_lon, origin_lat):
+        x, y = pyart.core.transforms.geographic_to_cartesian_aeqd(
+                                                        self.lon, self.lat,
+                                                        origin_lon, origin_lat)
+
+        return x[0], y[0]
 
 gnd_launcher_latlon = [29.9429917, -82.0332305, 0]  # Gnd Launcher
 tower_launcher_latlon = [29.94264819, -82.03179454, 0]  # Tower Launcher
